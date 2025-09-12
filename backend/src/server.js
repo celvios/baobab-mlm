@@ -13,7 +13,7 @@ const app = express();
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://baobab-mlm.vercel.app', 'https://baobab-frontend.vercel.app']
+    ? ['https://baobab-frontend.vercel.app']
     : ['http://localhost:3000', 'http://localhost:3002', 'http://192.168.1.84:3002'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
