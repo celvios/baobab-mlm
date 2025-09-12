@@ -179,34 +179,30 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
     setErrors({});
 
     try {
-      // Simulate API call to Paystack or similar service
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Use real Paystack API for bank verification
+      const response = await fetch('/api/bank/verify-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          accountNumber: formData.accountNumber,
+          bankCode: formData.bankCode
+        })
+      });
       
-      // Mock response - in real implementation, use actual API
-      // For testing: generate a name for any 10-digit account number
-      if (formData.accountNumber.length === 10 && /^\d{10}$/.test(formData.accountNumber)) {
-        // Generate mock name based on account number for testing
-        const names = [
-          'John Doe', 'Jane Smith', 'Alison Eyo', 'Mary Johnson', 'David Wilson',
-          'Sarah Ahmed', 'Michael Okafor', 'Fatima Ibrahim', 'Emmanuel Adebayo', 'Grace Okoro',
-          'Ahmed Musa', 'Blessing Okoro', 'Chidi Okafor', 'Damilola Adebayo', 'Esther Uche',
-          'Femi Adeyemi', 'Goodness Eze', 'Hassan Ibrahim', 'Ifeoma Nwankwo', 'Joseph Yakubu'
-        ];
-        
-        // Use last digit to select a name for consistency
-        const lastDigit = parseInt(formData.accountNumber.slice(-1));
-        const nameIndex = lastDigit % names.length;
-        const resolvedName = names[nameIndex];
-        
-        setResolvedAccountName(resolvedName);
+      const result = await response.json();
+      
+      if (result.success) {
+        setResolvedAccountName(result.accountName);
         setAccountVerified(true);
-        setFormData({...formData, accountName: resolvedName});
+        setFormData({...formData, accountName: result.accountName});
         addNotification('Account verified successfully!', 'success');
       } else {
-        // Invalid format - must be exactly 10 digits
         setAccountVerified(false);
-        setErrors({accountNumber: 'Account number must be exactly 10 digits.'});
-        addNotification('Invalid account number format. Must be 10 digits.', 'error');
+        setErrors({accountNumber: result.message || 'Account verification failed'});
+        addNotification(result.message || 'Account verification failed', 'error');
       }
     } catch (error) {
       setAccountVerified(false);

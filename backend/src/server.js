@@ -35,6 +35,16 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Baobab MLM API is running', timestamp: new Date().toISOString() });
 });
 
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Test route working' });
+});
+
+// Test auth route
+app.get('/api/auth/test', (req, res) => {
+  res.json({ message: 'Auth route working' });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
