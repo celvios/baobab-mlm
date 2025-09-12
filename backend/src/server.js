@@ -45,6 +45,55 @@ app.get('/api/auth/test', (req, res) => {
   res.json({ message: 'Auth route working' });
 });
 
+// Setup database tables
+app.get('/api/setup-database', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Create users table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        phone VARCHAR(20),
+        password_hash VARCHAR(255) NOT NULL,
+        referral_code VARCHAR(50) UNIQUE,
+        referred_by VARCHAR(50),
+        mlm_level VARCHAR(20) DEFAULT 'no_stage',
+        email_verified BOOLEAN DEFAULT FALSE,
+        verification_token VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create wallets table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS wallets (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        balance DECIMAL(10,2) DEFAULT 0,
+        total_earned DECIMAL(10,2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    client.release();
+    res.json({ message: 'Database tables created successfully!' });
+  } catch (error) {
+    console.error('Database setup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
