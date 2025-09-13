@@ -36,12 +36,14 @@ export default function Orders() {
     try {
       setLoading(true);
       setError(null);
-      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      console.log('Found orders:', userOrders);
-      setOrders(userOrders);
+      const response = await apiService.getOrders();
+      setOrders(response.orders || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      setError('Unable to load orders.');
+      // Fallback to localStorage
+      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      setOrders(userOrders);
+      setError('Using local orders - API unavailable');
     } finally {
       setLoading(false);
     }
