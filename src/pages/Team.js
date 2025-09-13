@@ -125,9 +125,9 @@ export default function Team() {
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">My Team</h2>
-          <button className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
+          <Link to="/team-tree" className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
             Team Tree
-          </button>
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">

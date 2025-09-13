@@ -49,7 +49,14 @@ export default function Login() {
       addNotification('Login successful! Welcome back.', 'success');
       navigate('/dashboard');
     } catch (error) {
-      addNotification(error.message || 'Login failed. Please check your credentials.', 'error');
+      if (error.message.includes('verify your email')) {
+        addNotification('Please verify your email first. Redirecting to verification page...', 'warning');
+        setTimeout(() => {
+          navigate('/security-verification');
+        }, 2000);
+      } else {
+        addNotification(error.message || 'Login failed. Please check your credentials.', 'error');
+      }
     } finally {
       setLoading(false);
     }

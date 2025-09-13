@@ -41,24 +41,32 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const response = await apiService.login(email, password);
-    setUser(response.user);
-    localStorage.setItem('user', JSON.stringify(response.user));
-    
-    // Add welcome message to market updates
-    const existingUpdates = JSON.parse(localStorage.getItem('marketUpdates') || '[]');
-    const welcomeUpdate = {
-      id: Date.now(),
-      title: 'Welcome back!',
-      message: `Hello ${response.user.fullName}, welcome back to Baobab! Ready to grow your business today?`,
-      type: 'success',
-      date: new Date().toISOString(),
-      isRead: false
-    };
-    existingUpdates.unshift(welcomeUpdate);
-    localStorage.setItem('marketUpdates', JSON.stringify(existingUpdates));
-    
-    return response;
+    try {
+      const response = await apiService.login(email, password);
+      setUser(response.user);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Add welcome message to market updates
+      const existingUpdates = JSON.parse(localStorage.getItem('marketUpdates') || '[]');
+      const welcomeUpdate = {
+        id: Date.now(),
+        title: 'Welcome back!',
+        message: `Hello ${response.user.fullName}, welcome back to Baobab! Ready to grow your business today?`,
+        type: 'success',
+        date: new Date().toISOString(),
+        isRead: false
+      };
+      existingUpdates.unshift(welcomeUpdate);
+      localStorage.setItem('marketUpdates', JSON.stringify(existingUpdates));
+      
+      return response;
+    } catch (error) {
+      // If verification required, store email for OTP verification
+      if (error.message.includes('verify your email')) {
+        localStorage.setItem('pendingVerificationEmail', email);
+      }
+      throw error;
+    }
   };
 
   const logout = () => {

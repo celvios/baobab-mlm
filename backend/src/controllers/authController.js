@@ -152,7 +152,14 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Email verification check removed - users can login without verification
+    // Check if email is verified
+    if (!user.is_email_verified) {
+      return res.status(400).json({ 
+        message: 'Please verify your email before logging in. Check your inbox for the verification code.',
+        requiresVerification: true,
+        email: user.email
+      });
+    }
 
     // Generate JWT
     const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_key';
