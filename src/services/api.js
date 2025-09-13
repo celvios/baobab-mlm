@@ -130,46 +130,46 @@ class ApiService {
 
   // Withdrawal methods
   async requestWithdrawal(amount) {
-    return this.request('/withdrawal/request', {
+    return this.request('/api/withdrawal/request', {
       method: 'POST',
       body: JSON.stringify({ amount }),
     });
   }
 
   async getWithdrawalRequests(page = 1, limit = 10) {
-    return this.request(`/withdrawal/requests?page=${page}&limit=${limit}`);
+    return this.request(`/api/withdrawal/requests?page=${page}&limit=${limit}`);
   }
 
   // Market updates methods
   async getMarketUpdates(page = 1, limit = 10) {
-    return this.request(`/market-updates?page=${page}&limit=${limit}`);
+    return this.request(`/api/market-updates?page=${page}&limit=${limit}`);
   }
 
   async markUpdateAsRead(updateId) {
-    return this.request(`/market-updates/${updateId}/read`, {
+    return this.request(`/api/market-updates/${updateId}/read`, {
       method: 'PUT',
     });
   }
 
   async getUnreadCount() {
-    return this.request('/market-updates/unread-count');
+    return this.request('/api/market-updates/unread-count');
   }
 
   // MLM methods
   async getMatrix() {
-    return this.request('/mlm/matrix');
+    return this.request('/api/mlm/matrix');
   }
 
   async getEarnings() {
-    return this.request('/mlm/earnings');
+    return this.request('/api/mlm/earnings');
   }
 
   async getTeam() {
-    return this.request('/mlm/team');
+    return this.request('/api/mlm/team');
   }
 
   async getLevelProgress() {
-    return this.request('/mlm/level-progress');
+    return this.request('/api/mlm/level-progress');
   }
 
   // Orders methods

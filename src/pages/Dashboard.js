@@ -38,16 +38,28 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       const [profile, team, progress, earningsData, transactionHistory, updates] = await Promise.all([
-        apiService.getProfile(),
-        apiService.getTeam(),
-        apiService.getLevelProgress(),
-        apiService.getEarnings(),
-        apiService.getTransactionHistory(1, 5),
-        apiService.getMarketUpdates(1, 10)
+        apiService.getProfile().catch(() => null),
+        apiService.getTeam().catch(() => ({ team: [] })),
+        apiService.getLevelProgress().catch(() => null),
+        apiService.getEarnings().catch(() => ({ earnings: [] })),
+        apiService.getTransactionHistory(1, 5).catch(() => ({ transactions: [] })),
+        apiService.getMarketUpdates(1, 10).catch(() => ({ updates: [] }))
       ]);
       
+      // Use stored user data if API fails
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const fallbackProfile = {
+        fullName: storedUser.fullName || 'User',
+        email: storedUser.email || 'user@example.com',
+        referralCode: storedUser.referralCode || 'LOADING',
+        mlmLevel: 'feeder',
+        wallet: { balance: 0 }
+      };
+      
+      const actualProfile = profile || fallbackProfile;
+      
       // Calculate MLM earnings based on team size
-      const teamSize = team.team?.length || 0;
+      const teamSize = team?.team?.length || 0;
       let stageBonus = 1.5; // Default feeder stage
       
       if (teamSize >= 14 && teamSize < 28) stageBonus = 4.8; // Bronze
@@ -60,22 +72,30 @@ export default function Dashboard() {
       
       // Update profile with calculated earnings
       const updatedProfile = {
-        ...profile,
+        ...actualProfile,
         wallet: {
-          ...profile.wallet,
+          ...actualProfile.wallet,
           balance: mlmEarnings
         }
       };
       
       setUserProfile(updatedProfile);
-      setTeamMembers(team.team || []);
+      setTeamMembers(team?.team || []);
       setLevelProgress(progress);
-      setEarnings(earningsData.earnings || []);
-      setTransactions(transactionHistory.transactions || []);
-      setMarketUpdates(updates.updates || []);
+      setEarnings(earningsData?.earnings || []);
+      setTransactions(transactionHistory?.transactions || []);
+      setMarketUpdates(updates?.updates || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      setUserProfile({ wallet: { balance: 0 }, mlmLevel: 'feeder' });
+      // Fallback to stored user data
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      setUserProfile({
+        fullName: storedUser.fullName || 'User',
+        email: storedUser.email || 'user@example.com',
+        referralCode: storedUser.referralCode || 'LOADING',
+        mlmLevel: 'feeder',
+        wallet: { balance: 0 }
+      });
     } finally {
       setLoading(false);
     }
