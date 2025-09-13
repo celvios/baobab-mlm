@@ -81,7 +81,7 @@ export default function Dashboard() {
     }
   };
 
-  const referralLink = userProfile ? `https://baobab.com/register?ref=${userProfile.referralCode}` : '';
+  const referralLink = userProfile?.referralCode ? `https://baobab.com/register?ref=${userProfile.referralCode}` : 'Loading...';
   
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);

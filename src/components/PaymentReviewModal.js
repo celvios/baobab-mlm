@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { XMarkIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useCart } from '../contexts/CartContext';
+import apiService from '../services/api';
+import { useNotification } from './NotificationSystem';
 
 const generateOrderNumber = () => {
   const timestamp = Date.now().toString();
@@ -10,13 +12,22 @@ const generateOrderNumber = () => {
 
 export default function PaymentReviewModal({ isOpen, onClose, product, quantity }) {
   const [orderNumber, setOrderNumber] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { clearCart } = useCart();
+  const { addNotification } = useNotification();
   
   useEffect(() => {
     if (isOpen && !orderNumber) {
+      createOrder();
+    }
+  }, [isOpen, product, quantity]);
+
+  const createOrder = async () => {
+    try {
+      setLoading(true);
+      setError(null);
       clearCart();
-      const newOrderNumber = generateOrderNumber();
-      setOrderNumber(newOrderNumber);
       
       // Check if user is new (no previous orders)
       const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
@@ -25,7 +36,54 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
       const productAmount = (product?.price || 9000) * (quantity || 1);
       const totalAmount = productAmount + registrationFee;
       
-      // Create order in localStorage
+      const orderData = {
+        productName: product?.name || 'Lentoc Tea',
+        productPrice: product?.price || 9000,
+        quantity: quantity || 1,
+        deliveryType: 'pickup',
+        pickupStation: 'Ikeja High Tower, Lagos'
+      };
+      
+      const response = await apiService.createOrder(orderData);
+      setOrderNumber(response.order.orderNumber);
+      
+      // Also save to localStorage as backup
+      const newOrder = {
+        id: response.order.id,
+        orderNumber: response.order.orderNumber,
+        date: new Date().toLocaleDateString('en-GB'),
+        product: response.order.productName,
+        productId: product?.id,
+        quantity: response.order.quantity,
+        productAmount: response.order.productPrice * response.order.quantity,
+        registrationFee: registrationFee,
+        amount: response.order.totalAmount,
+        status: response.order.orderStatus,
+        paymentStatus: response.order.paymentStatus,
+        deliveryStatus: response.order.orderStatus,
+        deliveryType: response.order.deliveryType,
+        transaction: 'Purchase',
+        createdAt: response.order.createdAt
+      };
+      
+      existingOrders.push(newOrder);
+      localStorage.setItem('userOrders', JSON.stringify(existingOrders));
+      
+      addNotification('Order placed successfully!', 'success');
+    } catch (error) {
+      console.error('Error creating order:', error);
+      setError(error.message);
+      
+      // Fallback to localStorage if API fails
+      const newOrderNumber = generateOrderNumber();
+      setOrderNumber(newOrderNumber);
+      
+      const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const isNewUser = existingOrders.length === 0;
+      const registrationFee = isNewUser ? 9000 : 0;
+      const productAmount = (product?.price || 9000) * (quantity || 1);
+      const totalAmount = productAmount + registrationFee;
+      
       const newOrder = {
         id: Date.now(),
         orderNumber: newOrderNumber,
@@ -47,20 +105,11 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
       existingOrders.push(newOrder);
       localStorage.setItem('userOrders', JSON.stringify(existingOrders));
       
-      // Add order completion to market updates
-      const marketUpdates = JSON.parse(localStorage.getItem('marketUpdates') || '[]');
-      const orderUpdate = {
-        id: Date.now() + 1,
-        title: 'Order Placed Successfully!',
-        message: `Your order #${newOrderNumber} for ${product?.name || 'Lentoc Tea'} has been placed and is under review`,
-        type: 'info',
-        date: new Date().toISOString(),
-        isRead: false
-      };
-      marketUpdates.unshift(orderUpdate);
-      localStorage.setItem('marketUpdates', JSON.stringify(marketUpdates));
+      addNotification('Order saved locally due to connection issue', 'warning');
+    } finally {
+      setLoading(false);
     }
-  }, [isOpen, product, quantity]);
+  };
 
   if (!isOpen) return null;
 
@@ -78,16 +127,39 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
             <XMarkIcon className="h-6 w-6" />
           </button>
 
-          {/* Success Icon */}
+          {/* Loading/Success/Error State */}
           <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircleIcon className="h-10 w-10 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Under Review</h2>
-            <p className="text-gray-600">Your payment is being processed and will be reviewed shortly.</p>
+            {loading ? (
+              <>
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Creating Order...</h2>
+                <p className="text-gray-600">Please wait while we process your order.</p>
+              </>
+            ) : error ? (
+              <>
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Issue</h2>
+                <p className="text-gray-600">{error}</p>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircleIcon className="h-10 w-10 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Under Review</h2>
+                <p className="text-gray-600">Your payment is being processed and will be reviewed shortly.</p>
+              </>
+            )}
           </div>
 
           {/* Order Details */}
+          {!loading && (
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
             <h3 className="font-medium text-gray-900 mb-4">Order Summary</h3>
             <div className="space-y-2">
@@ -123,23 +195,27 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
               </div>
             </div>
           </div>
+          )}
 
           {/* Status Message */}
+          {!loading && (
           <div className="text-center mb-6">
             <p className="text-sm text-gray-600 mb-2">
-              We'll notify you once your payment has been confirmed.
+              {error ? 'Order saved locally. Please try again later.' : "We'll notify you once your payment has been confirmed."}
             </p>
             <p className="text-sm text-gray-500">
-              This usually takes 5-10 minutes.
+              {error ? 'Check your internet connection.' : 'This usually takes 5-10 minutes.'}
             </p>
           </div>
+          )}
 
           {/* Action Button */}
           <button
             onClick={onClose}
-            className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800"
+            disabled={loading}
+            className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Continue Shopping
+            {loading ? 'Processing...' : 'Continue Shopping'}
           </button>
         </div>
       </div>

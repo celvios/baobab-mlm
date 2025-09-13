@@ -3,6 +3,8 @@ import { MoreVertical } from 'lucide-react';
 import DeleteOrderModal from '../components/DeleteOrderModal';
 import ViewOrderModal from '../components/ViewOrderModal';
 import MarketUpdates from '../components/MarketUpdates';
+import apiService from '../services/api';
+import { useNotification } from '../components/NotificationSystem';
 
 export default function Orders() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -10,7 +12,10 @@ export default function Orders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
+  const { addNotification } = useNotification();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -24,20 +29,25 @@ export default function Orders() {
   }, []);
 
   useEffect(() => {
-    // Load orders from localStorage
-    const loadOrders = () => {
-      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      setOrders(userOrders.reverse()); // Show newest first
-    };
-    
-    loadOrders();
-    
-    // Listen for storage changes
-    const handleStorageChange = () => loadOrders();
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => window.removeEventListener('storage', handleStorageChange);
+    fetchOrders();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiService.getOrders();
+      setOrders(response.orders || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setError(error.message);
+      // Fallback to localStorage if API fails
+      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      setOrders(userOrders.reverse());
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const mockOrders = [
     {
@@ -146,22 +156,23 @@ export default function Orders() {
     }
   ];
 
-  // Use real orders if available, otherwise show mock data
+  // Transform orders data for display
   const displayOrders = orders.length > 0 ? orders.map(order => ({
     id: order.id,
-    date: order.date,
+    date: new Date(order.createdAt).toLocaleDateString('en-GB'),
     orderNo: order.orderNumber,
-    product: order.product,
+    product: order.productName,
     qty: order.quantity.toString().padStart(2, '0'),
-    amount: `₦${order.amount.toLocaleString()}`,
-    transaction: order.transaction,
-    deliveryType: order.deliveryType,
-    deliveryStatus: order.status === 'pending' ? 'Pending' : 
-                   order.status === 'approved' ? 'Processing' : 
-                   order.status === 'delivered' ? 'Delivered' : 'Pending',
+    amount: `₦${order.totalAmount.toLocaleString()}`,
+    transaction: 'Purchased',
+    deliveryType: order.deliveryType === 'pickup' ? 'Pick-Up Station' : 'Home Delivery',
+    deliveryStatus: order.orderStatus === 'pending' ? 'Pending' : 
+                   order.orderStatus === 'processing' ? 'Processing' : 
+                   order.orderStatus === 'delivered' ? 'Delivered' : 'Pending',
     paymentStatus: order.paymentStatus === 'pending' ? 'Pending' : 
-                  order.paymentStatus === 'approved' ? 'Successful' : 'Pending',
-    pickupStation: 'Ikeja High Tower, Lagos'
+                  order.paymentStatus === 'successful' ? 'Successful' : 'Pending',
+    pickupStation: order.pickupStation || 'Ikeja High Tower, Lagos',
+    originalOrder: order
   })) : mockOrders;
 
   const handleViewOrder = (order) => {
@@ -174,6 +185,23 @@ export default function Orders() {
     setSelectedOrder(order);
     setShowDeleteModal(true);
     setActiveDropdown(null);
+  };
+
+  const confirmDeleteOrder = async () => {
+    if (!selectedOrder?.originalOrder?.id) {
+      addNotification('Unable to delete order', 'error');
+      return;
+    }
+
+    try {
+      await apiService.deleteOrder(selectedOrder.originalOrder.id);
+      addNotification('Order deleted successfully', 'success');
+      fetchOrders(); // Refresh orders list
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      addNotification(error.message || 'Failed to delete order', 'error');
+    }
   };
 
   const toggleDropdown = (orderId) => {
@@ -198,7 +226,39 @@ export default function Orders() {
 
       <MarketUpdates />
 
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white rounded-2xl shadow-card p-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <span className="ml-3 text-gray-600">Loading orders...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-white rounded-2xl shadow-card p-8">
+          <div className="text-center">
+            <div className="text-red-500 mb-2">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Orders</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={fetchOrders}
+              className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Orders Table */}
+      {!loading && !error && (
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -303,7 +363,28 @@ export default function Orders() {
             </tbody>
           </table>
         </div>
-      </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && displayOrders.length === 0 && (
+        <div className="bg-white rounded-2xl shadow-card p-8">
+          <div className="text-center">
+            <div className="text-gray-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Yet</h3>
+            <p className="text-gray-600 mb-4">You haven't placed any orders yet. Start shopping to see your orders here.</p>
+            <a 
+              href="/products"
+              className="bg-black text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors inline-block"
+            >
+              Browse Products
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <ViewOrderModal 
@@ -315,10 +396,7 @@ export default function Orders() {
       <DeleteOrderModal 
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => {
-          console.log('Order deleted:', selectedOrder);
-          setShowDeleteModal(false);
-        }}
+        onConfirm={confirmDeleteOrder}
       />
     </div>
   );

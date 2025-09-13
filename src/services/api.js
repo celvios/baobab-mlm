@@ -172,6 +172,35 @@ class ApiService {
     return this.request('/mlm/level-progress');
   }
 
+  // Orders methods
+  async createOrder(orderData) {
+    return this.request('/api/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+  }
+
+  async getOrders(page = 1, limit = 10) {
+    return this.request(`/api/orders?page=${page}&limit=${limit}`);
+  }
+
+  async getOrderById(orderId) {
+    return this.request(`/api/orders/${orderId}`);
+  }
+
+  async updateOrderStatus(orderId, statusData) {
+    return this.request(`/api/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify(statusData),
+    });
+  }
+
+  async deleteOrder(orderId) {
+    return this.request(`/api/orders/${orderId}`, {
+      method: 'DELETE',
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');
