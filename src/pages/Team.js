@@ -24,10 +24,9 @@ export default function Team() {
         const totalEarnings = earningsData.reduce((sum, earning) => sum + parseFloat(earning.total_earned || 0), 0);
         setEarnings(totalEarnings);
         
-        // Check feeder requirements: at least 1 approved order worth ₦9000+
-        const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-        const approvedOrders = userOrders.filter(order => order.status === 'approved');
-        const meetsFeederReq = approvedOrders.some(order => order.amount >= 9000);
+        // Check feeder requirements from database: registration fee + product purchase
+        const meetsFeederReq = (profile?.registrationFeePaid && profile?.productPurchasePaid) || false;
+        const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]'); // Keep for display
         setHasFeederRequirements(meetsFeederReq);
         setOrders(userOrders);
         
@@ -154,8 +153,8 @@ export default function Team() {
                       <span className="text-sm">{member.email}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-sm">{member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'Feeder'}</td>
-                  <td className="py-4 px-6 text-sm">{member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'Feeder'}</td>
+                  <td className="py-4 px-6 text-sm">{member.mlm_level === 'no_stage' ? 'No Stage' : (member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'No Stage')}</td>
+                  <td className="py-4 px-6 text-sm">{member.mlm_level === 'no_stage' ? 'No Stage' : (member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'No Stage')}</td>
                   <td className="py-4 px-6 text-sm font-semibold text-green-600">+ ${member.earning_from_user || '1.5'}</td>
                 </tr>
               )) : (

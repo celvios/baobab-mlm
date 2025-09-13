@@ -24,13 +24,18 @@ export default function TeamTree() {
         apiService.getTeam().catch(() => ({ team: [] }))
       ]);
       
+      // Check if user qualifies for feeder stage from database
+      const qualifiesForFeeder = (profile?.registrationFeePaid && profile?.productPurchasePaid) || false;
+      
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-      setUserProfile(profile || {
+      const actualProfile = profile || {
         fullName: storedUser.fullName || 'User',
         email: storedUser.email || 'user@example.com',
         referralCode: storedUser.referralCode || 'LOADING',
-        mlmLevel: 'feeder'
-      });
+        mlmLevel: qualifiesForFeeder ? 'feeder' : 'no_stage'
+      };
+      
+      setUserProfile(actualProfile);
       setTeamMembers(team?.team || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -53,13 +58,14 @@ export default function TeamTree() {
 
   const getLevelColor = (level) => {
     const levelColors = {
+      'no_stage': 'bg-red-500',
       'feeder': 'bg-gray-500',
       'bronze': 'bg-orange-600',
       'silver': 'bg-gray-400',
       'gold': 'bg-yellow-500',
       'diamond': 'bg-blue-600'
     };
-    return levelColors[level] || 'bg-gray-500';
+    return levelColors[level] || 'bg-red-500';
   };
 
   const buildTreeStructure = (members) => {
@@ -156,7 +162,7 @@ export default function TeamTree() {
             {isRoot ? 'You' : (node.full_name || node.email)}
           </p>
           <p className="text-xs text-gray-500">
-            {(node.mlm_level || 'feeder').charAt(0).toUpperCase() + (node.mlm_level || 'feeder').slice(1)}
+            {node.mlm_level === 'no_stage' ? 'No Stage' : ((node.mlm_level || 'no_stage').charAt(0).toUpperCase() + (node.mlm_level || 'no_stage').slice(1))}
           </p>
           {!isRoot && (
             <p className="text-xs text-green-600 font-semibold">
@@ -259,7 +265,7 @@ export default function TeamTree() {
             <div>
               <p className="text-sm text-gray-600">Your Level</p>
               <p className="text-xl font-bold text-gray-900">
-                {(userProfile?.mlmLevel || 'feeder').charAt(0).toUpperCase() + (userProfile?.mlmLevel || 'feeder').slice(1)}
+                {userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : ((userProfile?.mlmLevel || 'no_stage').charAt(0).toUpperCase() + (userProfile?.mlmLevel || 'no_stage').slice(1))}
               </p>
             </div>
           </div>
@@ -329,8 +335,9 @@ export default function TeamTree() {
       {/* Legend */}
       <div className="bg-white rounded-xl shadow-card p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Level Legend</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           {[
+            { level: 'no_stage', name: 'No Stage', color: 'bg-red-500' },
             { level: 'feeder', name: 'Feeder', color: 'bg-gray-500' },
             { level: 'bronze', name: 'Bronze', color: 'bg-orange-600' },
             { level: 'silver', name: 'Silver', color: 'bg-gray-400' },

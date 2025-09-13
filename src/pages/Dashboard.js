@@ -46,13 +46,16 @@ export default function Dashboard() {
         apiService.getMarketUpdates(1, 10).catch(() => ({ updates: [] }))
       ]);
       
+      // Check if user qualifies for feeder stage (registration fee + product purchase)
+      const qualifiesForFeeder = (profile?.registrationFeePaid && profile?.productPurchasePaid) || false;
+      
       // Use stored user data if API fails
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       const fallbackProfile = {
         fullName: storedUser.fullName || 'User',
         email: storedUser.email || 'user@example.com',
         referralCode: storedUser.referralCode || 'LOADING',
-        mlmLevel: 'feeder',
+        mlmLevel: qualifiesForFeeder ? 'feeder' : 'no_stage',
         wallet: { balance: 0 }
       };
       
@@ -70,12 +73,15 @@ export default function Dashboard() {
       
       const mlmEarnings = teamSize * stageBonus;
       
-      // Update profile with calculated earnings
+      // Check qualification from database fields
+      const qualifiesForFeeder = (actualProfile?.registrationFeePaid && actualProfile?.productPurchasePaid) || false;
+      
       const updatedProfile = {
         ...actualProfile,
+        mlmLevel: qualifiesForFeeder ? (actualProfile.mlmLevel || 'feeder') : 'no_stage',
         wallet: {
           ...actualProfile.wallet,
-          balance: mlmEarnings
+          balance: qualifiesForFeeder ? mlmEarnings : 0
         }
       };
       
@@ -89,11 +95,13 @@ export default function Dashboard() {
       console.error('Error fetching dashboard data:', error);
       // Fallback to stored user data
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const qualifiesForFeeder = false; // Default to no qualification if API fails
+      
       setUserProfile({
         fullName: storedUser.fullName || 'User',
         email: storedUser.email || 'user@example.com',
         referralCode: storedUser.referralCode || 'LOADING',
-        mlmLevel: 'feeder',
+        mlmLevel: qualifiesForFeeder ? 'feeder' : 'no_stage',
         wallet: { balance: 0 }
       });
     } finally {

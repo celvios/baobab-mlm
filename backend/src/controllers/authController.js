@@ -166,19 +166,43 @@ const login = async (req, res) => {
     const jwtExpire = process.env.JWT_EXPIRE || '7d';
     const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: jwtExpire });
 
-    // Create login notification for all users
+    // Check user's stage progress and create personalized notification
     try {
+      const [ordersResult, teamResult] = await Promise.all([
+        pool.query('SELECT COALESCE(SUM(total_amount), 0) as total_spent FROM orders WHERE user_id = $1', [user.id]),
+        pool.query('SELECT COUNT(*) as team_count FROM users WHERE referred_by = $1', [user.referral_code])
+      ]);
+      
+      const totalSpent = parseFloat(ordersResult.rows[0]?.total_spent || 0);
+      const teamCount = parseInt(teamResult.rows[0]?.team_count || 0);
+      
+      let welcomeMessage = `Welcome back, ${user.full_name}! `;
+      
+      if (totalSpent < 18000) {
+        const needed = 18000 - totalSpent;
+        welcomeMessage += `You need ₦${needed.toLocaleString()} more to qualify for Feeder stage.`;
+      } else if (teamCount < 2) {
+        const needed = 2 - teamCount;
+        welcomeMessage += `You're in Feeder stage! Refer ${needed} more people to reach Bronze.`;
+      } else if (teamCount < 6) {
+        const needed = 6 - teamCount;
+        welcomeMessage += `You're in Bronze stage! Refer ${needed} more people to reach Silver.`;
+      } else if (teamCount < 14) {
+        const needed = 14 - teamCount;
+        welcomeMessage += `You're in Silver stage! Refer ${needed} more people to reach Gold.`;
+      } else if (teamCount < 30) {
+        const needed = 30 - teamCount;
+        welcomeMessage += `You're in Gold stage! Refer ${needed} more people to reach Diamond.`;
+      } else {
+        welcomeMessage += `Congratulations! You've achieved Diamond stage with ${teamCount} referrals!`;
+      }
+      
       await pool.query(
-        'INSERT INTO market_updates (user_id, title, message, type) SELECT id, $1, $2, $3 FROM users WHERE id != $4',
-        [
-          `User ${user.full_name} logged in`,
-          `${user.full_name} is now online and active in the system`,
-          'info',
-          user.id
-        ]
+        'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+        [user.id, 'Welcome Back!', welcomeMessage, 'info']
       );
     } catch (notificationError) {
-      console.log('Failed to create login notification:', notificationError.message);
+      console.log('Failed to create welcome notification:', notificationError.message);
     }
 
     res.json({

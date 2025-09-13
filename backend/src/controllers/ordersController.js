@@ -46,6 +46,101 @@ const createOrder = async (req, res) => {
       'pending'
     ]);
 
+    // Check stage progression and create notifications
+    const [userOrdersResult, teamResult] = await Promise.all([
+      pool.query('SELECT SUM(total_amount) as total_spent FROM orders WHERE user_id = $1', [userId]),
+      pool.query('SELECT COUNT(*) as team_count FROM users WHERE referred_by = (SELECT referral_code FROM users WHERE id = $1)', [userId])
+    ]);
+    
+    const totalSpent = parseFloat(userOrdersResult.rows[0]?.total_spent || 0);
+    const teamCount = parseInt(teamResult.rows[0]?.team_count || 0);
+    
+    // Stage requirements
+    const stages = {
+      feeder: { purchase: 18000, referrals: 0 },
+      bronze: { purchase: 18000, referrals: 2 },
+      silver: { purchase: 18000, referrals: 6 },
+      gold: { purchase: 18000, referrals: 14 },
+      diamond: { purchase: 18000, referrals: 30 }
+    };
+    
+    let currentStage = 'no_stage';
+    let nextStage = 'feeder';
+    let notification = null;
+    
+    // Determine current stage and create progress notification
+    if (totalSpent >= 18000) {
+      await pool.query(
+        'UPDATE users SET registration_fee_paid = true, product_purchase_paid = true WHERE id = $1',
+        [userId]
+      );
+      
+      if (teamCount >= 30) {
+        currentStage = 'diamond';
+        notification = {
+          title: '🎉 Diamond Stage Achieved!',
+          message: 'Congratulations! You have reached the highest Diamond stage with 30+ referrals!',
+          type: 'success'
+        };
+      } else if (teamCount >= 14) {
+        currentStage = 'gold';
+        nextStage = 'diamond';
+        const needed = 30 - teamCount;
+        notification = {
+          title: '🥇 Gold Stage Active!',
+          message: `You're in Gold stage! Refer ${needed} more people to reach Diamond stage.`,
+          type: 'info'
+        };
+      } else if (teamCount >= 6) {
+        currentStage = 'silver';
+        nextStage = 'gold';
+        const needed = 14 - teamCount;
+        notification = {
+          title: '🥈 Silver Stage Active!',
+          message: `You're in Silver stage! Refer ${needed} more people to reach Gold stage.`,
+          type: 'info'
+        };
+      } else if (teamCount >= 2) {
+        currentStage = 'bronze';
+        nextStage = 'silver';
+        const needed = 6 - teamCount;
+        notification = {
+          title: '🥉 Bronze Stage Active!',
+          message: `You're in Bronze stage! Refer ${needed} more people to reach Silver stage.`,
+          type: 'info'
+        };
+      } else {
+        currentStage = 'feeder';
+        nextStage = 'bronze';
+        const needed = 2 - teamCount;
+        notification = {
+          title: '🌱 Feeder Stage Qualified!',
+          message: `Great! You've qualified for Feeder stage. Refer ${needed} more people to reach Bronze stage.`,
+          type: 'success'
+        };
+      }
+    } else {
+      // User hasn't qualified for feeder stage yet
+      const needed = 18000 - totalSpent;
+      notification = {
+        title: '💰 Almost There!',
+        message: `You need ₦${needed.toLocaleString()} more in purchases to qualify for Feeder stage and start earning!`,
+        type: 'warning'
+      };
+    }
+    
+    // Create the notification
+    if (notification) {
+      try {
+        await pool.query(
+          'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+          [userId, notification.title, notification.message, notification.type]
+        );
+      } catch (notificationError) {
+        console.log('Failed to create stage progress notification:', notificationError.message);
+      }
+    }
+
     res.status(201).json({
       message: 'Order created successfully',
       order: {
