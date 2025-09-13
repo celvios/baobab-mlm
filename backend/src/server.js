@@ -92,10 +92,33 @@ app.get('/api/setup-database', async (req, res) => {
         referral_code VARCHAR(50) UNIQUE,
         referred_by VARCHAR(50),
         mlm_level VARCHAR(20) DEFAULT 'no_stage',
-        email_verified BOOLEAN DEFAULT FALSE,
-        verification_token VARCHAR(255),
+        is_email_verified BOOLEAN DEFAULT FALSE,
+        email_verification_token VARCHAR(255),
+        email_verification_expires TIMESTAMP,
+        is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create user_profiles table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create market_updates table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS market_updates (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        type VARCHAR(20) DEFAULT 'info',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
     
