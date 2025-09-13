@@ -53,8 +53,10 @@ export default function DashboardLayout() {
   const handleLogout = () => {
     // Use API service logout method
     apiService.logout();
+    // Clear any stored data
+    localStorage.clear();
     // Navigate to login
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (

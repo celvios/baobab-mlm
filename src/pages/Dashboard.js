@@ -73,15 +73,15 @@ export default function Dashboard() {
       
       const mlmEarnings = teamSize * stageBonus;
       
-      // Check qualification from database fields
-      const qualifiesForFeeder = (actualProfile?.registrationFeePaid && actualProfile?.productPurchasePaid) || false;
+      // Update qualification status
+      const finalQualification = qualifiesForFeeder || (actualProfile?.registrationFeePaid && actualProfile?.productPurchasePaid) || false;
       
       const updatedProfile = {
         ...actualProfile,
-        mlmLevel: qualifiesForFeeder ? (actualProfile.mlmLevel || 'feeder') : 'no_stage',
+        mlmLevel: finalQualification ? (actualProfile.mlmLevel || 'feeder') : 'no_stage',
         wallet: {
           ...actualProfile.wallet,
-          balance: qualifiesForFeeder ? mlmEarnings : 0
+          balance: finalQualification ? mlmEarnings : 0
         }
       };
       
