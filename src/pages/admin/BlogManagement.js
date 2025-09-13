@@ -21,16 +21,16 @@ export default function BlogManagement() {
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Blog Overview</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Blog Overview</h2>
           <p className="text-gray-600 text-sm mb-6">Create and manage blog posts to engage your community.</p>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="text-gray-600 text-sm mb-2">Total Posts</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-2">47</div>
-              <p className="text-gray-500 text-sm">All Blog Posts</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Posts</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">47</div>
+              <p className="text-gray-500 text-xs sm:text-sm">All Blog Posts</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -54,21 +54,21 @@ export default function BlogManagement() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border">
-          <div className="p-6 border-b">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Blog Posts</h3>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center text-sm">
+          <div className="p-4 sm:p-6 border-b">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Blog Posts</h3>
+              <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center text-sm w-full sm:w-auto justify-center">
                 <PlusIcon className="h-4 w-4 mr-2" />
                 New Post
               </button>
             </div>
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
               <input 
                 type="text" 
                 placeholder="Search posts..." 
                 className="flex-1 px-3 py-2 border rounded-lg text-sm"
               />
-              <select className="px-3 py-2 border rounded-lg text-sm">
+              <select className="px-3 py-2 border rounded-lg text-sm w-full sm:w-auto">
                 <option>All Status</option>
                 <option>Published</option>
                 <option>Draft</option>

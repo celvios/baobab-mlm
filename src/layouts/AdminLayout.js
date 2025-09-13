@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationSystem';
+import axios from 'axios';
 import { 
   HomeIcon,
   ShoppingBagIcon,
@@ -14,13 +16,37 @@ import {
   MegaphoneIcon
 } from '@heroicons/react/24/outline';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { addNotification } = useNotification();
+  const [adminUser, setAdminUser] = useState(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    navigate('/admin/login');
+  useEffect(() => {
+    const storedAdmin = localStorage.getItem('adminUser');
+    if (storedAdmin) {
+      setAdminUser(JSON.parse(storedAdmin));
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        await axios.post(`${API_BASE_URL}/admin/logout`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      addNotification('Logged out successfully', 'success');
+      navigate('/admin/login');
+    }
   };
 
   const navigation = [
@@ -77,11 +103,13 @@ export default function AdminLayout() {
           <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-700">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center mr-3">
-                <span className="text-white text-sm font-semibold">AE</span>
+                <span className="text-white text-sm font-semibold">
+                  {adminUser?.name ? adminUser.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'AD'}
+                </span>
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-white">Alison Eyo</div>
-                <div className="text-xs text-gray-400">alison@gmail.com</div>
+                <div className="text-sm font-medium text-white">{adminUser?.name || 'Admin User'}</div>
+                <div className="text-xs text-gray-400">{adminUser?.email || 'admin@baobabmlm.com'}</div>
               </div>
               <button
                 onClick={handleLogout}

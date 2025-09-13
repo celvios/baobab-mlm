@@ -1,43 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BellIcon, PencilIcon } from '@heroicons/react/24/outline';
+import axios from 'axios';
+import ProcessLoader from '../../components/ProcessLoader';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export default function AdminDashboard() {
-  const recentOrders = [
-    {
-      id: 1,
-      date: '01/01/25',
-      orderNo: 'Ord39hdre...',
-      product: 'Lentoc Tea',
-      qty: '01',
-      amount: '#13,500',
-      status: 'Pending'
-    },
-    {
-      id: 2,
-      date: '01/01/25',
-      orderNo: 'Ord39hdre...',
-      product: 'Lentoc Tea',
-      qty: '01',
-      amount: '#13,500',
-      status: 'Delivered'
-    },
-    {
-      id: 3,
-      date: '01/01/25',
-      orderNo: 'Ord39hdre...',
-      product: 'Lentoc Tea',
-      qty: '01',
-      amount: '#13,500',
-      status: 'Delivered'
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.get(`${API_BASE_URL}/admin/dashboard/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <ProcessLoader size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Dashboard</h1>
           <div className="relative">
             <BellIcon className="h-6 w-6 text-gray-600" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">8</span>
@@ -45,46 +48,62 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Dashboard Overview */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Dashboard Overview</h2>
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Dashboard Overview</h2>
           <p className="text-gray-600 text-sm mb-6">Access critical metrics with a clear, real-time view of your platform's performance.</p>
           
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-gray-600 text-sm mb-2">Available Products</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-2">152</div>
-              <p className="text-gray-500 text-sm">152 Available Products</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Available Products</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                {dashboardData?.stats?.totalProducts || 0}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                {dashboardData?.stats?.totalProducts || 0} Available Products
+              </p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-gray-600 text-sm mb-2">Total Sales</h3>
-              <div className="text-3xl font-bold text-teal-600 mb-2">#12,730</div>
-              <p className="text-gray-500 text-sm">#12,730 Products Sales</p>
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Sales</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-teal-600 mb-2">
+                ₦{dashboardData?.stats?.totalSales?.toLocaleString() || '0'}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                ₦{dashboardData?.stats?.totalSales?.toLocaleString() || '0'} Products Sales
+              </p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-gray-600 text-sm mb-2">Total Users</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-2">208,768</div>
-              <p className="text-gray-500 text-sm">208,768 All Users</p>
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Users</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                {dashboardData?.stats?.totalUsers?.toLocaleString() || 0}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                {dashboardData?.stats?.totalUsers?.toLocaleString() || 0} All Users
+              </p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-gray-600 text-sm mb-2">Today Earnings</h3>
-              <div className="text-3xl font-bold text-green-600 mb-2">#1,504,234</div>
-              <p className="text-gray-500 text-sm">#1,504,234 Earned Today</p>
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Today Earnings</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">
+                ₦{dashboardData?.stats?.todayEarnings?.toLocaleString() || '0'}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                ₦{dashboardData?.stats?.todayEarnings?.toLocaleString() || '0'} Earned Today
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Left Column - Charts */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             {/* Sales Dynamics Chart */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Sales dynamics</h3>
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Sales dynamics</h3>
               <div className="h-64 flex items-center justify-center">
                 <svg className="w-full h-full" viewBox="0 0 600 200">
                   {/* Chart lines */}
@@ -112,10 +131,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent Orders */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
-                <button className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Orders</h3>
+                <button className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium w-full sm:w-auto">
                   All Orders
                 </button>
               </div>
@@ -134,32 +153,44 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentOrders.map((order) => (
-                      <tr key={order.id} className="border-b border-gray-100">
-                        <td className="py-4 text-sm">{order.id}</td>
-                        <td className="py-4 text-sm">{order.date}</td>
-                        <td className="py-4 text-sm">{order.orderNo}</td>
-                        <td className="py-4">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                              <span className="text-orange-600 text-xs">🍃</span>
+                    {dashboardData?.recentOrders?.length > 0 ? (
+                      dashboardData.recentOrders.map((order, index) => (
+                        <tr key={order.id} className="border-b border-gray-100">
+                          <td className="py-4 text-sm">{index + 1}</td>
+                          <td className="py-4 text-sm">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-4 text-sm">{order.order_number}</td>
+                          <td className="py-4">
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                                <span className="text-orange-600 text-xs">🍃</span>
+                              </div>
+                              <span className="text-sm">{order.product_name}</span>
                             </div>
-                            <span className="text-sm">{order.product}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 text-sm">{order.qty}</td>
-                        <td className="py-4 text-sm font-medium">{order.amount}</td>
-                        <td className="py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            order.status === 'Pending' 
-                              ? 'bg-orange-100 text-orange-600' 
-                              : 'bg-green-100 text-green-600'
-                          }`}>
-                            {order.status}
-                          </span>
+                          </td>
+                          <td className="py-4 text-sm">1</td>
+                          <td className="py-4 text-sm font-medium">
+                            ₦{order.total_amount?.toLocaleString()}
+                          </td>
+                          <td className="py-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              order.order_status === 'pending' 
+                                ? 'bg-orange-100 text-orange-600' 
+                                : 'bg-green-100 text-green-600'
+                            }`}>
+                              {order.order_status === 'pending' ? 'Pending' : 'Delivered'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="py-8 text-center text-gray-500">
+                          No recent orders found
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -167,15 +198,15 @@ export default function AdminDashboard() {
           </div>
 
           {/* Right Column - Business Overview & Daily Earnings */}
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Business Overview */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Business Overview</h3>
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Business Overview</h3>
               
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <h4 className="text-sm font-medium text-gray-600 mb-2">Wallet Balance</h4>
-                <div className="text-3xl font-bold text-green-600 mb-4">#6,244,500</div>
-                <button className="w-full bg-green-600 text-white py-3 rounded-lg font-medium">
+                <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-4">#6,244,500</div>
+                <button className="w-full bg-green-600 text-white py-2 sm:py-3 rounded-lg font-medium text-sm sm:text-base">
                   Cashout Requests
                 </button>
               </div>
@@ -226,9 +257,9 @@ export default function AdminDashboard() {
             </div>
 
             {/* Daily Earnings Chart */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Earnings</h3>
-              <div className="h-48">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Daily Earnings</h3>
+              <div className="h-40 sm:h-48">
                 <svg className="w-full h-full" viewBox="0 0 300 150">
                   {/* Bar chart */}
                   <rect x="20" y="100" width="15" height="40" fill="#10b981" />

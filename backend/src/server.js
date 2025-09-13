@@ -8,6 +8,7 @@ const withdrawalRoutes = require('./routes/withdrawal');
 const marketUpdatesRoutes = require('./routes/marketUpdates');
 const mlmRoutes = require('./routes/mlm');
 const ordersRoutes = require('./routes/orders');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/market-updates', marketUpdatesRoutes);
 app.use('/api/mlm', mlmRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/bank', require('./routes/bank'));
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -56,6 +58,18 @@ app.get('/api/test-email/:email', async (req, res) => {
     res.json({ message: `Test OTP ${testOTP} sent to ${req.params.email}` });
   } catch (error) {
     console.error('Email test error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Setup admin user
+app.get('/api/setup-admin', async (req, res) => {
+  try {
+    const createAdmin = require('./scripts/createAdmin');
+    await createAdmin();
+    res.json({ message: 'Admin setup completed successfully!' });
+  } catch (error) {
+    console.error('Admin setup error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -212,6 +226,22 @@ app.get('/api/setup-database', async (req, res) => {
         balance DECIMAL(10,2) DEFAULT 0,
         total_earned DECIMAL(10,2) DEFAULT 0,
         total_withdrawn DECIMAL(10,2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create products table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        price DECIMAL(10,2) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        stock INTEGER DEFAULT 0,
+        image_url TEXT,
+        is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )

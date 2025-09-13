@@ -5,9 +5,8 @@ import apiService from '../services/api';
 import { useNotification } from './NotificationSystem';
 
 const generateOrderNumber = () => {
-  const timestamp = Date.now().toString();
   const random = Math.random().toString(36).substring(2, 8);
-  return `ORD${timestamp.slice(-6)}${random.toUpperCase()}`;
+  return `ORD${random.toUpperCase()}`;
 };
 
 export default function PaymentReviewModal({ isOpen, onClose, product, quantity }) {
@@ -21,7 +20,7 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
     if (isOpen && !orderNumber) {
       createOrder();
     }
-  }, [isOpen, product, quantity]);
+  }, [isOpen]);
 
   const createOrder = async () => {
     try {
