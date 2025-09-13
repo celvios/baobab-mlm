@@ -45,6 +45,18 @@ app.get('/api/auth/test', (req, res) => {
   res.json({ message: 'Auth route working' });
 });
 
+// Test email endpoint
+app.get('/api/test-email', async (req, res) => {
+  try {
+    const { sendOTPEmail } = require('./utils/emailService');
+    await sendOTPEmail('test@example.com', '123456', 'Test User');
+    res.json({ message: 'Test email sent successfully' });
+  } catch (error) {
+    console.error('Email test error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 
 // Reset database tables
