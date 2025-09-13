@@ -10,6 +10,7 @@ export default function Orders() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -156,9 +157,9 @@ export default function Orders() {
     }
   ];
 
-  // Transform orders data for display
-  const displayOrders = orders.map(order => ({
-    id: order.id,
+  // Transform orders data for display with sequential numbering
+  const displayOrders = orders.map((order, index) => ({
+    id: index + 1,
     date: order.date || new Date(order.createdAt).toLocaleDateString('en-GB'),
     orderNo: order.orderNumber,
     product: order.product || order.productName,
@@ -195,12 +196,49 @@ export default function Orders() {
 
     try {
       await apiService.deleteOrder(selectedOrder.originalOrder.id);
+      
+      // Remove from localStorage as well
+      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const updatedOrders = userOrders.filter(order => order.id !== selectedOrder.originalOrder.id);
+      localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
+      
       addNotification('Order deleted successfully', 'success');
-      fetchOrders(); // Refresh orders list
+      fetchOrders();
       setShowDeleteModal(false);
     } catch (error) {
       console.error('Error deleting order:', error);
-      addNotification(error.message || 'Failed to delete order', 'error');
+      
+      // Fallback to localStorage deletion
+      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+      const updatedOrders = userOrders.filter(order => order.id !== selectedOrder.originalOrder.id);
+      localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
+      
+      addNotification('Order deleted locally', 'success');
+      fetchOrders();
+      setShowDeleteModal(false);
+    }
+  };
+
+  const confirmDeleteAll = async () => {
+    try {
+      // Clear localStorage
+      localStorage.setItem('userOrders', JSON.stringify([]));
+      
+      // Try to delete from API
+      for (const order of orders) {
+        try {
+          await apiService.deleteOrder(order.id);
+        } catch (error) {
+          console.log('Failed to delete order from API:', order.id);
+        }
+      }
+      
+      addNotification('All orders deleted successfully', 'success');
+      fetchOrders();
+      setShowDeleteAllModal(false);
+    } catch (error) {
+      console.error('Error deleting all orders:', error);
+      addNotification('Failed to delete all orders', 'error');
     }
   };
 
@@ -264,7 +302,10 @@ export default function Orders() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900">History</h2>
             <div className="flex space-x-3">
-              <button className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium">
+              <button 
+                onClick={() => setShowDeleteAllModal(true)}
+                className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium"
+              >
                 Delete All
               </button>
               <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center">
@@ -398,6 +439,12 @@ export default function Orders() {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDeleteOrder}
+      />
+      
+      <DeleteOrderModal 
+        isOpen={showDeleteAllModal}
+        onClose={() => setShowDeleteAllModal(false)}
+        onConfirm={confirmDeleteAll}
       />
     </div>
   );
