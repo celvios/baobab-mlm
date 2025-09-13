@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 class ApiService {
   constructor() {
@@ -65,7 +65,7 @@ class ApiService {
 
   // Auth methods
   async register(userData) {
-    return this.request('/auth/register', {
+    return this.request('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
         email: userData.email,
