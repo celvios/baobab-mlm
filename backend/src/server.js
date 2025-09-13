@@ -47,6 +47,29 @@ app.get('/api/auth/test', (req, res) => {
 
 
 
+// Reset database tables
+app.get('/api/reset-database', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Drop existing tables
+    await client.query('DROP TABLE IF EXISTS wallets CASCADE');
+    await client.query('DROP TABLE IF EXISTS users CASCADE');
+    
+    client.release();
+    res.json({ message: 'Database tables dropped successfully!' });
+  } catch (error) {
+    console.error('Database reset error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Setup database tables
 app.get('/api/setup-database', async (req, res) => {
   const { Pool } = require('pg');
@@ -65,7 +88,7 @@ app.get('/api/setup-database', async (req, res) => {
         full_name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         phone VARCHAR(20),
-        password_hash VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL,
         referral_code VARCHAR(50) UNIQUE,
         referred_by VARCHAR(50),
         mlm_level VARCHAR(20) DEFAULT 'no_stage',
