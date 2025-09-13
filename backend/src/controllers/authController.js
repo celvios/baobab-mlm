@@ -241,22 +241,26 @@ const resendVerification = async (req, res) => {
     }
 
     const user = result.rows[0];
-    const verificationToken = generateVerificationToken();
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    
+    // Generate new 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Update verification token
+    // Update verification token with new OTP
     await pool.query(
       'UPDATE users SET email_verification_token = $1, email_verification_expires = $2 WHERE id = $3',
-      [verificationToken, verificationExpires, user.id]
+      [otpCode, otpExpires, user.id]
     );
 
-    // Send new verification email
-    await sendVerificationEmail(email, verificationToken, user.full_name);
+    // Send new OTP email
+    await sendOTPEmail(email, otpCode, user.full_name);
+    
+    console.log(`Resent OTP for ${email}: ${otpCode}`);
 
-    res.json({ message: 'Verification email sent successfully' });
+    res.json({ message: 'Verification code sent successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Resend verification error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 
