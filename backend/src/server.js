@@ -45,12 +45,13 @@ app.get('/api/auth/test', (req, res) => {
   res.json({ message: 'Auth route working' });
 });
 
-// Test email endpoint
-app.get('/api/test-email', async (req, res) => {
+// Test email endpoint with your actual email
+app.get('/api/test-email/:email', async (req, res) => {
   try {
     const { sendOTPEmail } = require('./utils/emailService');
-    await sendOTPEmail('test@example.com', '123456', 'Test User');
-    res.json({ message: 'Test email sent successfully' });
+    const testOTP = '123456';
+    await sendOTPEmail(req.params.email, testOTP, 'Test User');
+    res.json({ message: `Test OTP ${testOTP} sent to ${req.params.email}` });
   } catch (error) {
     console.error('Email test error:', error);
     res.status(500).json({ error: error.message });
