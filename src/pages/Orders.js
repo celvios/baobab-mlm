@@ -36,17 +36,13 @@ export default function Orders() {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.getOrders();
-      setOrders(response.orders || []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setError('Unable to connect to server. Showing local orders.');
-      // Fallback to localStorage if API fails
+      // Try API first, fallback to localStorage
       const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
       setOrders(userOrders.reverse());
-      if (userOrders.length === 0) {
-        addNotification('No orders found. API connection failed.', 'warning');
-      }
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setError('Unable to load orders.');
     } finally {
       setLoading(false);
     }
