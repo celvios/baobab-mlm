@@ -45,6 +45,15 @@ app.get('/api/auth/test', (req, res) => {
   res.json({ message: 'Auth route working' });
 });
 
+// Simple register route for testing
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    res.json({ message: 'Register endpoint working', body: req.body });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Setup database tables
 app.get('/api/setup-database', async (req, res) => {
   const { Pool } = require('pg');
