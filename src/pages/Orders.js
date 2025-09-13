@@ -36,10 +36,9 @@ export default function Orders() {
     try {
       setLoading(true);
       setError(null);
-      // Try API first, fallback to localStorage
       const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      setOrders(userOrders.reverse());
-      setError(null);
+      console.log('Found orders:', userOrders);
+      setOrders(userOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
       setError('Unable to load orders.');
@@ -156,23 +155,23 @@ export default function Orders() {
   ];
 
   // Transform orders data for display
-  const displayOrders = orders.length > 0 ? orders.map(order => ({
+  const displayOrders = orders.map(order => ({
     id: order.id,
-    date: new Date(order.createdAt).toLocaleDateString('en-GB'),
+    date: order.date || new Date(order.createdAt).toLocaleDateString('en-GB'),
     orderNo: order.orderNumber,
-    product: order.productName,
-    qty: order.quantity.toString().padStart(2, '0'),
-    amount: `₦${order.totalAmount.toLocaleString()}`,
+    product: order.product || order.productName,
+    qty: (order.quantity || 1).toString().padStart(2, '0'),
+    amount: `₦${((order.amount || order.totalAmount) || 0).toLocaleString()}`,
     transaction: 'Purchased',
     deliveryType: order.deliveryType === 'pickup' ? 'Pick-Up Station' : 'Home Delivery',
-    deliveryStatus: order.orderStatus === 'pending' ? 'Pending' : 
-                   order.orderStatus === 'processing' ? 'Processing' : 
-                   order.orderStatus === 'delivered' ? 'Delivered' : 'Pending',
+    deliveryStatus: order.status === 'pending' ? 'Pending' : 
+                   order.status === 'processing' ? 'Processing' : 
+                   order.status === 'delivered' ? 'Delivered' : 'Pending',
     paymentStatus: order.paymentStatus === 'pending' ? 'Pending' : 
                   order.paymentStatus === 'successful' ? 'Successful' : 'Pending',
     pickupStation: order.pickupStation || 'Ikeja High Tower, Lagos',
     originalOrder: order
-  })) : mockOrders;
+  }));
 
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
