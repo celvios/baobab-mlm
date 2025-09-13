@@ -78,7 +78,7 @@ class ApiService {
   }
 
   async login(email, password) {
-    const response = await this.request('/auth/login', {
+    const response = await this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -91,18 +91,18 @@ class ApiService {
   }
 
   async verifyEmail(token) {
-    return this.request(`/auth/verify-email?token=${token}`);
+    return this.request(`/api/auth/verify-email?token=${token}`);
   }
 
   async resendVerification(email) {
-    return this.request('/auth/resend-verification', {
+    return this.request('/api/auth/resend-verification', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
   }
 
   async verifyOTP(email, otp) {
-    return this.request('/auth/verify-otp', {
+    return this.request('/api/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify({ email, otp }),
     });
@@ -110,22 +110,22 @@ class ApiService {
 
   // User methods
   async getProfile() {
-    return this.request('/user/profile');
+    return this.request('/api/user/profile');
   }
 
   async updateProfile(profileData) {
-    return this.request('/user/profile', {
+    return this.request('/api/user/profile', {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });
   }
 
   async getWallet() {
-    return this.request('/user/wallet');
+    return this.request('/api/user/wallet');
   }
 
   async getTransactionHistory(page = 1, limit = 10) {
-    return this.request(`/user/transactions?page=${page}&limit=${limit}`);
+    return this.request(`/api/user/transactions?page=${page}&limit=${limit}`);
   }
 
   // Withdrawal methods

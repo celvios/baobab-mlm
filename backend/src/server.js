@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-// const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const withdrawalRoutes = require('./routes/withdrawal');
 const marketUpdatesRoutes = require('./routes/marketUpdates');
@@ -23,7 +23,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-// app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/withdrawal', withdrawalRoutes);
 app.use('/api/market-updates', marketUpdatesRoutes);
@@ -45,14 +45,7 @@ app.get('/api/auth/test', (req, res) => {
   res.json({ message: 'Auth route working' });
 });
 
-// Simple register route for testing
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    res.json({ message: 'Register endpoint working', body: req.body });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+
 
 // Setup database tables
 app.get('/api/setup-database', async (req, res) => {
