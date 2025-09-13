@@ -366,6 +366,7 @@ export default function Orders() {
             </tbody>
           </table>
         </div>
+      </div>
       )}
 
       {/* Empty State */}
