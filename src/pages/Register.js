@@ -68,10 +68,10 @@ export default function Register() {
       // Store email for OTP verification
       localStorage.setItem('pendingVerificationEmail', formData.email);
       
-      addNotification('Registration successful! Please check your email for the verification code.', 'success');
-      // Redirect to OTP verification page
+      addNotification('Registration successful! You can now login with your credentials.', 'success');
+      // Redirect to login page
       setTimeout(() => {
-        window.location.href = '/security-verification';
+        window.location.href = '/login';
       }, 2000);
     } catch (error) {
       console.error('Registration error:', error);

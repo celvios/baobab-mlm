@@ -61,17 +61,18 @@ const register = async (req, res) => {
     // Create wallet
     await pool.query('INSERT INTO wallets (user_id) VALUES ($1)', [user.id]);
 
-    // Send OTP email (temporarily disabled for testing)
+    // Send OTP email
     console.log(`\n=== OTP FOR ${email} ===`);
     console.log(`OTP CODE: ${otpCode}`);
     console.log(`EXPIRES: ${otpExpires}`);
     console.log('========================\n');
     
     try {
-      // await sendOTPEmail(email, otpCode, fullName);
-      console.log('Email sending temporarily disabled for testing');
+      await sendOTPEmail(email, otpCode, fullName);
+      console.log('OTP email sent successfully');
     } catch (emailError) {
       console.log('Email sending failed, but continuing registration:', emailError.message);
+      // Don't fail registration if email fails
     }
 
     // Process referral if referred by someone
