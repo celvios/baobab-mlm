@@ -155,7 +155,9 @@ const login = async (req, res) => {
     // Email verification check removed - users can login without verification
 
     // Generate JWT
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
+    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_key';
+    const jwtExpire = process.env.JWT_EXPIRE || '7d';
+    const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: jwtExpire });
 
     // Create login notification for all users
     try {
@@ -186,8 +188,8 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 
