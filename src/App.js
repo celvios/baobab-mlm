@@ -4,6 +4,7 @@ import { NotificationProvider } from './components/NotificationSystem';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './contexts/CartContext';
 import DashboardLayout from './layouts/DashboardLayout';
+import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SecurityVerification from './pages/SecurityVerification';
@@ -17,7 +18,17 @@ import Incentives from './pages/Incentives';
 import RankingsEarnings from './pages/RankingsEarnings';
 import History from './pages/History';
 
-import AdminOrders from './pages/AdminOrders';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UsersManagement from './pages/admin/UsersManagement';
+import ProductManagement from './pages/admin/ProductManagement';
+import OrdersManagement from './pages/admin/OrdersManagement';
+import BlogManagement from './pages/admin/BlogManagement';
+import StagesRewards from './pages/admin/StagesRewards';
+import CashoutRequests from './pages/admin/CashoutRequests';
+import Emailer from './pages/admin/Emailer';
+import Announcements from './pages/admin/Announcements';
+import Settings from './pages/admin/Settings';
 import SkeletonLoader from './components/SkeletonLoader';
 
 const ProtectedRoute = ({ children }) => {
@@ -32,6 +43,16 @@ const ProtectedRoute = ({ children }) => {
   }
   
   return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
+const AdminProtectedRoute = ({ children }) => {
+  const isAdminAuthenticated = localStorage.getItem('adminToken') === 'admin-logged-in';
+  return isAdminAuthenticated ? children : <Navigate to="/admin/login" replace />;
+};
+
+const AdminPublicRoute = ({ children }) => {
+  const isAdminAuthenticated = localStorage.getItem('adminToken') === 'admin-logged-in';
+  return isAdminAuthenticated ? <Navigate to="/admin" replace /> : children;
 };
 
 const PublicRoute = ({ children }) => {
@@ -68,8 +89,21 @@ function AppContent() {
             <Route path="incentives" element={<Incentives />} />
             <Route path="rankings-earnings" element={<RankingsEarnings />} />
             <Route path="history" element={<History />} />
-
-            <Route path="admin/orders" element={<AdminOrders />} />
+          </Route>
+          
+          <Route path="/admin/login" element={<AdminPublicRoute><AdminLogin /></AdminPublicRoute>} />
+          
+          <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<UsersManagement />} />
+            <Route path="products" element={<ProductManagement />} />
+            <Route path="orders" element={<OrdersManagement />} />
+            <Route path="blog" element={<BlogManagement />} />
+            <Route path="stages" element={<StagesRewards />} />
+            <Route path="cashout" element={<CashoutRequests />} />
+            <Route path="emailer" element={<Emailer />} />
+            <Route path="announcements" element={<Announcements />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
       </div>
