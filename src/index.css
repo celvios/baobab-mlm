@@ -107,4 +107,49 @@
       transform: translateX(-100%);
     }
   }
+  
+  .tree-node {
+    @apply transition-all duration-500 ease-in-out;
+  }
+  
+  .tree-node:hover {
+    @apply transform scale-110 z-10;
+  }
+  
+  .tree-connection {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .animate-tree-grow {
+    animation: treeGrow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  @keyframes treeGrow {
+    0% {
+      transform: scale(0) translateY(-20px);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.1) translateY(-5px);
+    }
+    100% {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .pulse-ring {
+    animation: pulseRing 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+  }
+  
+  @keyframes pulseRing {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+    }
+    80%, 100% {
+      transform: scale(1.2);
+      opacity: 0;
+    }
+  }
 }
