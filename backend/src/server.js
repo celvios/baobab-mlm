@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const authRoutes = require('./routes/auth');
+// const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const withdrawalRoutes = require('./routes/withdrawal');
 const marketUpdatesRoutes = require('./routes/marketUpdates');
@@ -23,7 +23,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/auth', authRoutes);
+// app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/withdrawal', withdrawalRoutes);
 app.use('/api/market-updates', marketUpdatesRoutes);
