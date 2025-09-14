@@ -1,8 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EyeIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 export default function OrdersManagement() {
-  const [orders] = useState([
+  const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    fetchOrders();
+    fetchStats();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/orders`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setOrders(data.orders);
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/orders/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, status) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        fetchOrders();
+        fetchStats();
+      }
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+    }
+  };
+
+  const [dummyOrders] = useState([
     { id: 1, date: '01/01/25', orderNo: 'Ord39hdre...', customer: 'John Doe', product: 'Lentoc Tea', qty: 1, amount: 13500, status: 'Pending' },
     { id: 2, date: '01/01/25', orderNo: 'Ord40kls...', customer: 'Jane Smith', product: 'Face Powder', qty: 2, amount: 12000, status: 'Processing' },
     { id: 3, date: '01/01/25', orderNo: 'Ord41mno...', customer: 'Mike Johnson', product: 'Lip Gloss', qty: 1, amount: 12000, status: 'Delivered' },
@@ -39,25 +108,25 @@ export default function OrdersManagement() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Orders</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">1,247</div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{stats.totalOrders || 0}</div>
               <p className="text-gray-500 text-xs sm:text-sm">All Time Orders</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Pending Orders</h3>
-              <div className="text-3xl font-bold text-yellow-600 mb-2">23</div>
+              <div className="text-3xl font-bold text-yellow-600 mb-2">{stats.pendingOrders || 0}</div>
               <p className="text-gray-500 text-sm">Awaiting Processing</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Today's Orders</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-2">45</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">{stats.todayOrders || 0}</div>
               <p className="text-gray-500 text-sm">Orders Today</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Revenue Today</h3>
-              <div className="text-3xl font-bold text-green-600 mb-2">#567,000</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">₦{stats.todayRevenue?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">Today's Revenue</p>
             </div>
           </div>
@@ -103,25 +172,29 @@ export default function OrdersManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {orders.map((order, index) => (
+                {(orders.length > 0 ? orders : dummyOrders).map((order, index) => (
                   <tr key={order.id}>
                     <td className="px-6 py-4 text-sm">{index + 1}</td>
-                    <td className="px-6 py-4 text-sm">{order.date}</td>
-                    <td className="px-6 py-4 text-sm">{order.orderNo}</td>
-                    <td className="px-6 py-4 text-sm font-medium">{order.customer}</td>
+                    <td className="px-6 py-4 text-sm">{order.created_at ? new Date(order.created_at).toLocaleDateString() : order.date}</td>
+                    <td className="px-6 py-4 text-sm">{order.order_number || order.orderNo}</td>
+                    <td className="px-6 py-4 text-sm font-medium">{order.customer_name || order.customer}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
                           <span className="text-orange-600 text-xs">🍃</span>
                         </div>
-                        <span className="text-sm">{order.product}</span>
+                        <span className="text-sm">{order.product_name || order.product}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm">{order.qty}</td>
-                    <td className="px-6 py-4 text-sm font-medium">#{order.amount.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm">{order.quantity || order.qty || 1}</td>
+                    <td className="px-6 py-4 text-sm font-medium">₦{(order.total_amount || order.amount)?.toLocaleString()}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
-                        {order.status}
+                      <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(order.order_status || order.status)}`}>
+                        {(order.order_status || order.status) === 'pending' ? 'Pending' : 
+                         (order.order_status || order.status) === 'processing' ? 'Processing' :
+                         (order.order_status || order.status) === 'shipped' ? 'Shipped' :
+                         (order.order_status || order.status) === 'completed' ? 'Delivered' :
+                         order.order_status || order.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -129,10 +202,16 @@ export default function OrdersManagement() {
                         <button className="text-blue-600 hover:text-blue-800">
                           <EyeIcon className="h-4 w-4" />
                         </button>
-                        <button className="text-green-600 hover:text-green-800">
+                        <button 
+                          onClick={() => updateOrderStatus(order.id, 'completed')}
+                          className="text-green-600 hover:text-green-800"
+                        >
                           <CheckIcon className="h-4 w-4" />
                         </button>
-                        <button className="text-red-600 hover:text-red-800">
+                        <button 
+                          onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                          className="text-red-600 hover:text-red-800"
+                        >
                           <XMarkIcon className="h-4 w-4" />
                         </button>
                       </div>

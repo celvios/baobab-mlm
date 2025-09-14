@@ -309,10 +309,31 @@ const deleteOrder = async (req, res) => {
   }
 };
 
+const deleteAllOrders = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(`
+      DELETE FROM orders 
+      WHERE user_id = $1
+      RETURNING COUNT(*)
+    `, [userId]);
+
+    res.json({ 
+      message: 'All orders deleted successfully',
+      deletedCount: result.rowCount
+    });
+  } catch (error) {
+    console.error('Delete all orders error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
   getOrderById,
   updateOrderStatus,
-  deleteOrder
+  deleteOrder,
+  deleteAllOrders
 };

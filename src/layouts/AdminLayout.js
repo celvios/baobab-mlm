@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationSystem';
-import axios from 'axios';
+// Using fetch API instead of axios
 import { 
   HomeIcon,
   ShoppingBagIcon,
@@ -12,8 +12,7 @@ import {
   CurrencyDollarIcon,
   DocumentTextIcon,
   GiftIcon,
-  SpeakerWaveIcon,
-  MegaphoneIcon
+  SpeakerWaveIcon
 } from '@heroicons/react/24/outline';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -58,7 +57,6 @@ export default function AdminLayout() {
     { name: 'Stages & Rewards', href: '/admin/stages', icon: GiftIcon },
     { name: 'Cashout Requests', href: '/admin/cashout', icon: CurrencyDollarIcon },
     { name: 'Emailer', href: '/admin/emailer', icon: SpeakerWaveIcon },
-    { name: 'Announcements', href: '/admin/announcements', icon: MegaphoneIcon },
     { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon },
   ];
 

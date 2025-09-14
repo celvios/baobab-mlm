@@ -1,8 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckIcon, XMarkIcon, EyeIcon, ClockIcon } from '@heroicons/react/24/outline';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 export default function CashoutRequests() {
-  const [requests] = useState([
+  const [requests, setRequests] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    fetchWithdrawals();
+    fetchStats();
+  }, []);
+
+  const fetchWithdrawals = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/withdrawals`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setRequests(data.withdrawals);
+      }
+    } catch (error) {
+      console.error('Failed to fetch withdrawals:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/withdrawals/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const updateWithdrawalStatus = async (id, status) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/withdrawals/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        fetchWithdrawals();
+        fetchStats();
+      }
+    } catch (error) {
+      console.error('Failed to update withdrawal status:', error);
+    }
+  };
+
+  const [dummyRequests] = useState([
     { id: 1, user: 'John Doe', email: 'john@email.com', amount: 45000, stage: 'Bronze', date: '01/01/25', status: 'Pending', repurchase: 'Required' },
     { id: 2, user: 'Jane Smith', email: 'jane@email.com', amount: 72000, stage: 'Silver', date: '01/01/25', status: 'Approved', repurchase: 'Completed' },
     { id: 3, user: 'Mike Johnson', email: 'mike@email.com', amount: 18000, stage: 'Feeder', date: '31/12/24', status: 'Processing', repurchase: 'Completed' },
@@ -48,26 +117,26 @@ export default function CashoutRequests() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Pending Requests</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-yellow-600 mb-2">23</div>
+              <div className="text-2xl sm:text-3xl font-bold text-yellow-600 mb-2">{stats.pendingRequests || 0}</div>
               <p className="text-gray-500 text-xs sm:text-sm">Awaiting Review</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Total Amount</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-2">₦2.1M</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">₦{stats.totalPendingAmount?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">Pending Payouts</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Processed Today</h3>
-              <div className="text-3xl font-bold text-green-600 mb-2">₦890K</div>
-              <p className="text-gray-500 text-sm">12 Requests</p>
+              <div className="text-3xl font-bold text-green-600 mb-2">₦{stats.todayProcessed?.toLocaleString() || '0'}</div>
+              <p className="text-gray-500 text-sm">{stats.todayCount || 0} Requests</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="text-gray-600 text-sm mb-2">Repurchase Required</h3>
-              <div className="text-3xl font-bold text-red-600 mb-2">8</div>
-              <p className="text-gray-500 text-sm">Blocked Requests</p>
+              <h3 className="text-gray-600 text-sm mb-2">Total Processed</h3>
+              <div className="text-3xl font-bold text-green-600 mb-2">{stats.totalProcessed || 0}</div>
+              <p className="text-gray-500 text-sm">All Time</p>
             </div>
           </div>
         </div>
@@ -124,30 +193,34 @@ export default function CashoutRequests() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {requests.map((request, index) => (
+                {(requests.length > 0 ? requests : dummyRequests).map((request, index) => (
                   <tr key={request.id}>
                     <td className="px-6 py-4 text-sm">{index + 1}</td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{request.user}</div>
-                        <div className="text-sm text-gray-500">{request.email}</div>
+                        <div className="text-sm font-medium text-gray-900">{request.user_name || request.user}</div>
+                        <div className="text-sm text-gray-500">{request.user_email || request.email}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-green-600">₦{request.amount.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-green-600">₦{(request.amount || request.withdrawal_amount)?.toLocaleString()}</td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                        {request.stage}
+                        {request.user_stage || request.stage || 'N/A'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm">{request.date}</td>
+                    <td className="px-6 py-4 text-sm">{request.created_at ? new Date(request.created_at).toLocaleDateString() : request.date}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 text-xs rounded-full ${getRepurchaseColor(request.repurchase)}`}>
-                        {request.repurchase}
+                        {request.repurchase_status || request.repurchase || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(request.status)}`}>
-                        {request.status}
+                        {(request.withdrawal_status || request.status) === 'pending' ? 'Pending' :
+                         (request.withdrawal_status || request.status) === 'approved' ? 'Approved' :
+                         (request.withdrawal_status || request.status) === 'completed' ? 'Completed' :
+                         (request.withdrawal_status || request.status) === 'rejected' ? 'Rejected' :
+                         request.withdrawal_status || request.status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -155,18 +228,30 @@ export default function CashoutRequests() {
                         <button className="text-blue-600 hover:text-blue-800" title="View Details">
                           <EyeIcon className="h-4 w-4" />
                         </button>
-                        {request.status === 'Pending' && (
+                        {(request.withdrawal_status || request.status) === 'pending' && (
                           <>
-                            <button className="text-green-600 hover:text-green-800" title="Approve">
+                            <button 
+                              onClick={() => updateWithdrawalStatus(request.id, 'approved')}
+                              className="text-green-600 hover:text-green-800" 
+                              title="Approve"
+                            >
                               <CheckIcon className="h-4 w-4" />
                             </button>
-                            <button className="text-red-600 hover:text-red-800" title="Reject">
+                            <button 
+                              onClick={() => updateWithdrawalStatus(request.id, 'rejected')}
+                              className="text-red-600 hover:text-red-800" 
+                              title="Reject"
+                            >
                               <XMarkIcon className="h-4 w-4" />
                             </button>
                           </>
                         )}
-                        {request.status === 'Approved' && (
-                          <button className="text-yellow-600 hover:text-yellow-800" title="Processing">
+                        {(request.withdrawal_status || request.status) === 'approved' && (
+                          <button 
+                            onClick={() => updateWithdrawalStatus(request.id, 'completed')}
+                            className="text-yellow-600 hover:text-yellow-800" 
+                            title="Mark as Processed"
+                          >
                             <ClockIcon className="h-4 w-4" />
                           </button>
                         )}

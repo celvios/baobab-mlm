@@ -1,8 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PencilIcon, CurrencyDollarIcon, PlusIcon, CheckIcon } from '@heroicons/react/24/outline';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 export default function StagesRewards() {
-  const [stages] = useState([
+  const [stages, setStages] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    fetchStages();
+    fetchStats();
+  }, []);
+
+  const fetchStages = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/stages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStages(data.stages);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/stages/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const createStage = async (stageData) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/stages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(stageData)
+      });
+      if (response.ok) {
+        fetchStages();
+        fetchStats();
+      }
+    } catch (error) {
+      console.error('Failed to create stage:', error);
+    }
+  };
+
+  const [dummyStages] = useState([
     { id: 1, name: 'Feeder', requirement: '₦18,000 + 2 referrals', reward: '₦4,500', members: 1250, status: 'Active', color: 'bg-gray-500' },
     { id: 2, name: 'Bronze', requirement: '6 referrals', reward: '₦18,000', members: 890, status: 'Active', color: 'bg-orange-600' },
     { id: 3, name: 'Silver', requirement: '14 referrals', reward: '₦72,000', members: 340, status: 'Active', color: 'bg-gray-400' },
@@ -54,25 +123,25 @@ export default function StagesRewards() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Members</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">2,650</div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{stats.totalMembers || 0}</div>
               <p className="text-gray-500 text-xs sm:text-sm">Across All Stages</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Active Stages</h3>
-              <div className="text-3xl font-bold text-green-600 mb-2">5</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">{stats.activeStages || 0}</div>
               <p className="text-gray-500 text-sm">MLM Stages</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Total Rewards Paid</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-2">₦45.2M</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">₦{stats.totalRewardsPaid?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">This Month</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Pending Payouts</h3>
-              <div className="text-3xl font-bold text-orange-600 mb-2">₦2.1M</div>
+              <div className="text-3xl font-bold text-orange-600 mb-2">₦{stats.pendingPayouts?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">Awaiting Processing</p>
             </div>
           </div>
@@ -108,7 +177,7 @@ export default function StagesRewards() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {stages.map((stage) => (
+                {(stages.length > 0 ? stages : dummyStages).map((stage) => (
                   <tr key={stage.id}>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -118,14 +187,14 @@ export default function StagesRewards() {
                         <span className="text-sm font-medium">{stage.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm">{stage.requirement}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-green-600">{stage.reward}</td>
-                    <td className="px-6 py-4 text-sm">Required</td>
-                    <td className="px-6 py-4 text-sm">{stage.reward}</td>
-                    <td className="px-6 py-4 text-sm">{stage.members.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm">{stage.requirements || stage.requirement}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-green-600">₦{(stage.bonus_amount || stage.reward)?.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm">{stage.repurchase_required ? 'Required' : 'Optional'}</td>
+                    <td className="px-6 py-4 text-sm">₦{(stage.bonus_amount || stage.reward)?.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm">{(stage.member_count || stage.members || 0).toLocaleString()}</td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        {stage.status}
+                        {stage.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-6 py-4">

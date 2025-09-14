@@ -3,7 +3,7 @@ const { validationResult } = require('express-validator');
 
 const getProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '', category = '' } = req.query;
+    const { page = 1, limit = 10, search = '', category = '', status = '' } = req.query;
     const offset = (page - 1) * limit;
 
     let query = 'SELECT * FROM products WHERE 1=1';
@@ -22,6 +22,14 @@ const getProducts = async (req, res) => {
       query += ` AND category = $${paramIndex}`;
       countQuery += ` AND category = $${paramIndex}`;
       params.push(category);
+      paramIndex++;
+    }
+
+    if (status) {
+      const isActive = status === 'active';
+      query += ` AND is_active = $${paramIndex}`;
+      countQuery += ` AND is_active = $${paramIndex}`;
+      params.push(isActive);
       paramIndex++;
     }
 
@@ -122,4 +130,35 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-module.exports = { getProducts, createProduct, updateProduct, deleteProduct };
+const getProductCategories = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT DISTINCT category FROM products WHERE is_active = true ORDER BY category');
+    res.json({ categories: result.rows.map(row => row.category) });
+  } catch (error) {
+    console.error('Get categories error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+};
+
+const getProductStats = async (req, res) => {
+  try {
+    const [totalProducts, activeProducts, outOfStock, totalSales] = await Promise.all([
+      pool.query('SELECT COUNT(*) as count FROM products'),
+      pool.query('SELECT COUNT(*) as count FROM products WHERE is_active = true'),
+      pool.query('SELECT COUNT(*) as count FROM products WHERE stock = 0'),
+      pool.query('SELECT COALESCE(SUM(o.total_amount), 0) as total FROM orders o WHERE o.payment_status = \'completed\'')
+    ]);
+
+    res.json({
+      totalProducts: parseInt(totalProducts.rows[0].count),
+      activeProducts: parseInt(activeProducts.rows[0].count),
+      outOfStock: parseInt(outOfStock.rows[0].count),
+      totalSales: parseFloat(totalSales.rows[0].total)
+    });
+  } catch (error) {
+    console.error('Get product stats error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+};
+
+module.exports = { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, getProductStats };

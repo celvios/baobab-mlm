@@ -201,6 +201,12 @@ class ApiService {
     });
   }
 
+  async deleteAllOrders() {
+    return this.request('/api/orders', {
+      method: 'DELETE',
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');

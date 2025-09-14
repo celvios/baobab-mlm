@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useNotification } from '../../components/NotificationSystem';
 import ProcessLoader from '../../components/ProcessLoader';
-import axios from 'axios';
+// Using fetch API instead of axios
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -42,21 +42,33 @@ export default function AdminLogin() {
     
     setLoading(true);
     
+    
     try {
-      const response = await axios.post(`${API_BASE_URL}/admin/login`, {
-        email: formData.email,
-        password: formData.password
+      const response = await fetch(`${API_BASE_URL}/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
       });
 
-      // Store admin token
-      localStorage.setItem('adminToken', response.data.token);
-      localStorage.setItem('adminUser', JSON.stringify(response.data.admin));
+      const data = await response.json();
       
-      addNotification('Admin login successful! Welcome back.', 'success');
-      navigate('/admin/dashboard');
+      if (response.ok) {
+        // Store admin token
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        
+        addNotification('Admin login successful! Welcome back.', 'success');
+        navigate('/admin/dashboard');
+      } else {
+        addNotification(data.message || 'Login failed. Please check your credentials.', 'error');
+      }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
-      addNotification(errorMessage, 'error');
+      addNotification('Login failed. Please check your credentials.', 'error');
     } finally {
       setLoading(false);
     }
@@ -87,11 +99,7 @@ export default function AdminLogin() {
           <p className="text-center text-gray-600 mb-2">
             Sign in to admin dashboard
           </p>
-          <div className="text-center text-sm text-gray-500 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
-            <p className="font-medium text-amber-800">Demo Credentials:</p>
-            <p className="text-amber-700">admin@baobabmlm.com</p>
-            <p className="text-amber-700">Baobab2025@</p>
-          </div>
+
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

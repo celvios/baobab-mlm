@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { NotificationProvider } from './components/NotificationSystem';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './contexts/CartContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
@@ -27,7 +28,7 @@ import BlogManagement from './pages/admin/BlogManagement';
 import StagesRewards from './pages/admin/StagesRewards';
 import CashoutRequests from './pages/admin/CashoutRequests';
 import Emailer from './pages/admin/Emailer';
-import Announcements from './pages/admin/Announcements';
+
 import Settings from './pages/admin/Settings';
 import SkeletonLoader from './components/SkeletonLoader';
 
@@ -46,12 +47,12 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const AdminProtectedRoute = ({ children }) => {
-  const isAdminAuthenticated = localStorage.getItem('adminToken') === 'admin-logged-in';
+  const isAdminAuthenticated = !!localStorage.getItem('adminToken');
   return isAdminAuthenticated ? children : <Navigate to="/admin/login" replace />;
 };
 
 const AdminPublicRoute = ({ children }) => {
-  const isAdminAuthenticated = localStorage.getItem('adminToken') === 'admin-logged-in';
+  const isAdminAuthenticated = !!localStorage.getItem('adminToken');
   return isAdminAuthenticated ? <Navigate to="/admin" replace /> : children;
 };
 
@@ -94,7 +95,8 @@ function AppContent() {
           <Route path="/admin/login" element={<AdminPublicRoute><AdminLogin /></AdminPublicRoute>} />
           
           <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
-            <Route index element={<AdminDashboard />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<UsersManagement />} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="orders" element={<OrdersManagement />} />
@@ -102,7 +104,7 @@ function AppContent() {
             <Route path="stages" element={<StagesRewards />} />
             <Route path="cashout" element={<CashoutRequests />} />
             <Route path="emailer" element={<Emailer />} />
-            <Route path="announcements" element={<Announcements />} />
+
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
@@ -115,9 +117,11 @@ function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <NotificationProvider>
-          <AppContent />
-        </NotificationProvider>
+        <SettingsProvider>
+          <NotificationProvider>
+            <AppContent />
+          </NotificationProvider>
+        </SettingsProvider>
       </CartProvider>
     </AuthProvider>
   );

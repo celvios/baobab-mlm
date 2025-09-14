@@ -1,16 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, EllipsisVerticalIcon, CheckIcon } from '@heroicons/react/24/outline';
 
-export default function ProductManagement() {
-  const [products] = useState([
-    { id: 1, name: 'Lentoc Tea', description: 'A revitalizing herbal infusion blending powerful botanicals for total-body wellness.', price: 9000, image: '/images/lentoc-tea.jpg' },
-    { id: 2, name: 'Lentoc Tea', description: 'A revitalizing herbal infusion blending powerful botanicals for total-body wellness.', price: 9000, image: '/images/lentoc-tea.jpg' },
-    { id: 3, name: 'Lentoc Tea', description: 'A revitalizing herbal infusion blending powerful botanicals for total-body wellness.', price: 9000, image: '/images/lentoc-tea.jpg' },
-    { id: 4, name: 'Lentoc Tea', description: 'A revitalizing herbal infusion blending powerful botanicals for total-body wellness.', price: 9000, image: '/images/lentoc-tea.jpg' },
-    { id: 5, name: 'Lentoc Tea', description: 'A revitalizing herbal infusion blending powerful botanicals for total-body wellness.', price: 9000, image: '/images/lentoc-tea.jpg' },
-    { id: 6, name: 'Lentoc Tea', description: 'A revitalizing herbal infusion blending powerful botanicals for total-body wellness.', price: 9000, image: '/images/lentoc-tea.jpg' }
-  ]);
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
+export default function ProductManagement() {
+  const [products, setProducts] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -19,7 +15,7 @@ export default function ProductManagement() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDropdown, setShowDropdown] = useState(null);
   const [actionType, setActionType] = useState('');
-  const [productList, setProductList] = useState(products);
+  const [productList, setProductList] = useState([]);
 
   const [productData, setProductData] = useState({
     name: '',
@@ -29,13 +25,57 @@ export default function ProductManagement() {
     image: null
   });
 
+  useEffect(() => {
+    fetchProducts();
+    fetchStats();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/products`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setProducts(data.products);
+        setProductList(data.products);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/products/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
   const handleEditProduct = (product) => {
     setSelectedProduct(product);
     setProductData({
       name: product.name,
       description: product.description,
       price: product.price.toString(),
-      inventory: '50',
+      inventory: product.stock_quantity?.toString() || '0',
       image: null
     });
     setShowEditModal(true);
@@ -48,42 +88,93 @@ export default function ProductManagement() {
     setShowDropdown(null);
   };
 
-  const confirmDelete = () => {
-    setProductList(productList.filter(p => p.id !== selectedProduct.id));
-    setShowDeleteModal(false);
-    setActionType('delete');
-    setShowSuccessModal(true);
-    setTimeout(() => setShowSuccessModal(false), 2000);
+  const confirmDelete = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/products/${selectedProduct.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        await fetchProducts();
+        await fetchStats();
+        setShowDeleteModal(false);
+        setActionType('delete');
+        setShowSuccessModal(true);
+        setTimeout(() => setShowSuccessModal(false), 2000);
+      }
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+    }
   };
 
-  const handleCreateProduct = (e) => {
+  const handleCreateProduct = async (e) => {
     e.preventDefault();
-    const newProduct = {
-      id: productList.length + 1,
-      name: productData.name,
-      description: productData.description,
-      price: parseInt(productData.price),
-      image: '/images/lentoc-tea.jpg'
-    };
-    setProductList([...productList, newProduct]);
-    setShowCreateModal(false);
-    setActionType('create');
-    setShowSuccessModal(true);
-    setProductData({ name: '', description: '', price: '', inventory: '', image: null });
-    setTimeout(() => setShowSuccessModal(false), 2000);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/products`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: productData.name,
+          description: productData.description,
+          price: parseFloat(productData.price),
+          stock_quantity: parseInt(productData.inventory) || 0,
+          category: 'general',
+          status: 'active'
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        await fetchProducts();
+        await fetchStats();
+        setShowCreateModal(false);
+        setActionType('create');
+        setShowSuccessModal(true);
+        setProductData({ name: '', description: '', price: '', inventory: '', image: null });
+        setTimeout(() => setShowSuccessModal(false), 2000);
+      }
+    } catch (error) {
+      console.error('Failed to create product:', error);
+    }
   };
 
-  const handleUpdateProduct = (e) => {
+  const handleUpdateProduct = async (e) => {
     e.preventDefault();
-    setProductList(productList.map(p => 
-      p.id === selectedProduct.id 
-        ? { ...p, name: productData.name, description: productData.description, price: parseInt(productData.price) }
-        : p
-    ));
-    setShowEditModal(false);
-    setActionType('edit');
-    setShowSuccessModal(true);
-    setTimeout(() => setShowSuccessModal(false), 2000);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/products/${selectedProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: productData.name,
+          description: productData.description,
+          price: parseFloat(productData.price),
+          stock_quantity: parseInt(productData.inventory) || selectedProduct.stock_quantity
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        await fetchProducts();
+        await fetchStats();
+        setShowEditModal(false);
+        setActionType('edit');
+        setShowSuccessModal(true);
+        setTimeout(() => setShowSuccessModal(false), 2000);
+      }
+    } catch (error) {
+      console.error('Failed to update product:', error);
+    }
   };
 
   const resetProductData = () => {
@@ -112,26 +203,26 @@ export default function ProductManagement() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Available Products</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">152</div>
-              <p className="text-gray-500 text-xs sm:text-sm">152 Available Products</p>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{stats.totalProducts || 0}</div>
+              <p className="text-gray-500 text-xs sm:text-sm">{stats.totalProducts || 0} Available Products</p>
             </div>
             
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
-              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Pending Orders</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-teal-600 mb-2">252</div>
-              <p className="text-gray-500 text-xs sm:text-sm">252 Pending Users</p>
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Out of Stock</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-2">{stats.outOfStock || 0}</div>
+              <p className="text-gray-500 text-xs sm:text-sm">{stats.outOfStock || 0} Out of Stock</p>
             </div>
             
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Sales</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">#12,730</div>
-              <p className="text-gray-500 text-xs sm:text-sm">#12,730 Products Sales</p>
+              <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">₦{stats.totalSales?.toLocaleString() || '0'}</div>
+              <p className="text-gray-500 text-xs sm:text-sm">₦{stats.totalSales?.toLocaleString() || '0'} Products Sales</p>
             </div>
             
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Orders</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">1,148</div>
-              <p className="text-gray-500 text-xs sm:text-sm">1,148 All Orders</p>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{stats.totalOrders || 0}</div>
+              <p className="text-gray-500 text-xs sm:text-sm">{stats.totalOrders || 0} All Orders</p>
             </div>
           </div>
         </div>
@@ -219,7 +310,8 @@ export default function ProductManagement() {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">{product.name}</h3>
                     <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-2">{product.description}</p>
-                    <div className="text-base sm:text-lg font-bold text-gray-900">#{product.price.toLocaleString()}</div>
+                    <div className="text-base sm:text-lg font-bold text-gray-900">₦{product.price?.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500 mt-1">Stock: {product.stock_quantity || 0}</div>
                   </div>
                 </div>
               ))}

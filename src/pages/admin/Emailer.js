@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PaperAirplaneIcon, UserGroupIcon, EnvelopeIcon, TrashIcon, PencilIcon, CheckIcon } from '@heroicons/react/24/outline';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 export default function Emailer() {
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'create', 'history'
+  const [currentView, setCurrentView] = useState('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState(null);
+  const [emailList, setEmailList] = useState([]);
+  const [emailHistory, setEmailHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
   
   const [emailData, setEmailData] = useState({
     recipients: 'all',
@@ -14,7 +19,71 @@ export default function Emailer() {
     message: ''
   });
 
-  const [emailList] = useState([
+  useEffect(() => {
+    fetchEmailList();
+    fetchEmailHistory();
+  }, []);
+
+  const fetchEmailList = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/users/emails`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEmailList(data.users);
+      }
+    } catch (error) {
+      console.error('Failed to fetch email list:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEmailHistory = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/emails/history`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEmailHistory(data.emails);
+      }
+    } catch (error) {
+      console.error('Failed to fetch email history:', error);
+    }
+  };
+
+  const sendEmail = async (emailData) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/emails/send`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailData)
+      });
+      if (response.ok) {
+        fetchEmailHistory();
+        return true;
+      }
+    } catch (error) {
+      console.error('Failed to send email:', error);
+    }
+    return false;
+  };
+
+  const [dummyEmailList] = useState([
     { id: 1, email: 'alison@gmail.com', status: 'Subscribed', category: 'All Users' },
     { id: 2, email: 'john@gmail.com', status: 'Subscribed', category: 'All Users' },
     { id: 3, email: 'jane@gmail.com', status: 'Subscribed', category: 'All Users' },
@@ -24,7 +93,7 @@ export default function Emailer() {
     { id: 7, email: 'lisa@gmail.com', status: 'Subscribed', category: 'All Users' }
   ]);
 
-  const [emailHistory] = useState([
+  const [dummyEmailHistory] = useState([
     { id: 1, date: '12/03/25', recipient: 'All Users', category: 'All Users', body: 'Thank you for joining the Baobab – you\'re one step closer to be...', status: 'Sent' },
     { id: 2, date: '12/04/25', recipient: 'All Users', category: 'All Users', body: 'Thank you for joining the Baobab – you\'re one step closer to be...', status: 'Sent' },
     { id: 3, date: '12/03/25', recipient: 'Onboarded', category: 'Onboarded', body: 'Thank you for joining the Baobab – you\'re one step closer to be...', status: 'Sent' },
@@ -38,13 +107,14 @@ export default function Emailer() {
     setShowCreateModal(true);
   };
 
-  const handleSendEmail = (e) => {
+  const handleSendEmail = async (e) => {
     e.preventDefault();
+    const success = await sendEmail(emailData);
     setShowCreateModal(false);
     setShowSuccessModal(true);
     setTimeout(() => {
       setShowSuccessModal(false);
-      setCurrentView('history');
+      if (success) setCurrentView('history');
     }, 2000);
   };
 
@@ -142,7 +212,7 @@ export default function Emailer() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {emailList.map((email, index) => (
+                  {(emailList.length > 0 ? emailList : dummyEmailList).map((email, index) => (
                     <tr key={email.id}>
                       <td className="px-6 py-4 text-sm">{index + 1}</td>
                       <td className="px-6 py-4">
@@ -150,15 +220,15 @@ export default function Emailer() {
                           <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
                             <EnvelopeIcon className="h-4 w-4 text-yellow-600" />
                           </div>
-                          <span className="text-sm">{email.email}</span>
+                          <span className="text-sm">{email.email || email.user_email}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(email.status)}`}>
-                          {email.status}
+                        <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(email.status || email.subscription_status || 'Subscribed')}`}>
+                          {email.status || email.subscription_status || 'Subscribed'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm">{email.category}</td>
+                      <td className="px-6 py-4 text-sm">{email.category || email.user_role || 'All Users'}</td>
                       <td className="px-6 py-4">
                         <button 
                           onClick={() => handleRemoveUser(email)}
@@ -215,7 +285,7 @@ export default function Emailer() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {emailHistory.map((email, index) => (
+                  {(emailHistory.length > 0 ? emailHistory : dummyEmailHistory).map((email, index) => (
                     <tr key={email.id}>
                       <td className="px-6 py-4 text-sm">{index + 1}</td>
                       <td className="px-6 py-4 text-sm">{email.date}</td>

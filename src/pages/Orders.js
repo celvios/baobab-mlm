@@ -15,13 +15,20 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const sortDropdownRef = useRef(null);
   const { addNotification } = useNotification();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setActiveDropdown(null);
+      }
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
+        setShowSortDropdown(false);
       }
     };
 
@@ -39,6 +46,8 @@ export default function Orders() {
       setError(null);
       const response = await apiService.getOrders();
       setOrders(response.orders || []);
+      // Sync with localStorage
+      localStorage.setItem('userOrders', JSON.stringify(response.orders || []));
     } catch (error) {
       console.error('Error fetching orders:', error);
       // Fallback to localStorage
@@ -157,24 +166,62 @@ export default function Orders() {
     }
   ];
 
-  // Transform orders data for display with sequential numbering
-  const displayOrders = orders.map((order, index) => ({
-    id: index + 1,
-    date: order.date || new Date(order.createdAt).toLocaleDateString('en-GB'),
-    orderNo: order.orderNumber,
-    product: order.product || order.productName,
-    qty: (order.quantity || 1).toString().padStart(2, '0'),
-    amount: `₦${((order.amount || order.totalAmount) || 0).toLocaleString()}`,
-    transaction: 'Purchased',
-    deliveryType: order.deliveryType === 'pickup' ? 'Pick-Up Station' : 'Home Delivery',
-    deliveryStatus: order.status === 'pending' ? 'Pending' : 
-                   order.status === 'processing' ? 'Processing' : 
-                   order.status === 'delivered' ? 'Delivered' : 'Pending',
-    paymentStatus: order.paymentStatus === 'pending' ? 'Pending' : 
-                  order.paymentStatus === 'successful' ? 'Successful' : 'Pending',
-    pickupStation: order.pickupStation || 'Ikeja High Tower, Lagos',
-    originalOrder: order
-  }));
+  // Transform and sort orders data for display
+  const getSortedOrders = () => {
+    const transformed = orders.map((order, index) => ({
+      id: index + 1,
+      date: order.date || new Date(order.createdAt).toLocaleDateString('en-GB'),
+      dateValue: order.createdAt ? new Date(order.createdAt) : new Date(),
+      orderNo: order.orderNumber,
+      product: order.product || order.productName,
+      qty: (order.quantity || 1).toString().padStart(2, '0'),
+      amount: `₦${((order.amount || order.totalAmount) || 0).toLocaleString()}`,
+      amountValue: (order.amount || order.totalAmount) || 0,
+      transaction: 'Purchased',
+      deliveryType: order.deliveryType === 'pickup' ? 'Pick-Up Station' : 'Home Delivery',
+      deliveryStatus: order.status === 'pending' ? 'Pending' : 
+                     order.status === 'processing' ? 'Processing' : 
+                     order.status === 'delivered' ? 'Delivered' : 'Pending',
+      paymentStatus: order.paymentStatus === 'pending' ? 'Pending' : 
+                    order.paymentStatus === 'successful' ? 'Successful' : 'Pending',
+      pickupStation: order.pickupStation || 'Ikeja High Tower, Lagos',
+      originalOrder: order
+    }));
+
+    return transformed.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'date':
+          aValue = a.dateValue;
+          bValue = b.dateValue;
+          break;
+        case 'amount':
+          aValue = a.amountValue;
+          bValue = b.amountValue;
+          break;
+        case 'product':
+          aValue = a.product.toLowerCase();
+          bValue = b.product.toLowerCase();
+          break;
+        case 'status':
+          aValue = a.deliveryStatus;
+          bValue = b.deliveryStatus;
+          break;
+        default:
+          aValue = a.dateValue;
+          bValue = b.dateValue;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    }).map((order, index) => ({ ...order, id: index + 1 }));
+  };
+
+  const displayOrders = getSortedOrders();
 
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
@@ -197,13 +244,15 @@ export default function Orders() {
     try {
       await apiService.deleteOrder(selectedOrder.originalOrder.id);
       
-      // Remove from localStorage as well
+      // Remove from localStorage
       const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
       const updatedOrders = userOrders.filter(order => order.id !== selectedOrder.originalOrder.id);
       localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
       
+      // Update local state
+      setOrders(prev => prev.filter(order => order.id !== selectedOrder.originalOrder.id));
+      
       addNotification('Order deleted successfully', 'success');
-      fetchOrders();
       setShowDeleteModal(false);
     } catch (error) {
       console.error('Error deleting order:', error);
@@ -213,32 +262,34 @@ export default function Orders() {
       const updatedOrders = userOrders.filter(order => order.id !== selectedOrder.originalOrder.id);
       localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
       
+      // Update local state
+      setOrders(prev => prev.filter(order => order.id !== selectedOrder.originalOrder.id));
+      
       addNotification('Order deleted locally', 'success');
-      fetchOrders();
       setShowDeleteModal(false);
     }
   };
 
   const confirmDeleteAll = async () => {
     try {
+      // Try to delete all from API first
+      await apiService.deleteAllOrders();
+      
       // Clear localStorage
       localStorage.setItem('userOrders', JSON.stringify([]));
       
-      // Try to delete from API
-      for (const order of orders) {
-        try {
-          await apiService.deleteOrder(order.id);
-        } catch (error) {
-          console.log('Failed to delete order from API:', order.id);
-        }
-      }
+      // Clear local state
+      setOrders([]);
       
       addNotification('All orders deleted successfully', 'success');
-      fetchOrders();
       setShowDeleteAllModal(false);
     } catch (error) {
       console.error('Error deleting all orders:', error);
-      addNotification('Failed to delete all orders', 'error');
+      // Still clear localStorage and local state even if API fails
+      localStorage.setItem('userOrders', JSON.stringify([]));
+      setOrders([]);
+      addNotification('Orders deleted locally', 'success');
+      setShowDeleteAllModal(false);
     }
   };
 
@@ -308,12 +359,52 @@ export default function Orders() {
               >
                 Delete All
               </button>
-              <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center">
-                Sort By
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowSortDropdown(!showSortDropdown)}
+                  className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center"
+                >
+                  Sort By: {sortBy === 'date' ? 'Date' : sortBy === 'amount' ? 'Amount' : sortBy === 'product' ? 'Product' : 'Status'}
+                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {showSortDropdown && (
+                  <div ref={sortDropdownRef} className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[150px]">
+                    {[
+                      { value: 'date', label: 'Date' },
+                      { value: 'amount', label: 'Amount' },
+                      { value: 'product', label: 'Product' },
+                      { value: 'status', label: 'Status' }
+                    ].map(option => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSortBy(option.value);
+                          setShowSortDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${
+                          sortBy === option.value ? 'bg-gray-50 text-blue-600' : 'text-gray-700'
+                        }`}
+                      >
+                        {option.label}
+                        {sortBy === option.value && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            }}
+                            className="ml-2 text-xs"
+                          >
+                            {sortOrder === 'asc' ? '↑' : '↓'}
+                          </button>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

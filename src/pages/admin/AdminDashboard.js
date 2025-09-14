@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { BellIcon, PencilIcon } from '@heroicons/react/24/outline';
-import axios from 'axios';
 import ProcessLoader from '../../components/ProcessLoader';
+import { LineChart, BarChart } from '../../components/SimpleChart';
+import { useSettings } from '../../contexts/SettingsContext';
 
+// Use your live server API URL
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { settings } = useSettings();
+
+
 
   useEffect(() => {
     fetchDashboardData();
@@ -16,12 +21,49 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get(`${API_BASE_URL}/admin/dashboard/stats`, {
-        headers: { Authorization: `Bearer ${token}` }
+      console.log('Fetching from:', `${API_BASE_URL}/admin/dashboard/stats`);
+      console.log('Token:', token);
+      
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
-      setDashboardData(response.data);
+      
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+      
+      if (response.ok && data.success) {
+        setDashboardData(data);
+      } else {
+        console.error('API Error:', data.message);
+        setDashboardData({
+          stats: {
+            totalProducts: 0,
+            totalSales: 0,
+            totalUsers: 0,
+            todayEarnings: 0
+          },
+          salesChart: [],
+          earningsChart: [],
+          recentOrders: []
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+      setDashboardData({
+        stats: {
+          totalProducts: 0,
+          totalSales: 0,
+          totalUsers: 0,
+          todayEarnings: 0
+        },
+        salesChart: [],
+        earningsChart: [],
+        recentOrders: []
+      });
     } finally {
       setLoading(false);
     }
@@ -104,30 +146,17 @@ export default function AdminDashboard() {
             {/* Sales Dynamics Chart */}
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Sales dynamics</h3>
-              <div className="h-64 flex items-center justify-center">
-                <svg className="w-full h-full" viewBox="0 0 600 200">
-                  {/* Chart lines */}
-                  <path d="M50 150 Q150 100 250 120 T450 80 T550 100" stroke="#10b981" strokeWidth="3" fill="none" />
-                  <path d="M50 120 Q150 80 250 100 T450 60 T550 80" stroke="#6366f1" strokeWidth="3" fill="none" />
-                  <path d="M50 100 Q150 140 250 110 T450 130 T550 120" stroke="#374151" strokeWidth="3" fill="none" />
-                  
-                  {/* X-axis labels */}
-                  <text x="80" y="190" className="text-xs fill-gray-500">FEB</text>
-                  <text x="150" y="190" className="text-xs fill-gray-500">MAR</text>
-                  <text x="220" y="190" className="text-xs fill-gray-500">APR</text>
-                  <text x="290" y="190" className="text-xs fill-gray-500">MAY</text>
-                  <text x="360" y="190" className="text-xs fill-gray-500">JUN</text>
-                  <text x="430" y="190" className="text-xs fill-gray-500">JUL</text>
-                  
-                  {/* Y-axis labels */}
-                  <text x="20" y="160" className="text-xs fill-gray-500">0M</text>
-                  <text x="20" y="130" className="text-xs fill-gray-500">50M</text>
-                  <text x="20" y="100" className="text-xs fill-gray-500">100M</text>
-                  
-                  {/* Legend */}
-                  <text x="450" y="30" className="text-xs fill-gray-500">Mar 18 #98k</text>
-                </svg>
+              <div className="h-64">
+                <LineChart 
+                  data={dashboardData?.salesChart || []} 
+                  color="#10b981"
+                />
               </div>
+              {dashboardData?.stats?.totalSales && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Total Sales: ₦{dashboardData.stats.totalSales.toLocaleString()}
+                </div>
+              )}
             </div>
 
             {/* Recent Orders */}
@@ -205,7 +234,9 @@ export default function AdminDashboard() {
               
               <div className="mb-4 sm:mb-6">
                 <h4 className="text-sm font-medium text-gray-600 mb-2">Wallet Balance</h4>
-                <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-4">#6,244,500</div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-4">
+                  ₦{dashboardData?.stats?.totalRevenue?.toLocaleString() || dashboardData?.stats?.totalSales?.toLocaleString() || '0'}
+                </div>
                 <button className="w-full bg-green-600 text-white py-2 sm:py-3 rounded-lg font-medium text-sm sm:text-base">
                   Cashout Requests
                 </button>
@@ -220,19 +251,19 @@ export default function AdminDashboard() {
                 <div className="space-y-3 text-sm">
                   <div>
                     <span className="text-gray-600">Business Name:</span>
-                    <span className="ml-2 text-gray-900">Baobab/MLM business co.</span>
+                    <span className="ml-2 text-gray-900">{settings.businessName}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Email:</span>
-                    <span className="ml-2 text-gray-900">baobabmlm@yahoo.com</span>
+                    <span className="ml-2 text-gray-900">{settings.businessEmail}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Phone:</span>
-                    <span className="ml-2 text-gray-900">+2348012345678</span>
+                    <span className="ml-2 text-gray-900">{settings.businessPhone}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Address:</span>
-                    <span className="ml-2 text-gray-900">Ikeja, Lagos</span>
+                    <span className="ml-2 text-gray-900">{settings.businessAddress}</span>
                   </div>
                 </div>
               </div>
@@ -246,11 +277,11 @@ export default function AdminDashboard() {
                 <div className="space-y-3 text-sm">
                   <div>
                     <span className="text-gray-600">Bank Name:</span>
-                    <span className="ml-2 text-gray-900">Jaiz Microfinance Bank</span>
+                    <span className="ml-2 text-gray-900">{settings.bankName}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Account Number:</span>
-                    <span className="ml-2 text-gray-900">0012345678</span>
+                    <span className="ml-2 text-gray-900">{settings.accountNumber}</span>
                   </div>
                 </div>
               </div>
@@ -260,30 +291,10 @@ export default function AdminDashboard() {
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Daily Earnings</h3>
               <div className="h-40 sm:h-48">
-                <svg className="w-full h-full" viewBox="0 0 300 150">
-                  {/* Bar chart */}
-                  <rect x="20" y="100" width="15" height="40" fill="#10b981" />
-                  <rect x="45" y="80" width="15" height="60" fill="#10b981" />
-                  <rect x="70" y="60" width="15" height="80" fill="#10b981" />
-                  <rect x="95" y="70" width="15" height="70" fill="#10b981" />
-                  <rect x="120" y="50" width="15" height="90" fill="#10b981" />
-                  <rect x="145" y="40" width="15" height="100" fill="#10b981" />
-                  <rect x="170" y="90" width="15" height="50" fill="#10b981" />
-                  
-                  {/* Y-axis labels */}
-                  <text x="5" y="145" className="text-xs fill-gray-500">0</text>
-                  <text x="5" y="115" className="text-xs fill-gray-500">100k</text>
-                  <text x="5" y="85" className="text-xs fill-gray-500">200k</text>
-                  <text x="5" y="55" className="text-xs fill-gray-500">300k</text>
-                  
-                  {/* X-axis labels */}
-                  <text x="25" y="160" className="text-xs fill-gray-500">M</text>
-                  <text x="50" y="160" className="text-xs fill-gray-500">T</text>
-                  <text x="75" y="160" className="text-xs fill-gray-500">W</text>
-                  <text x="100" y="160" className="text-xs fill-gray-500">Th</text>
-                  <text x="125" y="160" className="text-xs fill-gray-500">F</text>
-                  <text x="150" y="160" className="text-xs fill-gray-500">S</text>
-                </svg>
+                <BarChart 
+                  data={dashboardData?.earningsChart || []} 
+                  color="#10b981"
+                />
               </div>
             </div>
           </div>
