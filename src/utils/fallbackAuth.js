@@ -7,8 +7,8 @@ const FALLBACK_ADMIN = {
 };
 
 const FALLBACK_ADMINS = [
-  { email: 'admin', password: 'admin' },
   { email: 'admin@baobab.com', password: 'admin123' },
+  { email: 'admin@baobabmlm.com', password: 'Baobab2025@' },
   { email: 'baobab@admin.com', password: 'baobab2025' }
 ];
 
