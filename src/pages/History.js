@@ -16,6 +16,9 @@ export default function History() {
   const [historyData, setHistoryData] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('id');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -40,8 +43,10 @@ export default function History() {
           stage: profile?.mlmLevel === 'feeder' ? 'Feeder' : profile?.mlmLevel?.charAt(0).toUpperCase() + profile?.mlmLevel?.slice(1) || 'No Level',
           transaction: 'Product Order',
           type: 'Outgoing',
-          amount: `₦${order.amount.toLocaleString()}`,
-          status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'
+          amount: `$${order.amount.toLocaleString()}`,
+          amountValue: order.amount,
+          status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending',
+          originalId: order.id
         })),
         ...withdrawals.map((withdrawal, index) => ({
           id: userOrders.length + index + 1,
@@ -50,7 +55,9 @@ export default function History() {
           transaction: 'Withdrawal',
           type: 'Outgoing',
           amount: `$${withdrawal.amount.toLocaleString()}`,
-          status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending'
+          amountValue: withdrawal.amount,
+          status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending',
+          originalId: withdrawal.id
         })),
         ...transactions.transactions?.map((tx, index) => ({
           id: userOrders.length + withdrawals.length + index + 1,
@@ -58,8 +65,10 @@ export default function History() {
           stage: profile?.mlmLevel === 'feeder' ? 'Feeder' : profile?.mlmLevel?.charAt(0).toUpperCase() + profile?.mlmLevel?.slice(1) || 'No Level',
           transaction: tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction',
           type: tx.amount > 0 ? 'Incoming' : 'Outgoing',
-          amount: `₦${Math.abs(tx.amount).toLocaleString()}`,
-          status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending'
+          amount: `$${Math.abs(tx.amount).toLocaleString()}`,
+          amountValue: Math.abs(tx.amount),
+          status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending',
+          originalId: tx.id
         })) || []
       ];
       
@@ -77,8 +86,10 @@ export default function History() {
           stage: 'No Level',
           transaction: 'Product Order',
           type: 'Outgoing',
-          amount: `₦${order.amount.toLocaleString()}`,
-          status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'
+          amount: `$${order.amount.toLocaleString()}`,
+          amountValue: order.amount,
+          status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending',
+          originalId: order.id
         })),
         ...withdrawals.map((withdrawal, index) => ({
           id: userOrders.length + index + 1,
@@ -87,7 +98,9 @@ export default function History() {
           transaction: 'Withdrawal',
           type: 'Outgoing',
           amount: `$${withdrawal.amount.toLocaleString()}`,
-          status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending'
+          amountValue: withdrawal.amount,
+          status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending',
+          originalId: withdrawal.id
         }))
       ];
       
@@ -95,6 +108,40 @@ export default function History() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getSortedHistoryData = () => {
+    return [...historyData].sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'amount':
+          aValue = a.amountValue || 0;
+          bValue = b.amountValue || 0;
+          break;
+        case 'transaction':
+          aValue = a.transaction.toLowerCase();
+          bValue = b.transaction.toLowerCase();
+          break;
+        case 'status':
+          aValue = a.status.toLowerCase();
+          bValue = b.status.toLowerCase();
+          break;
+        case 'type':
+          aValue = a.type.toLowerCase();
+          bValue = b.type.toLowerCase();
+          break;
+        default: // 'id'
+          aValue = a.id;
+          bValue = b.id;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
   };
 
   if (loading) {
@@ -134,10 +181,51 @@ export default function History() {
           >
             Delete All
           </button>
-          <button className="border border-gray-300 text-gray-700 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center">
-            Sort By
-            <ChevronDownIcon className="h-3 w-3 lg:h-4 lg:w-4 ml-1 lg:ml-2" />
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="border border-gray-300 text-gray-700 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm font-medium hover:bg-gray-50 transition-colors flex items-center"
+            >
+              Sort By: {sortBy === 'id' ? 'Date' : sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+              <ChevronDownIcon className="h-3 w-3 lg:h-4 lg:w-4 ml-1 lg:ml-2" />
+            </button>
+            
+            {showSortDropdown && (
+              <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[150px]">
+                {[
+                  { value: 'id', label: 'Date' },
+                  { value: 'amount', label: 'Amount' },
+                  { value: 'transaction', label: 'Transaction' },
+                  { value: 'status', label: 'Status' },
+                  { value: 'type', label: 'Type' }
+                ].map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSortBy(option.value);
+                      setShowSortDropdown(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${
+                      sortBy === option.value ? 'bg-gray-50 text-blue-600' : 'text-gray-700'
+                    }`}
+                  >
+                    {option.label}
+                    {sortBy === option.value && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        }}
+                        className="ml-2 text-xs"
+                      >
+                        {sortOrder === 'asc' ? '↑' : '↓'}
+                      </button>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -158,7 +246,7 @@ export default function History() {
               </tr>
             </thead>
             <tbody>
-              {historyData.length > 0 ? historyData.map((item) => (
+              {getSortedHistoryData().length > 0 ? getSortedHistoryData().map((item) => (
                 <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 lg:py-4 px-2 lg:px-4 text-xs lg:text-sm">{item.id}</td>
                   <td className="py-3 lg:py-4 px-2 lg:px-4">
@@ -226,9 +314,24 @@ export default function History() {
         }}
         onConfirm={() => {
           if (isDeleteAll) {
+            // Clear all localStorage data
+            localStorage.setItem('userOrders', JSON.stringify([]));
+            localStorage.setItem('userWithdrawals', JSON.stringify([]));
             setHistoryData([]);
             setToastMessage('All records deleted successfully!');
           } else {
+            // Remove specific item from localStorage
+            const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+            const userWithdrawals = JSON.parse(localStorage.getItem('userWithdrawals') || '[]');
+            
+            if (selectedItem.transaction === 'Product Order') {
+              const updatedOrders = userOrders.filter(order => order.id !== selectedItem.originalId);
+              localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
+            } else if (selectedItem.transaction === 'Withdrawal') {
+              const updatedWithdrawals = userWithdrawals.filter(withdrawal => withdrawal.id !== selectedItem.originalId);
+              localStorage.setItem('userWithdrawals', JSON.stringify(updatedWithdrawals));
+            }
+            
             setHistoryData(prev => prev.filter(item => item.id !== selectedItem.id));
             setToastMessage('Record deleted successfully!');
           }

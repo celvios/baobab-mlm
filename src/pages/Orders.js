@@ -236,61 +236,49 @@ export default function Orders() {
   };
 
   const confirmDeleteOrder = async () => {
-    if (!selectedOrder?.originalOrder?.id) {
+    if (!selectedOrder?.originalOrder) {
       addNotification('Unable to delete order', 'error');
       return;
     }
 
     try {
-      await apiService.deleteOrder(selectedOrder.originalOrder.id);
-      
-      // Remove from localStorage
-      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      const updatedOrders = userOrders.filter(order => order.id !== selectedOrder.originalOrder.id);
-      localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
-      
-      // Update local state
-      setOrders(prev => prev.filter(order => order.id !== selectedOrder.originalOrder.id));
-      
-      addNotification('Order deleted successfully', 'success');
-      setShowDeleteModal(false);
+      // Try API deletion first
+      if (selectedOrder.originalOrder.id) {
+        await apiService.deleteOrder(selectedOrder.originalOrder.id);
+      }
     } catch (error) {
-      console.error('Error deleting order:', error);
-      
-      // Fallback to localStorage deletion
-      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      const updatedOrders = userOrders.filter(order => order.id !== selectedOrder.originalOrder.id);
-      localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
-      
-      // Update local state
-      setOrders(prev => prev.filter(order => order.id !== selectedOrder.originalOrder.id));
-      
-      addNotification('Order deleted locally', 'success');
-      setShowDeleteModal(false);
+      console.error('API deletion failed:', error);
     }
+    
+    // Always update localStorage and local state
+    const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
+    const updatedOrders = userOrders.filter(order => 
+      order.id !== selectedOrder.originalOrder.id && 
+      order.orderNumber !== selectedOrder.originalOrder.orderNumber
+    );
+    localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
+    
+    // Update local state
+    setOrders(updatedOrders);
+    
+    addNotification('Order deleted successfully', 'success');
+    setShowDeleteModal(false);
   };
 
   const confirmDeleteAll = async () => {
     try {
       // Try to delete all from API first
       await apiService.deleteAllOrders();
-      
-      // Clear localStorage
-      localStorage.setItem('userOrders', JSON.stringify([]));
-      
-      // Clear local state
-      setOrders([]);
-      
-      addNotification('All orders deleted successfully', 'success');
-      setShowDeleteAllModal(false);
     } catch (error) {
-      console.error('Error deleting all orders:', error);
-      // Still clear localStorage and local state even if API fails
-      localStorage.setItem('userOrders', JSON.stringify([]));
-      setOrders([]);
-      addNotification('Orders deleted locally', 'success');
-      setShowDeleteAllModal(false);
+      console.error('API deletion failed:', error);
     }
+    
+    // Always clear localStorage and local state
+    localStorage.setItem('userOrders', JSON.stringify([]));
+    setOrders([]);
+    
+    addNotification('All orders deleted successfully', 'success');
+    setShowDeleteAllModal(false);
   };
 
   const toggleDropdown = (orderId) => {
