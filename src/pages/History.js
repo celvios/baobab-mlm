@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SpeakerWaveIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/outline';
 import DeleteHistoryModal from '../components/DeleteHistoryModal';
 import Toast from '../components/Toast';
@@ -19,9 +19,21 @@ export default function History() {
   const [sortBy, setSortBy] = useState('id');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const sortDropdownRef = useRef(null);
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(event.target)) {
+        setShowSortDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchData = async () => {
@@ -191,7 +203,7 @@ export default function History() {
             </button>
             
             {showSortDropdown && (
-              <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[150px]">
+              <div ref={sortDropdownRef} className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[150px]">
                 {[
                   { value: 'id', label: 'Date' },
                   { value: 'amount', label: 'Amount' },
