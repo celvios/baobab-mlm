@@ -2,7 +2,6 @@
   "name": "user-dashboard",
   "version": "1.0.0",
   "private": true,
-  "homepage": ".",
   "dependencies": {
     "@heroicons/react": "^2.0.16",
     "axios": "^1.12.2",
@@ -17,7 +16,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "vercel-build": "CI=false react-scripts build"
+    "vercel-build": "CI=false npm run build"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
