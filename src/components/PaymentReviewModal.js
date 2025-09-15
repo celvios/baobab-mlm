@@ -278,24 +278,4 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
       </div>
     </div>
   );
-}n confirmed."}
-            </p>
-            <p className="text-sm text-gray-500">
-              {error ? 'Check your internet connection.' : 'This usually takes 5-10 minutes.'}
-            </p>
-          </div>
-          )}
-
-          {/* Action Button */}
-          <button
-            onClick={onClose}
-            disabled={loading}
-            className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Processing...' : 'Continue Shopping'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
