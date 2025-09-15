@@ -7,7 +7,7 @@ import { validateAdminInput, sanitizeInput } from '../../config/adminSecurity';
 import { adminAuth } from '../../utils/adminAuth';
 import { fallbackAdminLogin } from '../../utils/fallbackAuth';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://baobab-backend.onrender.com/api';
 
 export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
@@ -57,8 +57,7 @@ export default function AdminLogin() {
       const response = await fetch(`${API_BASE_URL}/admin/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           email: sanitizeInput(formData.email),
