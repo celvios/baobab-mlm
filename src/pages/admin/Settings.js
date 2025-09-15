@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PencilIcon, CheckIcon, ShieldCheckIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useSettings } from '../../contexts/SettingsContext';
+import { getSecurityHeaders, validateAdminInput, sanitizeInput } from '../../config/adminSecurity';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -32,8 +33,8 @@ export default function Settings() {
 
   const [profileData, setProfileData] = useState({
     name: 'Admin User',
-    email: 'admin@baobab.com',
-    phone: '+2348012345678',
+    email: 'admin@company.com',
+    phone: '+1234567890',
     role: 'Super Admin'
   });
 
@@ -72,15 +73,12 @@ export default function Settings() {
       const token = localStorage.getItem('adminToken');
       const response = await fetch(`${API_BASE_URL}/admin/settings/business`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getSecurityHeaders(token),
         body: JSON.stringify({
-          business_name: businessData.name,
-          business_email: businessData.email,
-          business_phone: businessData.phone,
-          business_address: businessData.address
+          business_name: sanitizeInput(businessData.name),
+          business_email: sanitizeInput(businessData.email),
+          business_phone: sanitizeInput(businessData.phone),
+          business_address: sanitizeInput(businessData.address)
         })
       });
       
@@ -105,14 +103,11 @@ export default function Settings() {
       const token = localStorage.getItem('adminToken');
       const response = await fetch(`${API_BASE_URL}/admin/settings/account`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: getSecurityHeaders(token),
         body: JSON.stringify({
-          bank_name: accountData.bankName,
-          account_number: accountData.accountNumber,
-          account_name: accountData.accountName
+          bank_name: sanitizeInput(accountData.bankName),
+          account_number: sanitizeInput(accountData.accountNumber),
+          account_name: sanitizeInput(accountData.accountName)
         })
       });
       

@@ -51,7 +51,7 @@ export default function RankingsEarnings() {
     fetchData();
   }, []);
 
-  const referralLink = userProfile ? `https://baobab.com/register?ref=${userProfile.referralCode}` : '';
+  const referralLink = userProfile ? `${process.env.REACT_APP_FRONTEND_URL || 'https://baobab-mlm.vercel.app'}/register?ref=${userProfile.referralCode}` : '';
 
 
   if (loading) {

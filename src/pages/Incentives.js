@@ -11,7 +11,7 @@ export default function Incentives() {
   const [currentStage, setCurrentStage] = useState('feeder');
   const [earnings, setEarnings] = useState(0);
   const referralCode = localStorage.getItem('userReferralCode') || 'USER123';
-  const referralLink = `https://baobab.com/register?ref=${referralCode}`;
+  const referralLink = `${process.env.REACT_APP_FRONTEND_URL || 'https://baobab-mlm.vercel.app'}/register?ref=${referralCode}`;
   
   const mlmStages = {
     feeder: { name: 'Feeder Stage', bonus: 1.5, matrix: '2x2', teamRequired: 6, icon: 'F' },

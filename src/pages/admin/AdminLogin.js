@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useNotification } from '../../components/NotificationSystem';
 import ProcessLoader from '../../components/ProcessLoader';
-// Using fetch API instead of axios
+import { validateAdminInput, sanitizeInput } from '../../config/adminSecurity';
+import { adminAuth } from '../../utils/adminAuth';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -23,12 +24,14 @@ export default function AdminLogin() {
     
     if (!formData.email) {
       newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    } else if (!validateAdminInput(formData.email, 'email')) {
+      newErrors.email = 'Email format is invalid';
     }
     
     if (!formData.password) {
       newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
     
     setErrors(newErrors);
@@ -40,6 +43,12 @@ export default function AdminLogin() {
     
     if (!validateForm()) return;
     
+    // Check if account is locked
+    if (adminAuth.isAccountLocked(formData.email)) {
+      addNotification('Account temporarily locked due to multiple failed attempts. Try again later.', 'error');
+      return;
+    }
+    
     setLoading(true);
     
     
@@ -47,10 +56,11 @@ export default function AdminLogin() {
       const response = await fetch(`${API_BASE_URL}/admin/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({
-          email: formData.email,
+          email: sanitizeInput(formData.email),
           password: formData.password
         })
       });
@@ -58,14 +68,29 @@ export default function AdminLogin() {
       const data = await response.json();
       
       if (response.ok) {
-        // Store admin token
+        // Track successful login
+        adminAuth.trackLoginAttempt(formData.email, true);
+        
+        // Store admin token with expiry
+        const adminData = {
+          ...data.admin,
+          tokenExpiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+        };
         localStorage.setItem('adminToken', data.token);
-        localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        localStorage.setItem('adminUser', JSON.stringify(adminData));
+        
+        // Set session timeout
+        adminAuth.setSessionTimeout();
         
         addNotification('Admin login successful! Welcome back.', 'success');
         navigate('/admin/dashboard');
       } else {
-        addNotification(data.message || 'Login failed. Please check your credentials.', 'error');
+        // Track failed login attempt
+        const canRetry = adminAuth.trackLoginAttempt(formData.email, false);
+        const message = canRetry 
+          ? (data.message || 'Login failed. Please check your credentials.')
+          : 'Too many failed attempts. Account temporarily locked.';
+        addNotification(message, 'error');
       }
     } catch (error) {
       addNotification('Login failed. Please check your credentials.', 'error');
