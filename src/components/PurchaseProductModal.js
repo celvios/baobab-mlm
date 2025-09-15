@@ -113,7 +113,7 @@ const PurchaseProductModal = ({ isOpen, onClose }) => {
                       <h4 className="font-bold text-lg mb-2">{product.name}</h4>
                       <p className="text-gray-600 text-sm mb-4">{product.description}</p>
                       <div className="text-center">
-                        <span className="text-xl font-bold">₦{product.price.toLocaleString()}</span>
+                        <span className="text-xl font-bold">${product.price.toLocaleString()}</span>
                       </div>
                     </div>
                   );
@@ -148,7 +148,7 @@ const PurchaseProductModal = ({ isOpen, onClose }) => {
             
             <div className="text-center mb-8">
               <p className="text-lg">
-                <span className="font-medium">Total Payment: ₦{selectedProduct ? (
+                <span className="font-medium">Total Payment: ${selectedProduct ? (
                   selectedProduct.price + (JSON.parse(localStorage.getItem('userOrders') || '[]').length === 0 ? 9000 : 0)
                 ).toLocaleString() : '18,000'}</span>
                 <span className="text-gray-600">

@@ -111,10 +111,10 @@ export default function AdminDashboard() {
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Sales</h3>
               <div className="text-2xl sm:text-3xl font-bold text-teal-600 mb-2">
-                ₦{dashboardData?.stats?.totalSales?.toLocaleString() || '0'}
+                ${dashboardData?.stats?.totalSales?.toLocaleString() || '0'}
               </div>
               <p className="text-gray-500 text-xs sm:text-sm">
-                ₦{dashboardData?.stats?.totalSales?.toLocaleString() || '0'} Products Sales
+                ${dashboardData?.stats?.totalSales?.toLocaleString() || '0'} Products Sales
               </p>
             </div>
             
@@ -131,10 +131,10 @@ export default function AdminDashboard() {
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Today Earnings</h3>
               <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">
-                ₦{dashboardData?.stats?.todayEarnings?.toLocaleString() || '0'}
+                ${dashboardData?.stats?.todayEarnings?.toLocaleString() || '0'}
               </div>
               <p className="text-gray-500 text-xs sm:text-sm">
-                ₦{dashboardData?.stats?.todayEarnings?.toLocaleString() || '0'} Earned Today
+                ${dashboardData?.stats?.todayEarnings?.toLocaleString() || '0'} Earned Today
               </p>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
               </div>
               {dashboardData?.stats?.totalSales && (
                 <div className="mt-2 text-sm text-gray-600">
-                  Total Sales: ₦{dashboardData.stats.totalSales.toLocaleString()}
+                  Total Sales: ${dashboardData.stats.totalSales.toLocaleString()}
                 </div>
               )}
             </div>
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
                           </td>
                           <td className="py-4 text-sm">1</td>
                           <td className="py-4 text-sm font-medium">
-                            ₦{order.total_amount?.toLocaleString()}
+                            ${order.total_amount?.toLocaleString()}
                           </td>
                           <td className="py-4">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
               <div className="mb-4 sm:mb-6">
                 <h4 className="text-sm font-medium text-gray-600 mb-2">Wallet Balance</h4>
                 <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-4">
-                  ₦{dashboardData?.stats?.totalRevenue?.toLocaleString() || dashboardData?.stats?.totalSales?.toLocaleString() || '0'}
+                  ${dashboardData?.stats?.totalRevenue?.toLocaleString() || dashboardData?.stats?.totalSales?.toLocaleString() || '0'}
                 </div>
                 <button className="w-full bg-green-600 text-white py-2 sm:py-3 rounded-lg font-medium text-sm sm:text-base">
                   Cashout Requests

@@ -100,7 +100,7 @@ export default function Products() {
                   <div className="mb-6">
                     <p className="text-gray-600 text-sm mb-3">Price</p>
                     <div className="flex items-center space-x-4 mb-6">
-                      <span className="text-3xl font-bold text-green-600">₦{products[0]?.price?.toLocaleString() || '3,000'}</span>
+                      <span className="text-3xl font-bold text-green-600">${products[0]?.price?.toLocaleString() || '3,000'}</span>
                     </div>
                     <button 
                       onClick={() => handleAddToCart(products[0], quantity)}
@@ -159,7 +159,7 @@ export default function Products() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900 text-sm mb-1">₦{product.price.toLocaleString()}</p>
+                      <p className="font-bold text-gray-900 text-sm mb-1">${product.price.toLocaleString()}</p>
                       <p 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -206,7 +206,7 @@ export default function Products() {
                   <h3 className="font-bold text-gray-900 mb-2">{product.name}</h3>
                   <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold">₦{product.price.toLocaleString()}</span>
+                    <span className="text-xl font-bold">${product.price.toLocaleString()}</span>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -240,7 +240,7 @@ export default function Products() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-gray-900 text-sm mb-1">₦{product.price.toLocaleString()}</p>
+                  <p className="font-bold text-gray-900 text-sm mb-1">${product.price.toLocaleString()}</p>
                   <p 
                     onClick={() => handleAddToCart(product, 1)}
                     className="text-xs text-black cursor-pointer hover:text-gray-700 whitespace-nowrap"

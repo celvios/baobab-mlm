@@ -134,7 +134,7 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">Total Earnings</label>
-                        <p className="text-sm font-semibold text-green-600">₦{mockUserData.totalEarnings.toLocaleString()}</p>
+                        <p className="text-sm font-semibold text-green-600">${mockUserData.totalEarnings.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                       {mockUserData.orders.map((order) => (
                         <tr key={order.id}>
                           <td className="px-4 py-3 text-sm">{order.product}</td>
-                          <td className="px-4 py-3 text-sm font-medium">₦{order.amount.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-sm font-medium">${order.amount.toLocaleString()}</td>
                           <td className="px-4 py-3 text-sm">{order.date}</td>
                           <td className="px-4 py-3">
                             <span className={`px-2 py-1 text-xs rounded-full ${
@@ -208,7 +208,7 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                         <p className={`text-sm font-semibold ${
                           transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {transaction.amount > 0 ? '+' : ''}₦{Math.abs(transaction.amount).toLocaleString()}
+                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
                         </p>
                         <p className="text-xs text-gray-500">{transaction.type}</p>
                       </div>
@@ -234,7 +234,7 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-green-600">₦{member.earnings.toLocaleString()}</p>
+                        <p className="text-sm font-semibold text-green-600">${member.earnings.toLocaleString()}</p>
                         <p className="text-xs text-gray-500">Total Earnings</p>
                       </div>
                     </div>

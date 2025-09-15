@@ -126,7 +126,7 @@ export default function OrdersManagement() {
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Revenue Today</h3>
-              <div className="text-3xl font-bold text-green-600 mb-2">₦{stats.todayRevenue?.toLocaleString() || '0'}</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">${stats.todayRevenue?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">Today's Revenue</p>
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function OrdersManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">{order.quantity || order.qty || 1}</td>
-                    <td className="px-6 py-4 text-sm font-medium">₦{(order.total_amount || order.amount)?.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-medium">${(order.total_amount || order.amount)?.toLocaleString()}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(order.order_status || order.status)}`}>
                         {(order.order_status || order.status) === 'pending' ? 'Pending' : 

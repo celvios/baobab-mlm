@@ -135,13 +135,13 @@ export default function StagesRewards() {
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Total Rewards Paid</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-2">₦{stats.totalRewardsPaid?.toLocaleString() || '0'}</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">${stats.totalRewardsPaid?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">This Month</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Pending Payouts</h3>
-              <div className="text-3xl font-bold text-orange-600 mb-2">₦{stats.pendingPayouts?.toLocaleString() || '0'}</div>
+              <div className="text-3xl font-bold text-orange-600 mb-2">${stats.pendingPayouts?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">Awaiting Processing</p>
             </div>
           </div>
@@ -188,9 +188,9 @@ export default function StagesRewards() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">{stage.requirements || stage.requirement}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-green-600">₦{(stage.bonus_amount || stage.reward)?.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-green-600">${(stage.bonus_amount || stage.reward)?.toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm">{stage.repurchase_required ? 'Required' : 'Optional'}</td>
-                    <td className="px-6 py-4 text-sm">₦{(stage.bonus_amount || stage.reward)?.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm">${(stage.bonus_amount || stage.reward)?.toLocaleString()}</td>
                     <td className="px-6 py-4 text-sm">{(stage.member_count || stage.members || 0).toLocaleString()}</td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800">

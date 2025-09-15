@@ -22,7 +22,7 @@ export default function PaymentModal({ isOpen, onClose, amount, productName }) {
             <h4 className="font-medium text-gray-900 mb-2">Order Summary</h4>
             <div className="flex justify-between text-sm">
               <span>{productName}</span>
-              <span>₦{amount?.toLocaleString()}</span>
+              <span>${amount?.toLocaleString()}</span>
             </div>
           </div>
 
@@ -47,7 +47,7 @@ export default function PaymentModal({ isOpen, onClose, amount, productName }) {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Amount:</span>
-                <span className="font-medium text-green-600">₦{amount?.toLocaleString()}</span>
+                <span className="font-medium text-green-600">${amount?.toLocaleString()}</span>
               </div>
             </div>
           </div>

@@ -215,17 +215,17 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Product Amount:</span>
-                <span className="font-medium">₦{productAmount.toLocaleString()}</span>
+                <span className="font-medium">${productAmount.toLocaleString()}</span>
               </div>
               {isNewUser && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Registration Fee:</span>
-                  <span className="font-medium">₦{REGISTRATION_FEE.toLocaleString()}</span>
+                  <span className="font-medium">${REGISTRATION_FEE.toLocaleString()}</span>
                 </div>
               )}
               <div className="flex justify-between border-t pt-2 font-semibold">
                 <span className="text-gray-900">Total Amount:</span>
-                <span className="text-gray-900">₦{totalAmount.toLocaleString()}</span>
+                <span className="text-gray-900">${totalAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between border-t pt-2">
                 <span className="font-medium">Order ID:</span>

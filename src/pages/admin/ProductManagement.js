@@ -215,8 +215,8 @@ export default function ProductManagement() {
             
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Sales</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">₦{stats.totalSales?.toLocaleString() || '0'}</div>
-              <p className="text-gray-500 text-xs sm:text-sm">₦{stats.totalSales?.toLocaleString() || '0'} Products Sales</p>
+              <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">${stats.totalSales?.toLocaleString() || '0'}</div>
+              <p className="text-gray-500 text-xs sm:text-sm">${stats.totalSales?.toLocaleString() || '0'} Products Sales</p>
             </div>
             
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
@@ -310,7 +310,7 @@ export default function ProductManagement() {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">{product.name}</h3>
                     <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-2">{product.description}</p>
-                    <div className="text-base sm:text-lg font-bold text-gray-900">₦{product.price?.toLocaleString()}</div>
+                    <div className="text-base sm:text-lg font-bold text-gray-900">${product.price?.toLocaleString()}</div>
                     <div className="text-xs text-gray-500 mt-1">Stock: {product.stock_quantity || 0}</div>
                   </div>
                 </div>

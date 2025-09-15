@@ -48,7 +48,7 @@ export default function PaymentProcess({ isOpen, onClose, product, quantity }) {
           <div className="text-center mb-8">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Make Payment</h3>
             <p className="text-lg font-medium text-gray-700 mb-6">
-              Total Payment: ₦{(product?.price * quantity || 9000).toLocaleString()} ( Products )
+              Total Payment: ${(product?.price * quantity || 9000).toLocaleString()} ( Products )
             </p>
           </div>
 

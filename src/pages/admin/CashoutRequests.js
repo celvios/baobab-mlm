@@ -123,13 +123,13 @@ export default function CashoutRequests() {
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Total Amount</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-2">₦{stats.totalPendingAmount?.toLocaleString() || '0'}</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">${stats.totalPendingAmount?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">Pending Payouts</p>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-gray-600 text-sm mb-2">Processed Today</h3>
-              <div className="text-3xl font-bold text-green-600 mb-2">₦{stats.todayProcessed?.toLocaleString() || '0'}</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">${stats.todayProcessed?.toLocaleString() || '0'}</div>
               <p className="text-gray-500 text-sm">{stats.todayCount || 0} Requests</p>
             </div>
             
@@ -202,7 +202,7 @@ export default function CashoutRequests() {
                         <div className="text-sm text-gray-500">{request.user_email || request.email}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-green-600">₦{(request.amount || request.withdrawal_amount)?.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-green-600">${(request.amount || request.withdrawal_amount)?.toLocaleString()}</td>
                     <td className="px-6 py-4">
                       <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
                         {request.user_stage || request.stage || 'N/A'}

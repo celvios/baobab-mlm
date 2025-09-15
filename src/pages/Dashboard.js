@@ -145,7 +145,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: 'Product Order',
       type: 'Outgoing',
-      amount: `₦${order.amount.toLocaleString()}`,
+      amount: `$${order.amount.toLocaleString()}`,
       status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'
     })),
     ...withdrawals.map((withdrawal, index) => ({
@@ -154,7 +154,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: 'Withdrawal',
       type: 'Outgoing',
-      amount: `₦${withdrawal.amount.toLocaleString()}`,
+      amount: `$${withdrawal.amount.toLocaleString()}`,
       status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending'
     })),
     ...transactions.map((tx, index) => ({
@@ -163,7 +163,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction',
       type: tx.amount > 0 ? 'Incoming' : 'Outgoing',
-      amount: `₦${Math.abs(tx.amount).toLocaleString()}`,
+      amount: `$${Math.abs(tx.amount).toLocaleString()}`,
       status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending'
     }))
   ].slice(0, 5); // Show only latest 5 entries
