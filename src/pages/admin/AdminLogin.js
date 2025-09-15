@@ -5,6 +5,7 @@ import { useNotification } from '../../components/NotificationSystem';
 import ProcessLoader from '../../components/ProcessLoader';
 import { validateAdminInput, sanitizeInput } from '../../config/adminSecurity';
 import { adminAuth } from '../../utils/adminAuth';
+import { fallbackAdminLogin } from '../../utils/fallbackAuth';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -93,7 +94,33 @@ export default function AdminLogin() {
         addNotification(message, 'error');
       }
     } catch (error) {
-      addNotification('Login failed. Please check your credentials.', 'error');
+      console.log('Backend unavailable, trying fallback authentication...');
+      try {
+        const fallbackData = await fallbackAdminLogin(sanitizeInput(formData.email), formData.password);
+        
+        // Track successful login
+        adminAuth.trackLoginAttempt(formData.email, true);
+        
+        // Store admin token with expiry
+        const adminData = {
+          ...fallbackData.admin,
+          tokenExpiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+        };
+        localStorage.setItem('adminToken', fallbackData.token);
+        localStorage.setItem('adminUser', JSON.stringify(adminData));
+        
+        // Set session timeout
+        adminAuth.setSessionTimeout();
+        
+        addNotification('Admin login successful! (Offline mode)', 'success');
+        navigate('/admin/dashboard');
+      } catch (fallbackError) {
+        const canRetry = adminAuth.trackLoginAttempt(formData.email, false);
+        const message = canRetry 
+          ? 'Invalid credentials'
+          : 'Too many failed attempts. Account temporarily locked.';
+        addNotification(message, 'error');
+      }
     } finally {
       setLoading(false);
     }
