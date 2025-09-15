@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://baobab-backend.onrender.com';
 
 class ApiService {
   constructor() {
@@ -28,7 +28,7 @@ class ApiService {
   }
 
   async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${API_BASE_URL}/api${endpoint}`;
     const config = {
       headers: this.getHeaders(),
       ...options,
@@ -65,7 +65,7 @@ class ApiService {
 
   // Auth methods
   async register(userData) {
-    return this.request('/api/auth/register', {
+    return this.request('/auth/register', {
       method: 'POST',
       body: JSON.stringify({
         email: userData.email,
@@ -78,7 +78,7 @@ class ApiService {
   }
 
   async login(email, password) {
-    const response = await this.request('/api/auth/login', {
+    const response = await this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -91,18 +91,18 @@ class ApiService {
   }
 
   async verifyEmail(token) {
-    return this.request(`/api/auth/verify-email?token=${token}`);
+    return this.request(`/auth/verify-email?token=${token}`);
   }
 
   async resendVerification(email) {
-    return this.request('/api/auth/resend-verification', {
+    return this.request('/auth/resend-verification', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
   }
 
   async verifyOTP(email, otp) {
-    return this.request('/api/auth/verify-otp', {
+    return this.request('/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify({ email, otp }),
     });
@@ -110,99 +110,99 @@ class ApiService {
 
   // User methods
   async getProfile() {
-    return this.request('/api/user/profile');
+    return this.request('/user/profile');
   }
 
   async updateProfile(profileData) {
-    return this.request('/api/user/profile', {
+    return this.request('/user/profile', {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });
   }
 
   async getWallet() {
-    return this.request('/api/user/wallet');
+    return this.request('/user/wallet');
   }
 
   async getTransactionHistory(page = 1, limit = 10) {
-    return this.request(`/api/user/transactions?page=${page}&limit=${limit}`);
+    return this.request(`/user/transactions?page=${page}&limit=${limit}`);
   }
 
   // Withdrawal methods
   async requestWithdrawal(amount) {
-    return this.request('/api/withdrawal/request', {
+    return this.request('/withdrawal/request', {
       method: 'POST',
       body: JSON.stringify({ amount }),
     });
   }
 
   async getWithdrawalRequests(page = 1, limit = 10) {
-    return this.request(`/api/withdrawal/requests?page=${page}&limit=${limit}`);
+    return this.request(`/withdrawal/requests?page=${page}&limit=${limit}`);
   }
 
   // Market updates methods
   async getMarketUpdates(page = 1, limit = 10) {
-    return this.request(`/api/market-updates?page=${page}&limit=${limit}`);
+    return this.request(`/market-updates?page=${page}&limit=${limit}`);
   }
 
   async markUpdateAsRead(updateId) {
-    return this.request(`/api/market-updates/${updateId}/read`, {
+    return this.request(`/market-updates/${updateId}/read`, {
       method: 'PUT',
     });
   }
 
   async getUnreadCount() {
-    return this.request('/api/market-updates/unread-count');
+    return this.request('/market-updates/unread-count');
   }
 
   // MLM methods
   async getMatrix() {
-    return this.request('/api/mlm/matrix');
+    return this.request('/mlm/matrix');
   }
 
   async getEarnings() {
-    return this.request('/api/mlm/earnings');
+    return this.request('/mlm/earnings');
   }
 
   async getTeam() {
-    return this.request('/api/mlm/team');
+    return this.request('/mlm/team');
   }
 
   async getLevelProgress() {
-    return this.request('/api/mlm/level-progress');
+    return this.request('/mlm/level-progress');
   }
 
   // Orders methods
   async createOrder(orderData) {
-    return this.request('/api/orders', {
+    return this.request('/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
   }
 
   async getOrders(page = 1, limit = 10) {
-    return this.request(`/api/orders?page=${page}&limit=${limit}`);
+    return this.request(`/orders?page=${page}&limit=${limit}`);
   }
 
   async getOrderById(orderId) {
-    return this.request(`/api/orders/${orderId}`);
+    return this.request(`/orders/${orderId}`);
   }
 
   async updateOrderStatus(orderId, statusData) {
-    return this.request(`/api/orders/${orderId}`, {
+    return this.request(`/orders/${orderId}`, {
       method: 'PUT',
       body: JSON.stringify(statusData),
     });
   }
 
   async deleteOrder(orderId) {
-    return this.request(`/api/orders/${orderId}`, {
+    return this.request(`/orders/${orderId}`, {
       method: 'DELETE',
     });
   }
 
   async deleteAllOrders() {
-    return this.request('/api/orders', {
+    return this.request('/orders', {
       method: 'DELETE',
     });
   }
