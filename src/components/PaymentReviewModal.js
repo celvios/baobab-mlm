@@ -1,114 +1,157 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { XMarkIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useCart } from '../contexts/CartContext';
 import apiService from '../services/api';
 import { useNotification } from './NotificationSystem';
+
+// Constants
+const DEFAULT_PRODUCT_PRICE = 9000;
+const DEFAULT_PRODUCT_NAME = 'Lentoc Tea';
+const REGISTRATION_FEE = 9000;
+const DEFAULT_PICKUP_STATION = 'Ikeja High Tower, Lagos';
+const DELIVERY_TYPE = 'pickup';
+const USER_ORDERS_KEY = 'userOrders';
 
 const generateOrderNumber = () => {
   const random = Math.random().toString(36).substring(2, 8);
   return `ORD${random.toUpperCase()}`;
 };
 
-export default function PaymentReviewModal({ isOpen, onClose, product, quantity }) {
+const getStoredOrders = () => {
+  try {
+    return JSON.parse(localStorage.getItem(USER_ORDERS_KEY) || '[]');
+  } catch (error) {
+    console.error('Error parsing stored orders:', error);
+    return [];
+  }
+};
+
+const saveOrderToStorage = (orders) => {
+  try {
+    localStorage.setItem(USER_ORDERS_KEY, JSON.stringify(orders));
+  } catch (error) {
+    console.error('Error saving orders to storage:', error);
+  }
+};
+
+export default function PaymentReviewModal({ isOpen, onClose, product, quantity = 1 }) {
   const [orderNumber, setOrderNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { clearCart } = useCart();
   const { addNotification } = useNotification();
-  
+
+  // Memoized calculations
+  const existingOrders = useMemo(() => getStoredOrders(), [isOpen]);
+  const isNewUser = useMemo(() => existingOrders.length === 0, [existingOrders]);
+  const productPrice = product?.price || DEFAULT_PRODUCT_PRICE;
+  const productName = product?.name || DEFAULT_PRODUCT_NAME;
+  const productAmount = productPrice * quantity;
+  const registrationFee = isNewUser ? REGISTRATION_FEE : 0;
+  const totalAmount = productAmount + registrationFee;
+
+  // Reset state when modal closes
   useEffect(() => {
-    if (isOpen && !orderNumber) {
-      createOrder();
+    if (!isOpen) {
+      setOrderNumber('');
+      setError(null);
+      setLoading(false);
     }
   }, [isOpen]);
 
-  const createOrder = async () => {
+  const createOrderObject = useCallback((orderData, isApiResponse = false) => {
+    if (isApiResponse) {
+      return {
+        id: orderData.id,
+        orderNumber: orderData.orderNumber,
+        date: new Date().toLocaleDateString('en-GB'),
+        product: orderData.productName,
+        productId: product?.id,
+        quantity: orderData.quantity,
+        productAmount: orderData.productPrice * orderData.quantity,
+        registrationFee,
+        amount: orderData.totalAmount,
+        status: orderData.orderStatus,
+        paymentStatus: orderData.paymentStatus,
+        deliveryStatus: orderData.orderStatus,
+        deliveryType: orderData.deliveryType,
+        transaction: 'Purchase',
+        createdAt: orderData.createdAt
+      };
+    }
+    
+    return {
+      id: Date.now(),
+      orderNumber: orderData.orderNumber,
+      date: new Date().toLocaleDateString('en-GB'),
+      product: productName,
+      productId: product?.id,
+      quantity,
+      productAmount,
+      registrationFee,
+      amount: totalAmount,
+      status: 'pending',
+      paymentStatus: 'pending',
+      deliveryStatus: 'pending',
+      deliveryType: DELIVERY_TYPE,
+      transaction: 'Purchase',
+      createdAt: new Date().toISOString()
+    };
+  }, [product, productName, quantity, productAmount, registrationFee, totalAmount]);
+
+  const createOrder = useCallback(async () => {
+    if (!product && !productName) {
+      setError('Product information is required');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      clearCart();
-      
-      // Check if user is new (no previous orders)
-      const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      const isNewUser = existingOrders.length === 0;
-      const registrationFee = isNewUser ? 9000 : 0;
-      const productAmount = (product?.price || 9000) * (quantity || 1);
-      const totalAmount = productAmount + registrationFee;
       
       const orderData = {
-        productName: product?.name || 'Lentoc Tea',
-        productPrice: product?.price || 9000,
-        quantity: quantity || 1,
-        deliveryType: 'pickup',
-        pickupStation: 'Ikeja High Tower, Lagos'
+        productName,
+        productPrice,
+        quantity,
+        deliveryType: DELIVERY_TYPE,
+        pickupStation: DEFAULT_PICKUP_STATION
       };
       
       const response = await apiService.createOrder(orderData);
-      setOrderNumber(response.order.orderNumber);
+      const newOrderNumber = response.order.orderNumber;
+      setOrderNumber(newOrderNumber);
       
-      // Also save to localStorage as backup
-      const newOrder = {
-        id: response.order.id,
-        orderNumber: response.order.orderNumber,
-        date: new Date().toLocaleDateString('en-GB'),
-        product: response.order.productName,
-        productId: product?.id,
-        quantity: response.order.quantity,
-        productAmount: response.order.productPrice * response.order.quantity,
-        registrationFee: registrationFee,
-        amount: response.order.totalAmount,
-        status: response.order.orderStatus,
-        paymentStatus: response.order.paymentStatus,
-        deliveryStatus: response.order.orderStatus,
-        deliveryType: response.order.deliveryType,
-        transaction: 'Purchase',
-        createdAt: response.order.createdAt
-      };
+      // Save to localStorage as backup
+      const newOrder = createOrderObject(response.order, true);
+      const updatedOrders = [...existingOrders, newOrder];
+      saveOrderToStorage(updatedOrders);
       
-      existingOrders.push(newOrder);
-      localStorage.setItem('userOrders', JSON.stringify(existingOrders));
-      
+      clearCart();
       addNotification('Order placed successfully!', 'success');
     } catch (error) {
       console.error('Error creating order:', error);
-      setError(error.message);
+      setError(error.message || 'Failed to create order');
       
       // Fallback to localStorage if API fails
       const newOrderNumber = generateOrderNumber();
       setOrderNumber(newOrderNumber);
       
-      const existingOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      const isNewUser = existingOrders.length === 0;
-      const registrationFee = isNewUser ? 9000 : 0;
-      const productAmount = (product?.price || 9000) * (quantity || 1);
-      const totalAmount = productAmount + registrationFee;
-      
-      const newOrder = {
-        id: Date.now(),
-        orderNumber: newOrderNumber,
-        date: new Date().toLocaleDateString('en-GB'),
-        product: product?.name || 'Lentoc Tea',
-        productId: product?.id,
-        quantity: quantity || 1,
-        productAmount: productAmount,
-        registrationFee: registrationFee,
-        amount: totalAmount,
-        status: 'pending',
-        paymentStatus: 'pending',
-        deliveryStatus: 'pending',
-        deliveryType: 'Pick-Up Station',
-        transaction: 'Purchase',
-        createdAt: new Date().toISOString()
-      };
-      
-      existingOrders.push(newOrder);
-      localStorage.setItem('userOrders', JSON.stringify(existingOrders));
+      const newOrder = createOrderObject({ orderNumber: newOrderNumber });
+      const updatedOrders = [...existingOrders, newOrder];
+      saveOrderToStorage(updatedOrders);
       
       addNotification('Order saved locally due to connection issue', 'warning');
     } finally {
       setLoading(false);
     }
-  };
+  }, [product, productName, productPrice, quantity, existingOrders, createOrderObject, clearCart, addNotification]);
+
+  // Create order when modal opens
+  useEffect(() => {
+    if (isOpen && !orderNumber && !loading) {
+      createOrder();
+    }
+  }, [isOpen, orderNumber, loading, createOrder]);
 
   if (!isOpen) return null;
 
@@ -164,25 +207,25 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Product:</span>
-                <span className="font-medium">{product?.name || 'Lentoc Tea'}</span>
+                <span className="font-medium">{productName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Quantity:</span>
-                <span className="font-medium">{quantity || 1}</span>
+                <span className="font-medium">{quantity}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Product Amount:</span>
-                <span className="font-medium">₦{((product?.price || 9000) * (quantity || 1)).toLocaleString()}</span>
+                <span className="font-medium">₦{productAmount.toLocaleString()}</span>
               </div>
-              {JSON.parse(localStorage.getItem('userOrders') || '[]').length === 0 && (
+              {isNewUser && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Registration Fee:</span>
-                  <span className="font-medium">₦9,000</span>
+                  <span className="font-medium">₦{REGISTRATION_FEE.toLocaleString()}</span>
                 </div>
               )}
               <div className="flex justify-between border-t pt-2 font-semibold">
                 <span className="text-gray-900">Total Amount:</span>
-                <span className="text-gray-900">₦{(((product?.price || 9000) * (quantity || 1)) + (JSON.parse(localStorage.getItem('userOrders') || '[]').length === 0 ? 9000 : 0)).toLocaleString()}</span>
+                <span className="text-gray-900">₦{totalAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between border-t pt-2">
                 <span className="font-medium">Order ID:</span>
@@ -200,7 +243,42 @@ export default function PaymentReviewModal({ isOpen, onClose, product, quantity 
           {!loading && (
           <div className="text-center mb-6">
             <p className="text-sm text-gray-600 mb-2">
-              {error ? 'Order saved locally. Please try again later.' : "We'll notify you once your payment has been confirmed."}
+              {error ? 'Order saved locally. Please try again later.' : "We'll notify you once your payment has been approved."}
+            </p>
+            <p className="text-xs text-gray-500">
+              {error ? 'Your order will be synced when connection is restored.' : 'You can track your order status in the Orders section.'}
+            </p>
+          </div>
+          )}
+
+          {/* Action Buttons */}
+          {!loading && (
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Close
+            </button>
+            {error && (
+              <button
+                onClick={() => {
+                  setError(null);
+                  setOrderNumber('');
+                  createOrder();
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}n confirmed."}
             </p>
             <p className="text-sm text-gray-500">
               {error ? 'Check your internet connection.' : 'This usually takes 5-10 minutes.'}
