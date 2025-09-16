@@ -80,6 +80,68 @@ app.get('/api/setup-admin', async (req, res) => {
   }
 });
 
+// Fix database tables
+app.get('/api/fix-database', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Create user_profiles table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) UNIQUE,
+        delivery_address TEXT,
+        bank_name VARCHAR(255),
+        account_number VARCHAR(20),
+        account_name VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create market_updates table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS market_updates (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        type VARCHAR(20) DEFAULT 'info',
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Add missing columns to users table
+    try {
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT FALSE');
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255)');
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires TIMESTAMP');
+    } catch (e) {
+      console.log('Some columns may already exist');
+    }
+    
+    // Add type column to payment_confirmations if table exists
+    try {
+      await client.query('ALTER TABLE payment_confirmations ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT \'joining_fee\'');
+    } catch (e) {
+      console.log('payment_confirmations table may not exist yet');
+    }
+    
+    client.release();
+    res.json({ message: 'Database tables fixed successfully!' });
+  } catch (error) {
+    console.error('Database fix error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 
 // Reset database tables
