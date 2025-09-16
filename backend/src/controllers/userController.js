@@ -4,38 +4,65 @@ const getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const result = await pool.query(`
-      SELECT 
-        u.id, u.email, u.full_name, u.phone, u.referral_code, u.referred_by,
-        u.mlm_level, u.is_active, u.joining_fee_paid, u.joining_fee_amount,
-        up.delivery_address, up.bank_name, up.account_number, up.account_name,
-        w.balance, w.total_earned, w.total_withdrawn
-      FROM users u
-      LEFT JOIN user_profiles up ON u.id = up.user_id
-      LEFT JOIN wallets w ON u.id = w.user_id
-      WHERE u.id = $1
-    `, [userId]);
+    // Get basic user info first
+    const userResult = await pool.query(
+      'SELECT * FROM users WHERE id = $1',
+      [userId]
+    );
 
-    if (result.rows.length === 0) {
+    if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const user = result.rows[0];
+    const user = userResult.rows[0];
+    
+    // Try to get profile data (may not exist)
+    let profileData = {};
+    try {
+      const profileResult = await pool.query(
+        'SELECT * FROM user_profiles WHERE user_id = $1',
+        [userId]
+      );
+      if (profileResult.rows.length > 0) {
+        profileData = profileResult.rows[0];
+      }
+    } catch (e) {
+      console.log('user_profiles table may not exist');
+    }
+    
+    // Try to get wallet data (may not exist)
+    let walletData = { balance: 0, total_earned: 0, total_withdrawn: 0 };
+    try {
+      const walletResult = await pool.query(
+        'SELECT * FROM wallets WHERE user_id = $1',
+        [userId]
+      );
+      if (walletResult.rows.length > 0) {
+        walletData = walletResult.rows[0];
+      }
+    } catch (e) {
+      console.log('wallets table may not exist');
+    }
     
     // Calculate MLM earnings from team
-    const teamResult = await pool.query(
-      'SELECT COUNT(*) as team_count FROM users WHERE referred_by = $1',
-      [user.referral_code]
-    );
-    const teamSize = parseInt(teamResult.rows[0]?.team_count || 0);
+    let teamSize = 0;
+    try {
+      const teamResult = await pool.query(
+        'SELECT COUNT(*) as team_count FROM users WHERE referred_by = $1',
+        [user.referral_code]
+      );
+      teamSize = parseInt(teamResult.rows[0]?.team_count || 0);
+    } catch (e) {
+      console.log('Error getting team size');
+    }
     
     let mlmEarnings = 0;
     if (user.joining_fee_paid) {
-      if (teamSize >= 2) mlmEarnings = teamSize * 1.5; // Feeder stage
-      if (teamSize >= 6) mlmEarnings = teamSize * 4.8; // Bronze
-      if (teamSize >= 14) mlmEarnings = teamSize * 30; // Silver
-      if (teamSize >= 30) mlmEarnings = teamSize * 150; // Gold
-      if (teamSize >= 62) mlmEarnings = teamSize * 750; // Diamond
+      if (teamSize >= 2) mlmEarnings = teamSize * 1.5;
+      if (teamSize >= 6) mlmEarnings = teamSize * 4.8;
+      if (teamSize >= 14) mlmEarnings = teamSize * 30;
+      if (teamSize >= 30) mlmEarnings = teamSize * 150;
+      if (teamSize >= 62) mlmEarnings = teamSize * 750;
     }
 
     res.json({
@@ -45,26 +72,26 @@ const getProfile = async (req, res) => {
       phone: user.phone,
       referralCode: user.referral_code,
       referredBy: user.referred_by,
-      mlmLevel: user.mlm_level,
+      mlmLevel: user.mlm_level || 'no_stage',
       isActive: user.is_active,
-      joiningFeePaid: user.joining_fee_paid,
+      joiningFeePaid: user.joining_fee_paid || false,
       joiningFeeAmount: parseFloat(user.joining_fee_amount || 0),
-      deliveryAddress: user.delivery_address,
+      deliveryAddress: profileData.delivery_address,
       bankDetails: {
-        bankName: user.bank_name,
-        accountNumber: user.account_number,
-        accountName: user.account_name
+        bankName: profileData.bank_name,
+        accountNumber: profileData.account_number,
+        accountName: profileData.account_name
       },
       wallet: {
-        balance: parseFloat(user.balance || 0),
-        totalEarned: parseFloat(user.total_earned || 0),
-        totalWithdrawn: parseFloat(user.total_withdrawn || 0),
+        balance: parseFloat(walletData.balance || 0),
+        totalEarned: parseFloat(walletData.total_earned || 0),
+        totalWithdrawn: parseFloat(walletData.total_withdrawn || 0),
         mlmEarnings: mlmEarnings
       },
       teamSize: teamSize
     });
   } catch (error) {
-    console.error(error);
+    console.error('Profile error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
