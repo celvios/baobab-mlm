@@ -45,9 +45,99 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Baobab MLM API is running', timestamp: new Date().toISOString() });
 });
 
+// Fix database tables
+app.get('/api/fix-db', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Create user_profiles table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) UNIQUE,
+        delivery_address TEXT,
+        bank_name VARCHAR(255),
+        account_number VARCHAR(20),
+        account_name VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create market_updates table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS market_updates (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        type VARCHAR(20) DEFAULT 'info',
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Add missing columns to users table
+    try {
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT FALSE');
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255)');
+      await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires TIMESTAMP');
+    } catch (e) {
+      console.log('Some columns may already exist');
+    }
+    
+    client.release();
+    res.json({ message: 'Database tables fixed successfully!', success: true });
+  } catch (error) {
+    console.error('Database fix error:', error);
+    res.status(500).json({ error: error.message, success: false });
+  }
+});
+
 // Test route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Test route working' });
+});
+
+// Test user profile without auth
+app.get('/api/test-profile', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Get first user for testing
+    const result = await client.query('SELECT * FROM users LIMIT 1');
+    
+    if (result.rows.length === 0) {
+      return res.json({ message: 'No users found' });
+    }
+    
+    const user = result.rows[0];
+    client.release();
+    
+    res.json({
+      message: 'User found',
+      user: {
+        id: user.id,
+        fullName: user.full_name,
+        email: user.email,
+        referralCode: user.referral_code
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Test auth route
