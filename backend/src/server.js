@@ -37,6 +37,7 @@ app.use('/api/mlm', mlmRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/bank', require('./routes/bank'));
 app.use('/api/payment', require('./routes/payment'));
+app.use('/api/wallet', require('./routes/wallet'));
 app.use('/api/admin', adminRoutes);
 
 // Health check

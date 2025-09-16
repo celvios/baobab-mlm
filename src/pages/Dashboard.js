@@ -440,6 +440,7 @@ export default function Dashboard() {
       <PurchaseProductModal 
         isOpen={showPurchaseModal}
         onClose={() => setShowPurchaseModal(false)}
+        userProfile={userProfile}
       />
       
       <PaymentUploadModal 

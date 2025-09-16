@@ -238,6 +238,14 @@ class ApiService {
     });
   }
 
+  // Wallet purchase
+  async purchaseWithWallet(orderData) {
+    return this.request('/wallet/purchase', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');
