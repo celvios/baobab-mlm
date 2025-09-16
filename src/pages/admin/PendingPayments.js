@@ -25,14 +25,14 @@ export default function PendingPayments() {
     }
   };
 
-  const handleConfirmPayment = async (userId, amount) => {
+  const handleConfirmPayment = async (userId, amount, type = 'joining_fee') => {
     try {
-      await apiService.confirmPayment(userId, amount);
-      setToastMessage('Payment confirmed successfully!');
+      await apiService.confirmPayment(userId, amount, type);
+      setToastMessage('Payment approved successfully!');
       setShowToast(true);
       fetchPendingPayments();
     } catch (error) {
-      setToastMessage('Failed to confirm payment');
+      setToastMessage('Failed to approve payment');
       setShowToast(true);
     }
   };
@@ -77,18 +77,21 @@ export default function PendingPayments() {
                     <div>
                       <div className="text-sm font-medium text-gray-900">{payment.full_name}</div>
                       <div className="text-sm text-gray-500">{payment.email}</div>
+                      <div className="text-xs text-blue-600 font-medium">
+                        {payment.type === 'joining_fee' ? 'Joining Fee' : 'Wallet Deposit'}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                    ₦{payment.joining_fee_amount?.toLocaleString()}
+                    ₦{payment.amount?.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(payment.payment_submitted_at).toLocaleDateString()}
+                    {new Date(payment.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
-                    {payment.payment_proof_url && (
+                    {payment.proof_url && (
                       <button
-                        onClick={() => viewProof(payment.payment_proof_url)}
+                        onClick={() => viewProof(payment.proof_url)}
                         className="text-blue-600 hover:text-blue-700 flex items-center"
                       >
                         <EyeIcon className="h-4 w-4 mr-1" />
@@ -98,11 +101,11 @@ export default function PendingPayments() {
                   </td>
                   <td className="px-6 py-4">
                     <button
-                      onClick={() => handleConfirmPayment(payment.id, payment.joining_fee_amount)}
+                      onClick={() => handleConfirmPayment(payment.user_id, payment.amount, payment.type)}
                       className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 flex items-center"
                     >
                       <CheckCircleIcon className="h-4 w-4 mr-1" />
-                      Confirm
+                      Approve
                     </button>
                   </td>
                 </tr>

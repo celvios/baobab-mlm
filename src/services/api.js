@@ -231,10 +231,10 @@ class ApiService {
     return this.request('/payment/pending');
   }
 
-  async confirmPayment(userId, creditAmount) {
+  async confirmPayment(userId, creditAmount, type = 'joining_fee') {
     return this.request(`/payment/confirm/${userId}`, {
       method: 'POST',
-      body: JSON.stringify({ creditAmount }),
+      body: JSON.stringify({ creditAmount, type }),
     });
   }
 

@@ -15,6 +15,7 @@ import RequestWithdrawalModal from '../components/RequestWithdrawalModal';
 import PurchaseProductModal from '../components/PurchaseProductModal';
 import DeleteOrderModal from '../components/DeleteOrderModal';
 import PaymentUploadModal from '../components/PaymentUploadModal';
+import DepositModal from '../components/DepositModal';
 import BalanceChart from '../components/BalanceChart';
 import MarketUpdates from '../components/MarketUpdates';
 import { getFeaturedProducts } from '../data/products';
@@ -103,6 +104,7 @@ export default function Dashboard() {
 
   // Show payment upload modal if user hasn't paid joining fee
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
   const needsPayment = !userProfile?.joiningFeePaid;
   
   // Check if today is Friday (5 = Friday in JavaScript)
@@ -203,14 +205,21 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-white/70 text-xs">Automatic withdrawal</p>
-                        <p className="text-xs">Every Friday and Monday</p>
-                        {isFriday && (
+                        <p className="text-white/70 text-xs">Wallet Actions</p>
+                        <p className="text-xs">Deposit or Withdraw</p>
+                        {isFriday ? (
                           <button 
                             onClick={() => setShowWithdrawalModal(true)}
-                            className="mt-2 bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-gray-700 transition-colors"
+                            className="mt-2 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-red-700 transition-colors"
                           >
-                            Withdraw Now
+                            Withdraw
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => setShowDepositModal(true)}
+                            className="mt-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-green-700 transition-colors"
+                          >
+                            Deposit
                           </button>
                         )}
                       </div>
@@ -446,6 +455,12 @@ export default function Dashboard() {
       <PaymentUploadModal 
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
+        onSuccess={() => fetchDashboardData()}
+      />
+      
+      <DepositModal 
+        isOpen={showDepositModal}
+        onClose={() => setShowDepositModal(false)}
         onSuccess={() => fetchDashboardData()}
       />
       

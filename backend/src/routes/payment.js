@@ -10,5 +10,6 @@ router.post('/upload-proof', auth, uploadPaymentProof);
 // Admin routes
 router.get('/pending', adminAuth, getPendingPayments);
 router.post('/confirm/:userId', adminAuth, confirmPayment);
+router.post('/confirm-deposit/:userId', adminAuth, confirmPayment);
 
 module.exports = router;
