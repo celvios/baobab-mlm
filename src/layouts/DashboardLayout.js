@@ -47,6 +47,13 @@ export default function DashboardLayout() {
       setUserProfile(profile);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      // Use stored user data as fallback
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      setUserProfile({
+        fullName: storedUser.fullName || 'User',
+        email: storedUser.email || 'user@example.com',
+        mlmLevel: storedUser.mlmLevel || 'no_stage'
+      });
     }
   };
 
