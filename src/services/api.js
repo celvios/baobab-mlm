@@ -207,6 +207,36 @@ class ApiService {
     });
   }
 
+  // Payment methods
+  async uploadPaymentProof(formData) {
+    const url = `${API_BASE_URL}/api/payment/upload-proof`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Upload failed');
+    }
+    
+    return response.json();
+  }
+
+  async getPendingPayments() {
+    return this.request('/payment/pending');
+  }
+
+  async confirmPayment(userId, creditAmount) {
+    return this.request(`/payment/confirm/${userId}`, {
+      method: 'POST',
+      body: JSON.stringify({ creditAmount }),
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');

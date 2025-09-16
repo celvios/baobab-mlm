@@ -8,8 +8,11 @@ CREATE TABLE users (
     referral_code VARCHAR(50) UNIQUE,
     referred_by INTEGER REFERENCES users(id),
     mlm_level VARCHAR(50) DEFAULT 'no_stage',
-    registration_fee_paid BOOLEAN DEFAULT FALSE,
-    product_purchase_paid BOOLEAN DEFAULT FALSE,
+    joining_fee_paid BOOLEAN DEFAULT FALSE,
+    joining_fee_amount DECIMAL(10,2) DEFAULT 0,
+    payment_proof_url VARCHAR(500),
+    payment_confirmed_by INTEGER REFERENCES admin_users(id),
+    payment_confirmed_at TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -78,6 +81,41 @@ CREATE TABLE settings (
 INSERT INTO admin_users (name, email, password) VALUES 
 ('Admin User', 'admin@baobabmlm.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
 
+-- Wallets table
+CREATE TABLE wallets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) UNIQUE,
+    balance DECIMAL(10,2) DEFAULT 0,
+    total_earned DECIMAL(10,2) DEFAULT 0,
+    total_withdrawn DECIMAL(10,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Transactions table
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    type VARCHAR(50) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'completed',
+    reference VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Payment confirmations table
+CREATE TABLE payment_confirmations (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    amount DECIMAL(10,2) NOT NULL,
+    proof_url VARCHAR(500),
+    confirmed_by INTEGER REFERENCES admin_users(id),
+    confirmed_at TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Insert default settings
 INSERT INTO settings (key, value) VALUES 
 ('business_name', 'Baobab MLM'),
@@ -85,4 +123,5 @@ INSERT INTO settings (key, value) VALUES
 ('business_phone', '+234 123 456 7890'),
 ('bank_name', 'First Bank'),
 ('account_name', 'Baobab MLM Ltd'),
-('account_number', '1234567890');
+('account_number', '1234567890'),
+('joining_fee', '18000');

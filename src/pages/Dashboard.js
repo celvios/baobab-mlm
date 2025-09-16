@@ -14,6 +14,7 @@ import Toast from '../components/Toast';
 import RequestWithdrawalModal from '../components/RequestWithdrawalModal';
 import PurchaseProductModal from '../components/PurchaseProductModal';
 import DeleteOrderModal from '../components/DeleteOrderModal';
+import PaymentUploadModal from '../components/PaymentUploadModal';
 import BalanceChart from '../components/BalanceChart';
 import MarketUpdates from '../components/MarketUpdates';
 import { getFeaturedProducts } from '../data/products';
@@ -46,42 +47,26 @@ export default function Dashboard() {
         apiService.getMarketUpdates(1, 10).catch(() => ({ updates: [] }))
       ]);
       
-      // Check if user qualifies for feeder stage (registration fee + product purchase)
-      const qualifiesForFeeder = (profile?.registrationFeePaid && profile?.productPurchasePaid) || false;
-      
       // Use stored user data if API fails
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       const fallbackProfile = {
         fullName: storedUser.fullName || 'User',
         email: storedUser.email || 'user@example.com',
         referralCode: storedUser.referralCode || 'LOADING',
-        mlmLevel: qualifiesForFeeder ? 'feeder' : 'no_stage',
-        wallet: { balance: 0 }
+        mlmLevel: 'no_stage',
+        joiningFeePaid: false,
+        wallet: { balance: 0, mlmEarnings: 0 }
       };
       
       const actualProfile = profile || fallbackProfile;
       
-      // Calculate MLM earnings based on team size
-      const teamSize = team?.team?.length || 0;
-      let stageBonus = 1.5; // Default feeder stage
-      
-      if (teamSize >= 14 && teamSize < 28) stageBonus = 4.8; // Bronze
-      else if (teamSize >= 28 && teamSize < 42) stageBonus = 30; // Silver
-      else if (teamSize >= 42 && teamSize < 56) stageBonus = 150; // Gold
-      else if (teamSize >= 56 && teamSize < 70) stageBonus = 750; // Diamond
-      else if (teamSize >= 70) stageBonus = 15000; // Infinity
-      
-      const mlmEarnings = teamSize * stageBonus;
-      
-      // Update qualification status
-      const finalQualification = qualifiesForFeeder || (actualProfile?.registrationFeePaid && actualProfile?.productPurchasePaid) || false;
-      
       const updatedProfile = {
         ...actualProfile,
-        mlmLevel: finalQualification ? (actualProfile.mlmLevel || 'feeder') : 'no_stage',
         wallet: {
-          ...actualProfile.wallet,
-          balance: finalQualification ? mlmEarnings : 0
+          balance: actualProfile?.wallet?.balance || 0,
+          mlmEarnings: actualProfile?.wallet?.mlmEarnings || 0,
+          totalEarned: actualProfile?.wallet?.totalEarned || 0,
+          totalWithdrawn: actualProfile?.wallet?.totalWithdrawn || 0
         }
       };
       
@@ -115,6 +100,10 @@ export default function Dashboard() {
     navigator.clipboard.writeText(referralLink);
     setShowToast(true);
   };
+
+  // Show payment upload modal if user hasn't paid joining fee
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const needsPayment = !userProfile?.joiningFeePaid;
   
   // Check if today is Friday (5 = Friday in JavaScript)
   const isFriday = new Date().getDay() === 5 || new Date().getDay() === 1; // Friday or Monday
@@ -194,9 +183,9 @@ export default function Dashboard() {
                 <div className="relative z-10 h-full flex flex-col">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <p className="text-white/70 text-sm mb-1">Total Balance</p>
-                      <p className="text-3xl font-bold mb-1">${userProfile?.wallet?.balance?.toFixed(2) || '0.00'}</p>
-                      <p className="text-white/70 text-sm">=₦{((userProfile?.wallet?.balance || 0) * 1500).toLocaleString()}</p>
+                      <p className="text-white/70 text-sm mb-1">Wallet Balance</p>
+                      <p className="text-3xl font-bold mb-1">₦{(userProfile?.wallet?.balance || 0).toLocaleString()}</p>
+                      <p className="text-white/70 text-sm">${((userProfile?.wallet?.balance || 0) / 1500).toFixed(2)}</p>
                     </div>
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <CurrencyDollarIcon className="h-5 w-5" />
@@ -237,8 +226,8 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-900 mb-3">MLM Earnings</h2>
               <div className="bg-gray-100 p-6 rounded-2xl shadow-card h-48 flex flex-col justify-between">
                 <div>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">${userProfile?.wallet?.balance?.toFixed(2) || '0.00'}</p>
-                  <p className="text-gray-500 text-sm">=₦{((userProfile?.wallet?.balance || 0) * 1500).toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">₦{(userProfile?.wallet?.mlmEarnings || 0).toLocaleString()}</p>
+                  <p className="text-gray-500 text-sm">${((userProfile?.wallet?.mlmEarnings || 0) / 1500).toFixed(2)}</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
                 <Link to="/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
@@ -283,12 +272,30 @@ export default function Dashboard() {
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
                       <p className="text-base sm:text-lg font-semibold text-gray-900">₦{product.price.toLocaleString()}</p>
-                      <button 
-                        onClick={() => setShowPurchaseModal(true)}
-                        className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
-                      >
-                        Buy Now
-                      </button>
+                      {needsPayment ? (
+                        <button 
+                          onClick={() => setShowPaymentModal(true)}
+                          className="bg-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-orange-700 transition-colors w-full sm:w-auto"
+                        >
+                          Pay Joining Fee
+                        </button>
+                      ) : (
+                        {(userProfile?.wallet?.balance || 0) >= product.price ? (
+                          <button 
+                            onClick={() => setShowPurchaseModal(true)}
+                            className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
+                          >
+                            Buy Now
+                          </button>
+                        ) : (
+                          <button 
+                            disabled
+                            className="bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium cursor-not-allowed w-full sm:w-auto"
+                          >
+                            Insufficient Balance
+                          </button>
+                        )}
+                      )}
                     </div>
                   </div>
                 </div>
@@ -433,6 +440,12 @@ export default function Dashboard() {
       <PurchaseProductModal 
         isOpen={showPurchaseModal}
         onClose={() => setShowPurchaseModal(false)}
+      />
+      
+      <PaymentUploadModal 
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={() => fetchDashboardData()}
       />
       
       <DeleteOrderModal 

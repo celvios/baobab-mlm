@@ -7,7 +7,7 @@ const getProfile = async (req, res) => {
     const result = await pool.query(`
       SELECT 
         u.id, u.email, u.full_name, u.phone, u.referral_code, u.referred_by,
-        u.mlm_level, u.is_active, u.registration_fee_paid, u.product_purchase_paid,
+        u.mlm_level, u.is_active, u.joining_fee_paid, u.joining_fee_amount,
         up.delivery_address, up.bank_name, up.account_number, up.account_name,
         w.balance, w.total_earned, w.total_withdrawn
       FROM users u
@@ -21,6 +21,23 @@ const getProfile = async (req, res) => {
     }
 
     const user = result.rows[0];
+    
+    // Calculate MLM earnings from team
+    const teamResult = await pool.query(
+      'SELECT COUNT(*) as team_count FROM users WHERE referred_by = $1',
+      [user.referral_code]
+    );
+    const teamSize = parseInt(teamResult.rows[0]?.team_count || 0);
+    
+    let mlmEarnings = 0;
+    if (user.joining_fee_paid) {
+      if (teamSize >= 2) mlmEarnings = teamSize * 1.5; // Feeder stage
+      if (teamSize >= 6) mlmEarnings = teamSize * 4.8; // Bronze
+      if (teamSize >= 14) mlmEarnings = teamSize * 30; // Silver
+      if (teamSize >= 30) mlmEarnings = teamSize * 150; // Gold
+      if (teamSize >= 62) mlmEarnings = teamSize * 750; // Diamond
+    }
+
     res.json({
       id: user.id,
       email: user.email,
@@ -30,8 +47,8 @@ const getProfile = async (req, res) => {
       referredBy: user.referred_by,
       mlmLevel: user.mlm_level,
       isActive: user.is_active,
-      registrationFeePaid: user.registration_fee_paid,
-      productPurchasePaid: user.product_purchase_paid,
+      joiningFeePaid: user.joining_fee_paid,
+      joiningFeeAmount: parseFloat(user.joining_fee_amount || 0),
       deliveryAddress: user.delivery_address,
       bankDetails: {
         bankName: user.bank_name,
@@ -41,8 +58,10 @@ const getProfile = async (req, res) => {
       wallet: {
         balance: parseFloat(user.balance || 0),
         totalEarned: parseFloat(user.total_earned || 0),
-        totalWithdrawn: parseFloat(user.total_withdrawn || 0)
-      }
+        totalWithdrawn: parseFloat(user.total_withdrawn || 0),
+        mlmEarnings: mlmEarnings
+      },
+      teamSize: teamSize
     });
   } catch (error) {
     console.error(error);
