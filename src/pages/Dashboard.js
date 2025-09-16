@@ -280,7 +280,7 @@ export default function Dashboard() {
                           Pay Joining Fee
                         </button>
                       ) : (
-                        {(userProfile?.wallet?.balance || 0) >= product.price ? (
+                        (userProfile?.wallet?.balance || 0) >= product.price ? (
                           <button 
                             onClick={() => setShowPurchaseModal(true)}
                             className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
@@ -294,7 +294,7 @@ export default function Dashboard() {
                           >
                             Insufficient Balance
                           </button>
-                        )}
+                        )
                       )}
                     </div>
                   </div>
