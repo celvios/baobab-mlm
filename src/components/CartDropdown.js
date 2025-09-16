@@ -2,11 +2,49 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useCart } from '../contexts/CartContext';
 import { MinusIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import PaymentProcess from './PaymentProcess';
+import apiService from '../services/api';
+import Toast from './Toast';
 
-const CartDropdown = ({ isOpen, onClose }) => {
-  const { cartItems, updateQuantity, removeFromCart, cartTotal } = useCart();
-  const [showPayment, setShowPayment] = useState(false);
+const CartDropdown = ({ isOpen, onClose, userProfile }) => {
+  const { cartItems, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
+  const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  
+  const walletBalance = userProfile?.wallet?.balance || 0;
+  const canCheckout = walletBalance >= cartTotal;
+
+  const handleCheckout = async () => {
+    if (!canCheckout || loading) return;
+    
+    setLoading(true);
+    try {
+      // Process each cart item as a separate order
+      for (const item of cartItems) {
+        const orderData = {
+          productName: item.name,
+          productPrice: item.price,
+          quantity: item.quantity,
+          deliveryType: 'pickup',
+          pickupStation: 'Ikeja High Tower, Lagos'
+        };
+        
+        await apiService.purchaseWithWallet(orderData);
+      }
+      
+      clearCart();
+      setToastMessage('All items purchased successfully!');
+      setShowToast(true);
+      onClose();
+      
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      setToastMessage('Checkout failed. Please try again.');
+      setShowToast(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -67,34 +105,30 @@ const CartDropdown = ({ isOpen, onClose }) => {
             <span className="font-semibold">Total:</span>
             <span className="font-bold text-lg">₦{cartTotal.toLocaleString()}</span>
           </div>
+          <div className="mb-3 text-sm text-gray-600">
+            Wallet Balance: ₦{walletBalance.toLocaleString()}
+          </div>
           <button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Checkout clicked, cartItems:', cartItems.length, 'cartTotal:', cartTotal);
-              setShowPayment(true);
-              console.log('showPayment set to true');
-            }}
-            className="w-full bg-black text-white py-2 rounded-lg font-medium hover:bg-gray-800"
+            onClick={handleCheckout}
+            disabled={!canCheckout || loading}
+            className={`w-full py-2 rounded-lg font-medium transition-colors ${
+              canCheckout && !loading
+                ? 'bg-black text-white hover:bg-gray-800'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
-            Checkout
+            {loading ? 'Processing...' : canCheckout ? 'Checkout' : 'Insufficient Balance'}
           </button>
         </div>
       )}
       </div>
       
-      {showPayment && ReactDOM.createPortal(
-        <PaymentProcess
-          isOpen={showPayment}
-          onClose={() => {
-            setShowPayment(false);
-            onClose();
-          }}
-          product={{ name: 'Cart Items', price: cartTotal }}
-          quantity={1}
-        />,
-        document.body
-      )}
+      <Toast
+        message={toastMessage}
+        type={toastMessage.includes('success') ? 'success' : 'error'}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </>
   );
 };

@@ -173,7 +173,7 @@ export default function DashboardLayout() {
                   </span>
                 )}
               </button>
-              <CartDropdown isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+              <CartDropdown isOpen={cartOpen} onClose={() => setCartOpen(false)} userProfile={userProfile} />
             </div>
             <div className="relative">
               <button 

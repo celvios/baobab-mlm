@@ -102,6 +102,42 @@ export default function Dashboard() {
     setShowToast(true);
   };
 
+  const handleQuickPurchase = async (product) => {
+    const walletBalance = userProfile?.wallet?.balance || 0;
+    
+    if (walletBalance < product.price) {
+      setShowToast(true);
+      return;
+    }
+    
+    try {
+      const orderData = {
+        productName: product.name,
+        productPrice: product.price,
+        quantity: 1,
+        deliveryType: 'pickup',
+        pickupStation: 'Ikeja High Tower, Lagos'
+      };
+      
+      await apiService.purchaseWithWallet(orderData);
+      
+      // Update local state
+      setUserProfile(prev => ({
+        ...prev,
+        wallet: {
+          ...prev.wallet,
+          balance: prev.wallet.balance - product.price
+        }
+      }));
+      
+      // Refresh dashboard data
+      fetchDashboardData();
+      
+    } catch (error) {
+      console.error('Quick purchase failed:', error);
+    }
+  };
+
   // Show payment upload modal if user hasn't paid joining fee
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
@@ -281,29 +317,20 @@ export default function Dashboard() {
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
                       <p className="text-base sm:text-lg font-semibold text-gray-900">₦{product.price.toLocaleString()}</p>
-                      {needsPayment ? (
+                      {(userProfile?.wallet?.balance || 0) >= product.price ? (
                         <button 
-                          onClick={() => setShowPaymentModal(true)}
-                          className="bg-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-orange-700 transition-colors w-full sm:w-auto"
+                          onClick={() => handleQuickPurchase(product)}
+                          className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
                         >
-                          Pay Joining Fee
+                          Buy Now
                         </button>
                       ) : (
-                        (userProfile?.wallet?.balance || 0) >= product.price ? (
-                          <button 
-                            onClick={() => setShowPurchaseModal(true)}
-                            className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
-                          >
-                            Buy Now
-                          </button>
-                        ) : (
-                          <button 
-                            disabled
-                            className="bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium cursor-not-allowed w-full sm:w-auto"
-                          >
-                            Insufficient Balance
-                          </button>
-                        )
+                        <button 
+                          disabled
+                          className="bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium cursor-not-allowed w-full sm:w-auto"
+                        >
+                          Insufficient Balance
+                        </button>
                       )}
                     </div>
                   </div>
