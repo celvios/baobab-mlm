@@ -145,6 +145,44 @@ app.get('/api/auth/test', (req, res) => {
   res.json({ message: 'Auth route working' });
 });
 
+// Create missing user records
+app.get('/api/create-user-records', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Get all users without profiles
+    const users = await client.query('SELECT id FROM users');
+    
+    for (const user of users.rows) {
+      // Create user profile if doesn't exist
+      await client.query(`
+        INSERT INTO user_profiles (user_id) 
+        VALUES ($1) 
+        ON CONFLICT (user_id) DO NOTHING
+      `, [user.id]);
+      
+      // Create wallet if doesn't exist
+      await client.query(`
+        INSERT INTO wallets (user_id, balance, total_earned, total_withdrawn) 
+        VALUES ($1, 0, 0, 0) 
+        ON CONFLICT DO NOTHING
+      `, [user.id]);
+    }
+    
+    client.release();
+    res.json({ message: `Created records for ${users.rows.length} users` });
+  } catch (error) {
+    console.error('Create user records error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test email endpoint with your actual email
 app.get('/api/test-email/:email', async (req, res) => {
   try {
