@@ -1,13 +1,20 @@
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// Create transporter with better error handling
+let transporter;
+try {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+  console.log('Email transporter configured with:', process.env.EMAIL_USER);
+} catch (error) {
+  console.error('Email transporter setup failed:', error);
+}
 
 const generateVerificationToken = () => {
   return crypto.randomBytes(32).toString('hex');
@@ -76,6 +83,11 @@ const sendWelcomeEmail = async (email, fullName, referralCode) => {
 };
 
 const sendOTPEmail = async (email, otpCode, fullName) => {
+  if (!transporter) {
+    console.error('Email transporter not configured');
+    throw new Error('Email service not available');
+  }
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
@@ -94,7 +106,13 @@ const sendOTPEmail = async (email, otpCode, fullName) => {
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`OTP email sent successfully to ${email}`);
+  } catch (error) {
+    console.error('Failed to send OTP email:', error);
+    throw error;
+  }
 };
 
 module.exports = { generateVerificationToken, sendVerificationEmail, sendWelcomeEmail, sendOTPEmail };

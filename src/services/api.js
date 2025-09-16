@@ -34,7 +34,8 @@ class ApiService {
       ...options,
     };
 
-    console.log('Making request to:', url, 'with config:', config);
+    console.log('Making request to:', url);
+    console.log('API Base URL configured as:', API_BASE_URL);
 
     try {
       const response = await fetch(url, config);
