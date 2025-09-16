@@ -104,6 +104,29 @@ CREATE TABLE transactions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- User profiles table
+CREATE TABLE user_profiles (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) UNIQUE,
+    delivery_address TEXT,
+    bank_name VARCHAR(255),
+    account_number VARCHAR(20),
+    account_name VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Market updates table
+CREATE TABLE market_updates (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(20) DEFAULT 'info',
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Payment confirmations table
 CREATE TABLE payment_confirmations (
     id SERIAL PRIMARY KEY,
@@ -113,6 +136,7 @@ CREATE TABLE payment_confirmations (
     confirmed_by INTEGER REFERENCES admin_users(id),
     confirmed_at TIMESTAMP,
     status VARCHAR(50) DEFAULT 'pending',
+    type VARCHAR(50) DEFAULT 'joining_fee',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
