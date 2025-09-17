@@ -85,29 +85,9 @@ app.get('/api/fix-withdrawal-table', async (req, res) => {
   try {
     const client = await pool.connect();
     
-    console.log('Creating withdrawal_requests table...');
+    console.log('Creating admin_users table first...');
     
-    // Create withdrawal_requests table if it doesn't exist
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS withdrawal_requests (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id),
-        amount DECIMAL(10,2) NOT NULL,
-        status VARCHAR(50) DEFAULT 'pending',
-        admin_notes TEXT,
-        processed_at TIMESTAMP,
-        processed_by INTEGER REFERENCES admin_users(id),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    
-    // Add indexes for better performance
-    await client.query('CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_user_id ON withdrawal_requests(user_id)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_status ON withdrawal_requests(status)');
-    await client.query('CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_created_at ON withdrawal_requests(created_at)');
-    
-    // Create admin_users table if it doesn't exist
+    // Create admin_users table FIRST (before withdrawal_requests)
     await client.query(`
       CREATE TABLE IF NOT EXISTS admin_users (
         id SERIAL PRIMARY KEY,
@@ -129,6 +109,28 @@ app.get('/api/fix-withdrawal-table', async (req, res) => {
       `);
       console.log('Default admin user created');
     }
+    
+    console.log('Creating withdrawal_requests table...');
+    
+    // Create withdrawal_requests table AFTER admin_users
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS withdrawal_requests (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id),
+        amount DECIMAL(10,2) NOT NULL,
+        status VARCHAR(50) DEFAULT 'pending',
+        admin_notes TEXT,
+        processed_at TIMESTAMP,
+        processed_by INTEGER REFERENCES admin_users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Add indexes for better performance
+    await client.query('CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_user_id ON withdrawal_requests(user_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_status ON withdrawal_requests(status)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_created_at ON withdrawal_requests(created_at)');
     
     // Create settings table if it doesn't exist
     await client.query(`
