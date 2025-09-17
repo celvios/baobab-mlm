@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Storage</title>
+</head>
+<body>
+    <h1>Clearing Browser Storage...</h1>
+    <script>
+        localStorage.clear();
+        sessionStorage.clear();
+        alert('Storage cleared! You can now test the login flow.');
+        window.location.href = '/login';
+    </script>
+</body>
+</html>
