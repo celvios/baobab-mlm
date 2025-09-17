@@ -106,6 +106,37 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Test route working' });
 });
 
+// Check database tables
+app.get('/api/check-tables', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Check what tables exist
+    const result = await client.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `);
+    
+    client.release();
+    res.json({ 
+      success: true, 
+      tables: result.rows.map(row => row.table_name),
+      count: result.rows.length
+    });
+  } catch (error) {
+    console.error('Check tables error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test user profile without auth
 app.get('/api/test-profile', async (req, res) => {
   const { Pool } = require('pg');
@@ -507,8 +538,20 @@ app.get('/api/setup-database', async (req, res) => {
       )
     `);
     
+    // Check if tables were actually created
+    const checkResult = await client.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `);
+    
     client.release();
-    res.json({ message: 'Database tables created successfully!' });
+    res.json({ 
+      message: 'Database tables created successfully!', 
+      tables_created: checkResult.rows.map(row => row.table_name),
+      count: checkResult.rows.length
+    });
   } catch (error) {
     console.error('Database setup error:', error);
     res.status(500).json({ error: error.message });
