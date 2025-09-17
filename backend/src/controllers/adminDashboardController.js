@@ -14,9 +14,9 @@ const getDashboardStats = async (req, res) => {
       totalWalletBalanceResult,
       mlmEarningsResult
     ] = await Promise.all([
-      pool.query('SELECT COUNT(*) as total_users FROM users WHERE is_active = true'),
+      pool.query('SELECT COUNT(*) as total_users FROM users'),
       pool.query('SELECT COUNT(*) as total_orders, COALESCE(SUM(total_amount), 0) as total_sales FROM orders'),
-      pool.query('SELECT COUNT(*) as total_products FROM products WHERE is_active = true'),
+      pool.query('SELECT COUNT(*) as total_products FROM products'),
       pool.query('SELECT COALESCE(SUM(amount), 0) as today_earnings FROM transactions WHERE DATE(created_at) = CURRENT_DATE AND type = \'commission\''),
       pool.query('SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM orders WHERE order_status = \'completed\''),
       pool.query('SELECT COUNT(*) as pending_withdrawals, COALESCE(SUM(amount), 0) as total_withdrawal_amount FROM withdrawal_requests WHERE status = \'pending\''),
