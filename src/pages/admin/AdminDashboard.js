@@ -99,64 +99,125 @@ export default function AdminDashboard() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Available Products</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                {dashboardData?.stats?.totalProducts || 0}
-              </div>
-              <p className="text-gray-500 text-xs sm:text-sm">
-                {dashboardData?.stats?.totalProducts || 0} Available Products
-              </p>
-            </div>
-            
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Sales</h3>
-              <div className="text-2xl sm:text-3xl font-bold text-teal-600 mb-2">
-                ${dashboardData?.stats?.totalSales?.toLocaleString() || '0'}
-              </div>
-              <p className="text-gray-500 text-xs sm:text-sm">
-                ${dashboardData?.stats?.totalSales?.toLocaleString() || '0'} Products Sales
-              </p>
-            </div>
-            
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Users</h3>
               <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 {dashboardData?.stats?.totalUsers?.toLocaleString() || 0}
               </div>
               <p className="text-gray-500 text-xs sm:text-sm">
-                {dashboardData?.stats?.totalUsers?.toLocaleString() || 0} All Users
+                {dashboardData?.stats?.totalUsers?.toLocaleString() || 0} Registered Users
               </p>
             </div>
             
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Today Earnings</h3>
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Orders</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">
+                {dashboardData?.stats?.totalOrders?.toLocaleString() || 0}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                ${dashboardData?.stats?.totalSales?.toLocaleString() || '0'} in Sales
+              </p>
+            </div>
+            
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Total Wallet Balance</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">
+                ${dashboardData?.stats?.totalWalletBalance?.toLocaleString() || '0'}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                User Wallet Balances
+              </p>
+            </div>
+            
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">MLM Earnings</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-2">
+                ${dashboardData?.stats?.totalMlmEarnings?.toLocaleString() || '0'}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                Total MLM Commissions
+              </p>
+            </div>
+          </div>
+          
+          {/* Additional Stats Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Pending Withdrawals</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">
+                {dashboardData?.stats?.pendingWithdrawals || 0}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                ${dashboardData?.stats?.totalWithdrawalAmount?.toLocaleString() || '0'} Requested
+              </p>
+            </div>
+            
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Pending Payments</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-2">
+                {dashboardData?.stats?.pendingPayments || 0}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                Payment Confirmations
+              </p>
+            </div>
+            
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Available Products</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                {dashboardData?.stats?.totalProducts || 0}
+              </div>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                Products in Catalog
+              </p>
+            </div>
+            
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Today's Earnings</h3>
               <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">
                 ${dashboardData?.stats?.todayEarnings?.toLocaleString() || '0'}
               </div>
               <p className="text-gray-500 text-xs sm:text-sm">
-                ${dashboardData?.stats?.todayEarnings?.toLocaleString() || '0'} Earned Today
+                Commission Earned Today
               </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           {/* Left Column - Charts */}
           <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             {/* Sales Dynamics Chart */}
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Sales dynamics</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Sales Dynamics (Last 7 Days)</h3>
               <div className="h-64">
                 <LineChart 
-                  data={dashboardData?.salesChart || []} 
+                  data={dashboardData?.salesDynamics?.map(item => ({
+                    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    value: parseFloat(item.daily_sales || 0)
+                  })) || []} 
                   color="#10b981"
                 />
               </div>
-              {dashboardData?.stats?.totalSales && (
-                <div className="mt-2 text-sm text-gray-600">
-                  Total Sales: ${dashboardData.stats.totalSales.toLocaleString()}
-                </div>
-              )}
+              <div className="mt-2 text-sm text-gray-600">
+                Total Revenue: ${dashboardData?.stats?.totalRevenue?.toLocaleString() || '0'}
+              </div>
+            </div>
+            
+            {/* User Growth Chart */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">User Growth (Last 7 Days)</h3>
+              <div className="h-64">
+                <BarChart 
+                  data={dashboardData?.userGrowth?.map(item => ({
+                    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    value: parseInt(item.new_users || 0)
+                  })) || []} 
+                  color="#3b82f6"
+                />
+              </div>
+              <div className="mt-2 text-sm text-gray-600">
+                Total Users: {dashboardData?.stats?.totalUsers?.toLocaleString() || 0}
+              </div>
             </div>
 
             {/* Recent Orders */}
@@ -195,7 +256,10 @@ export default function AdminDashboard() {
                               <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
                                 <span className="text-orange-600 text-xs">🍃</span>
                               </div>
-                              <span className="text-sm">{order.product_name}</span>
+                              <div>
+                                <div className="text-sm font-medium">{order.product_name}</div>
+                                <div className="text-xs text-gray-500">{order.customer_name}</div>
+                              </div>
                             </div>
                           </td>
                           <td className="py-4 text-sm">1</td>
@@ -206,9 +270,11 @@ export default function AdminDashboard() {
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                               order.order_status === 'pending' 
                                 ? 'bg-orange-100 text-orange-600' 
-                                : 'bg-green-100 text-green-600'
+                                : order.order_status === 'completed'
+                                ? 'bg-green-100 text-green-600'
+                                : 'bg-gray-100 text-gray-600'
                             }`}>
-                              {order.order_status === 'pending' ? 'Pending' : 'Delivered'}
+                              {order.order_status?.charAt(0).toUpperCase() + order.order_status?.slice(1)}
                             </span>
                           </td>
                         </tr>
@@ -226,19 +292,33 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Right Column - Business Overview & Daily Earnings */}
+          {/* Right Column - Business Overview & MLM Breakdown */}
           <div className="space-y-6 sm:space-y-8">
             {/* Business Overview */}
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Business Overview</h3>
               
               <div className="mb-4 sm:mb-6">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">Wallet Balance</h4>
+                <h4 className="text-sm font-medium text-gray-600 mb-2">Total Revenue</h4>
                 <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-4">
-                  ${dashboardData?.stats?.totalRevenue?.toLocaleString() || dashboardData?.stats?.totalSales?.toLocaleString() || '0'}
+                  ${dashboardData?.stats?.totalRevenue?.toLocaleString() || '0'}
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="text-center p-3 bg-orange-50 rounded-lg">
+                    <div className="text-lg font-bold text-orange-600">
+                      {dashboardData?.stats?.pendingWithdrawals || 0}
+                    </div>
+                    <div className="text-xs text-gray-600">Pending Withdrawals</div>
+                  </div>
+                  <div className="text-center p-3 bg-red-50 rounded-lg">
+                    <div className="text-lg font-bold text-red-600">
+                      {dashboardData?.stats?.pendingPayments || 0}
+                    </div>
+                    <div className="text-xs text-gray-600">Pending Payments</div>
+                  </div>
                 </div>
                 <button className="w-full bg-green-600 text-white py-2 sm:py-3 rounded-lg font-medium text-sm sm:text-base">
-                  Cashout Requests
+                  View Cashout Requests
                 </button>
               </div>
               
@@ -251,19 +331,19 @@ export default function AdminDashboard() {
                 <div className="space-y-3 text-sm">
                   <div>
                     <span className="text-gray-600">Business Name:</span>
-                    <span className="ml-2 text-gray-900">{settings.businessName}</span>
+                    <span className="ml-2 text-gray-900">{dashboardData?.businessInfo?.name || settings.businessName}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Email:</span>
-                    <span className="ml-2 text-gray-900">{settings.businessEmail}</span>
+                    <span className="ml-2 text-gray-900">{dashboardData?.businessInfo?.email || settings.businessEmail}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Phone:</span>
-                    <span className="ml-2 text-gray-900">{settings.businessPhone}</span>
+                    <span className="ml-2 text-gray-900">{dashboardData?.businessInfo?.phone || settings.businessPhone}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Address:</span>
-                    <span className="ml-2 text-gray-900">{settings.businessAddress}</span>
+                    <span className="ml-2 text-gray-900">{dashboardData?.businessInfo?.address || settings.businessAddress}</span>
                   </div>
                 </div>
               </div>
@@ -277,24 +357,80 @@ export default function AdminDashboard() {
                 <div className="space-y-3 text-sm">
                   <div>
                     <span className="text-gray-600">Bank Name:</span>
-                    <span className="ml-2 text-gray-900">{settings.bankName}</span>
+                    <span className="ml-2 text-gray-900">{dashboardData?.businessInfo?.bankName || settings.bankName}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Account Number:</span>
-                    <span className="ml-2 text-gray-900">{settings.accountNumber}</span>
+                    <span className="ml-2 text-gray-900">{dashboardData?.businessInfo?.accountNumber || settings.accountNumber}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Daily Earnings Chart */}
+            {/* MLM Earnings Breakdown */}
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Daily Earnings</h3>
-              <div className="h-40 sm:h-48">
-                <BarChart 
-                  data={dashboardData?.earningsChart || []} 
-                  color="#10b981"
-                />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">MLM Earnings Breakdown</h3>
+              <div className="space-y-4">
+                {dashboardData?.mlmBreakdown?.length > 0 ? (
+                  dashboardData.mlmBreakdown.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <div className="font-medium text-gray-900 capitalize">
+                          {item.type.replace('_', ' ')}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {item.transaction_count} transactions
+                        </div>
+                      </div>
+                      <div className="text-lg font-bold text-green-600">
+                        ${parseFloat(item.total_amount || 0).toLocaleString()}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    No MLM earnings data available
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Recent Withdrawals */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Recent Withdrawals</h3>
+              <div className="space-y-3">
+                {dashboardData?.recentWithdrawals?.length > 0 ? (
+                  dashboardData.recentWithdrawals.slice(0, 5).map((withdrawal, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {withdrawal.full_name}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {withdrawal.bank_name} - {withdrawal.account_number}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-gray-900">
+                          ${parseFloat(withdrawal.amount || 0).toLocaleString()}
+                        </div>
+                        <div className={`text-xs px-2 py-1 rounded-full ${
+                          withdrawal.status === 'pending' 
+                            ? 'bg-orange-100 text-orange-600' 
+                            : withdrawal.status === 'approved'
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-red-100 text-red-600'
+                        }`}>
+                          {withdrawal.status}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    No recent withdrawals
+                  </div>
+                )}
               </div>
             </div>
           </div>
