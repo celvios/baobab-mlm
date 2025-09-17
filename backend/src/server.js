@@ -120,6 +120,16 @@ app.get('/api/fix-withdrawal-table', async (req, res) => {
       )
     `);
     
+    // Insert default admin user if not exists
+    const adminCheck = await client.query('SELECT COUNT(*) FROM admin_users WHERE email = $1', ['admin@baobabmlm.com']);
+    if (parseInt(adminCheck.rows[0].count) === 0) {
+      await client.query(`
+        INSERT INTO admin_users (name, email, password) 
+        VALUES ('Admin User', 'admin@baobabmlm.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi')
+      `);
+      console.log('Default admin user created');
+    }
+    
     // Create settings table if it doesn't exist
     await client.query(`
       CREATE TABLE IF NOT EXISTS settings (
