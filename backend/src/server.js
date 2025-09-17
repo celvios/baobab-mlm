@@ -156,27 +156,28 @@ app.get('/api/create-user-records', async (req, res) => {
   try {
     const client = await pool.connect();
     
-    // Get all users without profiles
+    // Get all users
     const users = await client.query('SELECT id FROM users');
+    let created = 0;
     
     for (const user of users.rows) {
-      // Create user profile if doesn't exist
-      await client.query(`
-        INSERT INTO user_profiles (user_id) 
-        VALUES ($1) 
-        ON CONFLICT (user_id) DO NOTHING
-      `, [user.id]);
+      // Check if profile exists
+      const profileExists = await client.query('SELECT id FROM user_profiles WHERE user_id = $1', [user.id]);
+      if (profileExists.rows.length === 0) {
+        await client.query('INSERT INTO user_profiles (user_id) VALUES ($1)', [user.id]);
+        created++;
+      }
       
-      // Create wallet if doesn't exist
-      await client.query(`
-        INSERT INTO wallets (user_id, balance, total_earned, total_withdrawn) 
-        VALUES ($1, 0, 0, 0) 
-        ON CONFLICT DO NOTHING
-      `, [user.id]);
+      // Check if wallet exists
+      const walletExists = await client.query('SELECT id FROM wallets WHERE user_id = $1', [user.id]);
+      if (walletExists.rows.length === 0) {
+        await client.query('INSERT INTO wallets (user_id, balance, total_earned, total_withdrawn) VALUES ($1, 0, 0, 0)', [user.id]);
+        created++;
+      }
     }
     
     client.release();
-    res.json({ message: `Created records for ${users.rows.length} users` });
+    res.json({ message: `Created ${created} missing records for ${users.rows.length} users` });
   } catch (error) {
     console.error('Create user records error:', error);
     res.status(500).json({ error: error.message });
