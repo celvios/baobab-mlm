@@ -27,11 +27,12 @@ const getDashboardStats = async (req, res) => {
 
     // Get recent orders with user details
     const recentOrders = await pool.query(`
-      SELECT o.id, o.order_number, p.name as product_name, o.total_amount, o.order_status, 
+      SELECT o.id, o.order_number, 
+             COALESCE(o.product_name, 'Product') as product_name, 
+             o.total_amount, o.order_status, 
              o.created_at, u.full_name as customer_name, u.email as customer_email
       FROM orders o
       JOIN users u ON o.user_id = u.id
-      LEFT JOIN products p ON o.product_id = p.id
       ORDER BY o.created_at DESC
       LIMIT 10
     `);
