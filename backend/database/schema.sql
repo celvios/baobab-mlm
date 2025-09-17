@@ -140,6 +140,19 @@ CREATE TABLE payment_confirmations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Withdrawal requests table (cashout requests)
+CREATE TABLE withdrawal_requests (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    admin_notes TEXT,
+    processed_at TIMESTAMP,
+    processed_by INTEGER REFERENCES admin_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Insert default settings
 INSERT INTO settings (key, value) VALUES 
 ('business_name', 'Baobab MLM'),
