@@ -71,7 +71,7 @@ export default function Settings() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/settings/business`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/settings/business`, {
         method: 'PUT',
         headers: getSecurityHeaders(token),
         body: JSON.stringify({
@@ -101,7 +101,7 @@ export default function Settings() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/settings/account`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/settings/account`, {
         method: 'PUT',
         headers: getSecurityHeaders(token),
         body: JSON.stringify({

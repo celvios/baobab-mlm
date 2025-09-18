@@ -29,7 +29,7 @@ export default function UsersManagement() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/users`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -53,7 +53,7 @@ export default function UsersManagement() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/dashboard/stats`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

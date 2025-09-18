@@ -16,7 +16,7 @@ export default function CashoutRequests() {
   const fetchWithdrawals = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/withdrawals`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/withdrawals`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -36,7 +36,7 @@ export default function CashoutRequests() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/withdrawals/stats`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/withdrawals/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -54,7 +54,7 @@ export default function CashoutRequests() {
   const updateWithdrawalStatus = async (id, status) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/withdrawals/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/withdrawals/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

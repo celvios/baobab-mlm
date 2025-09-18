@@ -33,7 +33,7 @@ export default function ProductManagement() {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/products`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/products`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -54,7 +54,7 @@ export default function ProductManagement() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/products/stats`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/products/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -91,7 +91,7 @@ export default function ProductManagement() {
   const confirmDelete = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/products/${selectedProduct.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/products/${selectedProduct.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -116,7 +116,7 @@ export default function ProductManagement() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/products`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/products`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -150,7 +150,7 @@ export default function ProductManagement() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/products/${selectedProduct.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/products/${selectedProduct.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

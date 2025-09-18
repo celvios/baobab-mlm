@@ -16,7 +16,7 @@ export default function OrdersManagement() {
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/orders`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/orders`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -36,7 +36,7 @@ export default function OrdersManagement() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/orders/stats`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/orders/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -54,7 +54,7 @@ export default function OrdersManagement() {
   const updateOrderStatus = async (orderId, status) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

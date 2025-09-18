@@ -19,7 +19,7 @@ export default function DepositRequests() {
   const fetchDepositRequests = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/deposit-requests`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/deposit-requests`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -44,7 +44,7 @@ export default function DepositRequests() {
     setProcessingId(requestId);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/approve-deposit`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/approve-deposit`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -72,7 +72,7 @@ export default function DepositRequests() {
     setProcessingId(requestId);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_BASE_URL}/admin/reject-deposit`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reject-deposit`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

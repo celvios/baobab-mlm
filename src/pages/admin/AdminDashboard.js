@@ -26,7 +26,7 @@ export default function AdminDashboard() {
       console.log('Fetching from:', `${API_BASE_URL}/admin/dashboard/stats`);
       console.log('Token:', token);
       
-      const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/dashboard/stats`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
