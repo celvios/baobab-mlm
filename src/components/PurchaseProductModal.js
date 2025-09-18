@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { XMarkIcon as X, ChevronLeftIcon as ChevronLeft, ChevronRightIcon as ChevronRight } from '@heroicons/react/24/outline';
 import { CheckCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { products as allProducts } from '../data/products';
 import apiService from '../services/api';

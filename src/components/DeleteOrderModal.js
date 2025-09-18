@@ -1,5 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { XMarkIcon as X } from '@heroicons/react/24/outline';
 
 const DeleteOrderModal = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;

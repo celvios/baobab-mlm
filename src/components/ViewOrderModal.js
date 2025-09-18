@@ -1,5 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { XMarkIcon as X } from '@heroicons/react/24/outline';
 
 const ViewOrderModal = ({ isOpen, onClose, order }) => {
   if (!isOpen || !order) return null;

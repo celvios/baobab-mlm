@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { EllipsisVerticalIcon as MoreVertical } from '@heroicons/react/24/outline';
 import DeleteOrderModal from '../components/DeleteOrderModal';
 import ViewOrderModal from '../components/ViewOrderModal';
 import MarketUpdates from '../components/MarketUpdates';
