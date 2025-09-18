@@ -318,7 +318,56 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {dashboardData?.recentOrders?.length > 0 ? (
-                      dashboardData.recentOrders.map((order, index) => (
+                      dashboardData.recentOrders.slice(0, 5).map((order, index) => (
+                        <tr key={order.id} className="border-b border-gray-100">
+                          <td className="py-3 text-sm text-gray-900">{index + 1}</td>
+                          <td className="py-3 text-sm text-gray-600">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-3 text-sm text-gray-900 font-medium">
+                            #{order.order_number}
+                          </td>
+                          <td className="py-3 text-sm text-gray-600">
+                            {order.product_name}
+                          </td>
+                          <td className="py-3 text-sm text-gray-600">
+                            {order.quantity}
+                          </td>
+                          <td className="py-3 text-sm text-gray-900 font-medium">
+                            ${order.total_amount}
+                          </td>
+                          <td className="py-3">
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                              order.delivery_status === 'delivered' 
+                                ? 'bg-green-100 text-green-800'
+                                : order.delivery_status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {order.delivery_status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="py-8 text-center text-gray-500">
+                          No recent orders found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;centOrders.map((order, index) => (
                         <tr key={order.id} className="border-b border-gray-100">
                           <td className="py-4 text-sm">{index + 1}</td>
                           <td className="py-4 text-sm">
