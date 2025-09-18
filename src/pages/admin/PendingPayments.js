@@ -16,8 +16,17 @@ export default function PendingPayments() {
 
   const fetchPendingPayments = async () => {
     try {
-      const response = await apiService.getPendingPayments();
-      setPendingPayments(response.pendingPayments || []);
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/admin/pending-payments`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setPendingPayments(data.pendingPayments || []);
+      }
     } catch (error) {
       console.error('Failed to fetch pending payments:', error);
     } finally {
@@ -27,10 +36,23 @@ export default function PendingPayments() {
 
   const handleConfirmPayment = async (userId, amount, type = 'joining_fee') => {
     try {
-      await apiService.confirmPayment(userId, amount, type);
-      setToastMessage('Payment approved successfully!');
-      setShowToast(true);
-      fetchPendingPayments();
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/admin/confirm-payment`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId, amount, type })
+      });
+      
+      if (response.ok) {
+        setToastMessage('Payment approved successfully!');
+        setShowToast(true);
+        fetchPendingPayments();
+      } else {
+        throw new Error('Failed to approve payment');
+      }
     } catch (error) {
       setToastMessage('Failed to approve payment');
       setShowToast(true);

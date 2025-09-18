@@ -1,42 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XMarkIcon, UserIcon, BanknotesIcon, ShoppingBagIcon, UsersIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export default function UserDetailModal({ user, isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('details');
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [userDetails, setUserDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && user?.id) {
+      fetchUserDetails();
+    }
+  }, [isOpen, user?.id]);
+
+  const fetchUserDetails = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`${API_BASE_URL}/admin/users/${user.id}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setUserDetails(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen || !user) return null;
 
-  const mockUserData = {
-    id: user.id,
-    name: 'John Doe',
-    email: user.email || 'john@email.com',
-    phone: '+2348012345678',
-    address: 'Lagos, Nigeria',
-    stage: user.stage || 'Feeder',
-    dateRegistered: '24/12/2024',
-    status: 'Active',
-    totalEarnings: 45000,
-    totalOrders: 12,
-    referrals: 8,
+  const userData = userDetails ? {
+    id: userDetails.user.id,
+    name: userDetails.user.full_name || 'N/A',
+    email: userDetails.user.email,
+    phone: userDetails.user.phone || 'N/A',
+    address: userDetails.user.address || 'N/A',
+    stage: userDetails.user.current_stage || 'Feeder',
+    dateRegistered: new Date(userDetails.user.created_at).toLocaleDateString(),
+    status: userDetails.user.is_active ? 'Active' : 'Inactive',
+    totalEarnings: userDetails.user.total_earnings || 0,
+    totalOrders: userDetails.orders?.length || 0,
+    referrals: userDetails.teamMembers?.length || 0,
     bankDetails: {
-      bankName: 'First Bank',
-      accountNumber: '1234567890',
-      accountName: 'John Doe'
+      bankName: userDetails.user.bank_name || 'N/A',
+      accountNumber: userDetails.user.account_number || 'N/A',
+      accountName: userDetails.user.account_name || userDetails.user.full_name || 'N/A'
     },
-    orders: [
-      { id: 1, product: 'Lentoc Tea', amount: 13500, date: '01/01/25', status: 'Delivered' },
-      { id: 2, product: 'Face Cream', amount: 18000, date: '31/12/24', status: 'Pending' }
-    ],
-    transactions: [
-      { id: 1, type: 'Earning', amount: 4500, date: '01/01/25', description: 'Referral Bonus' },
-      { id: 2, type: 'Withdrawal', amount: -15000, date: '30/12/24', description: 'Bank Transfer' }
-    ],
-    teamMembers: [
-      { id: 1, name: 'Jane Smith', stage: 'Bronze', earnings: 18000 },
-      { id: 2, name: 'Mike Johnson', stage: 'Feeder', earnings: 4500 }
-    ]
-  };
+    orders: userDetails.orders || [],
+    transactions: userDetails.transactions || [],
+    teamMembers: userDetails.teamMembers || []
+  } : null;
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="text-center mt-4">Loading user details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userData) return null;
 
   const tabs = [
     { id: 'details', name: 'User Details', icon: UserIcon },
@@ -56,8 +91,8 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                 <UserIcon className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">{mockUserData.name}</h2>
-                <p className="text-sm text-gray-500">{mockUserData.email}</p>
+                <h2 className="text-xl font-semibold text-gray-900">{userData.name}</h2>
+                <p className="text-sm text-gray-500">{userData.email}</p>
               </div>
             </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -98,19 +133,19 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                     <div className="space-y-3">
                       <div>
                         <label className="text-sm font-medium text-gray-500">Full Name</label>
-                        <p className="text-sm text-gray-900">{mockUserData.name}</p>
+                        <p className="text-sm text-gray-900">{userData.name}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">Email</label>
-                        <p className="text-sm text-gray-900">{mockUserData.email}</p>
+                        <p className="text-sm text-gray-900">{userData.email}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">Phone</label>
-                        <p className="text-sm text-gray-900">{mockUserData.phone}</p>
+                        <p className="text-sm text-gray-900">{userData.phone}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">Address</label>
-                        <p className="text-sm text-gray-900">{mockUserData.address}</p>
+                        <p className="text-sm text-gray-900">{userData.address}</p>
                       </div>
                     </div>
                   </div>
@@ -120,21 +155,23 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                     <div className="space-y-3">
                       <div>
                         <label className="text-sm font-medium text-gray-500">Current Stage</label>
-                        <p className="text-sm text-gray-900">{mockUserData.stage}</p>
+                        <p className="text-sm text-gray-900 capitalize">{userData.stage}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">Date Registered</label>
-                        <p className="text-sm text-gray-900">{mockUserData.dateRegistered}</p>
+                        <p className="text-sm text-gray-900">{userData.dateRegistered}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">Status</label>
-                        <span className="inline-flex px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                          {mockUserData.status}
+                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                          userData.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {userData.status}
                         </span>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-500">Total Earnings</label>
-                        <p className="text-sm font-semibold text-green-600">${mockUserData.totalEarnings.toLocaleString()}</p>
+                        <p className="text-sm font-semibold text-green-600">₦{userData.totalEarnings.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
@@ -145,15 +182,15 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-500">Bank Name</label>
-                      <p className="text-sm text-gray-900">{mockUserData.bankDetails.bankName}</p>
+                      <p className="text-sm text-gray-900">{userData.bankDetails.bankName}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Account Number</label>
-                      <p className="text-sm text-gray-900">{mockUserData.bankDetails.accountNumber}</p>
+                      <p className="text-sm text-gray-900">{userData.bankDetails.accountNumber}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-500">Account Name</label>
-                      <p className="text-sm text-gray-900">{mockUserData.bankDetails.accountName}</p>
+                      <p className="text-sm text-gray-900">{userData.bankDetails.accountName}</p>
                     </div>
                   </div>
                 </div>
@@ -174,20 +211,28 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {mockUserData.orders.map((order) => (
+                      {userData.orders.length > 0 ? userData.orders.map((order) => (
                         <tr key={order.id}>
-                          <td className="px-4 py-3 text-sm">{order.product}</td>
-                          <td className="px-4 py-3 text-sm font-medium">${order.amount.toLocaleString()}</td>
-                          <td className="px-4 py-3 text-sm">{order.date}</td>
+                          <td className="px-4 py-3 text-sm">{order.product_name || 'N/A'}</td>
+                          <td className="px-4 py-3 text-sm font-medium">₦{(order.total_amount || 0).toLocaleString()}</td>
+                          <td className="px-4 py-3 text-sm">{new Date(order.created_at).toLocaleDateString()}</td>
                           <td className="px-4 py-3">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            <span className={`px-2 py-1 text-xs rounded-full capitalize ${
+                              order.delivery_status === 'delivered' ? 'bg-green-100 text-green-800' : 
+                              order.delivery_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
                             }`}>
-                              {order.status}
+                              {order.delivery_status || 'pending'}
                             </span>
                           </td>
                         </tr>
-                      ))}
+                      )) : (
+                        <tr>
+                          <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                            No orders found
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -198,22 +243,27 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h3>
                 <div className="space-y-3">
-                  {mockUserData.transactions.map((transaction) => (
+                  {userData.transactions.length > 0 ? userData.transactions.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
-                        <p className="text-xs text-gray-500">{transaction.date}</p>
+                        <p className="text-sm font-medium text-gray-900 capitalize">{transaction.type || 'Transaction'}</p>
+                        <p className="text-xs text-gray-500">{new Date(transaction.created_at).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500">{transaction.description || 'No description'}</p>
                       </div>
                       <div className="text-right">
                         <p className={`text-sm font-semibold ${
                           transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString()}
+                          {transaction.amount > 0 ? '+' : ''}₦{Math.abs(transaction.amount || 0).toLocaleString()}
                         </p>
-                        <p className="text-xs text-gray-500">{transaction.type}</p>
+                        <p className="text-xs text-gray-500 capitalize">{transaction.status || 'completed'}</p>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No transactions found
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -222,23 +272,27 @@ export default function UserDetailModal({ user, isOpen, onClose }) {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Members</h3>
                 <div className="space-y-3">
-                  {mockUserData.teamMembers.map((member) => (
+                  {userData.teamMembers.length > 0 ? userData.teamMembers.map((member) => (
                     <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                           <UserIcon className="h-4 w-4 text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{member.name}</p>
-                          <p className="text-xs text-gray-500">Stage: {member.stage}</p>
+                          <p className="text-sm font-medium text-gray-900">{member.full_name}</p>
+                          <p className="text-xs text-gray-500 capitalize">Stage: {member.current_stage}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-green-600">${member.earnings.toLocaleString()}</p>
+                        <p className="text-sm font-semibold text-green-600">₦{(member.total_earnings || 0).toLocaleString()}</p>
                         <p className="text-xs text-gray-500">Total Earnings</p>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No team members found
+                    </div>
+                  )}
                 </div>
               </div>
             )}

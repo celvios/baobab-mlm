@@ -91,14 +91,15 @@ export default function UsersManagement() {
         }
       });
       const data = await response.json();
-      if (data.success) {
+      if (response.ok && data.users) {
         setUsers(data.users);
       } else {
-        setUsers(mockUsers);
+        console.error('API Error:', data.message);
+        setUsers([]);
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
-      setUsers(mockUsers);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -114,7 +115,7 @@ export default function UsersManagement() {
         }
       });
       const data = await response.json();
-      if (data.success) {
+      if (response.ok && data.stats) {
         setStats({
           totalUsers: data.stats?.totalUsers || 0,
           onboardedUsers: data.stats?.onboardedUsers || 0,
@@ -256,12 +257,13 @@ export default function UsersManagement() {
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
                           <span className="text-yellow-600 text-xs font-semibold">
-                            {(user.email || user.user_email || 'U').charAt(0).toUpperCase()}
+                            {(user.full_name || user.email || 'U').charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div>
-                          <div className="text-sm text-gray-900">{user.email || user.user_email}</div>
-                          <div className="text-xs text-gray-500">{user.status || (user.is_active ? 'Onboarded Users' : 'Pending Users')}</div>
+                          <div className="text-sm text-gray-900">{user.full_name || user.email}</div>
+                          <div className="text-xs text-gray-500">{user.email}</div>
+                          <div className="text-xs text-gray-500">{user.is_active ? 'Active' : 'Inactive'}</div>
                         </div>
                       </div>
                     </td>
@@ -270,8 +272,8 @@ export default function UsersManagement() {
                         {user.stage || user.current_stage || 'Feeder'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{user.created_at ? new Date(user.created_at).toLocaleDateString() : user.date}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">₦{(user.total_orders || user.amount || '0').toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{new Date(user.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">₦{(user.total_orders || 0).toLocaleString()}</td>
                     <td className="px-6 py-4">
                       <button 
                         onClick={() => handleViewUser(user)}
