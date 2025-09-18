@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { NotificationProvider } from './components/NotificationSystem';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './contexts/CartContext';
-import { SettingsProvider } from './contexts/SettingsContext';
+// import { SettingsProvider } from './contexts/SettingsContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
@@ -143,11 +143,11 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <CartProvider>
-          <SettingsProvider>
+          {/* <SettingsProvider> */}
             <NotificationProvider>
               <AppContent />
             </NotificationProvider>
-          </SettingsProvider>
+          {/* </SettingsProvider> */}
         </CartProvider>
       </AuthProvider>
     </ErrorBoundary>

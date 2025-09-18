@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BellIcon, PencilIcon } from '@heroicons/react/24/outline';
 import ProcessLoader from '../../components/ProcessLoader';
 import { LineChart, BarChart } from '../../components/SimpleChart';
-import { useSettings } from '../../contexts/SettingsContext';
+// import { useSettings } from '../../contexts/SettingsContext';
 import AdminStats from '../../components/admin/AdminStats';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -10,7 +10,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api
 export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { settings } = useSettings();
+  // const { settings } = useSettings();
 
   useEffect(() => {
     fetchDashboardData();
