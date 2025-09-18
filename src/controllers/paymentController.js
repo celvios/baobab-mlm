@@ -92,8 +92,27 @@ const getDepositRequests = async (req, res) => {
   }
 };
 
+const rejectDeposit = async (req, res) => {
+  try {
+    const { requestId } = req.body;
+    const adminId = req.admin.id;
+
+    // Update deposit request status to rejected
+    await pool.query(
+      'UPDATE deposit_requests SET status = $1, rejected_by = $2, rejected_at = CURRENT_TIMESTAMP WHERE id = $3',
+      ['rejected', adminId, requestId]
+    );
+
+    res.json({ message: 'Deposit request rejected' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = { 
   uploadPaymentProof: [upload.single('paymentProof'), uploadPaymentProof],
   approveDeposit,
+  rejectDeposit,
   getDepositRequests
 };

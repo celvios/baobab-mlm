@@ -50,10 +50,10 @@ import History from './pages/History';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UsersManagement from './pages/admin/UsersManagement';
+import DepositRequests from './pages/admin/DepositRequests';
 import ProductManagement from './pages/admin/ProductManagement';
 import OrdersManagement from './pages/admin/OrdersManagement';
 import BlogManagement from './pages/admin/BlogManagement';
-import StagesRewards from './pages/admin/StagesRewards';
 import CashoutRequests from './pages/admin/CashoutRequests';
 import Emailer from './pages/admin/Emailer';
 
@@ -126,13 +126,12 @@ function AppContent() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<UsersManagement />} />
+            <Route path="deposits" element={<DepositRequests />} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="orders" element={<OrdersManagement />} />
             <Route path="blog" element={<BlogManagement />} />
-            <Route path="stages" element={<StagesRewards />} />
             <Route path="cashout" element={<CashoutRequests />} />
             <Route path="emailer" element={<Emailer />} />
-
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>

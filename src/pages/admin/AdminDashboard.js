@@ -41,102 +41,50 @@ export default function AdminDashboard() {
         setDashboardData(data);
       } else {
         console.error('API Error:', data.message);
-        // Show demo data when API fails
+        // Show minimal fallback data when API fails
         setDashboardData({
           stats: {
-            totalUsers: 156,
-            totalOrders: 89,
-            totalSales: 45670,
-            totalRevenue: 45670,
-            totalProducts: 12,
-            todayEarnings: 1250,
-            totalWalletBalance: 23450,
-            totalMlmEarnings: 8900,
-            pendingWithdrawals: 5,
-            totalWithdrawalAmount: 3400,
-            pendingPayments: 3
+            totalUsers: 0,
+            totalOrders: 0,
+            totalSales: 0,
+            totalRevenue: 0,
+            totalProducts: 0,
+            todayEarnings: 0,
+            totalWalletBalance: 0,
+            totalMlmEarnings: 0,
+            pendingWithdrawals: 0,
+            totalWithdrawalAmount: 0,
+            pendingPayments: 0
           },
-          salesDynamics: [
-            { date: '2024-01-15', daily_sales: 1200 },
-            { date: '2024-01-16', daily_sales: 1800 },
-            { date: '2024-01-17', daily_sales: 2100 },
-            { date: '2024-01-18', daily_sales: 1600 },
-            { date: '2024-01-19', daily_sales: 2400 },
-            { date: '2024-01-20', daily_sales: 1900 },
-            { date: '2024-01-21', daily_sales: 2200 }
-          ],
-          userGrowth: [
-            { date: '2024-01-15', new_users: 5 },
-            { date: '2024-01-16', new_users: 8 },
-            { date: '2024-01-17', new_users: 12 },
-            { date: '2024-01-18', new_users: 6 },
-            { date: '2024-01-19', new_users: 15 },
-            { date: '2024-01-20', new_users: 9 },
-            { date: '2024-01-21', new_users: 11 }
-          ],
-          recentOrders: [
-            { id: 1, order_number: 'ORD-001', product_name: 'Baobab Fruit Extract', customer_name: 'John Doe', total_amount: 450, order_status: 'completed', created_at: '2024-01-21' },
-            { id: 2, order_number: 'ORD-002', product_name: 'Baobab Powder', customer_name: 'Jane Smith', total_amount: 320, order_status: 'pending', created_at: '2024-01-21' }
-          ],
-          mlmBreakdown: [
-            { type: 'commission', total_amount: 3400, transaction_count: 45 },
-            { type: 'referral_bonus', total_amount: 2800, transaction_count: 28 },
-            { type: 'level_bonus', total_amount: 2700, transaction_count: 32 }
-          ],
-          recentWithdrawals: [
-            { id: 1, full_name: 'Alice Johnson', amount: 500, status: 'pending', bank_name: 'GTBank', account_number: '0123456789' },
-            { id: 2, full_name: 'Bob Wilson', amount: 750, status: 'approved', bank_name: 'Access Bank', account_number: '0987654321' }
-          ]
+          salesDynamics: [],
+          userGrowth: [],
+          recentOrders: [],
+          mlmBreakdown: [],
+          recentWithdrawals: []
         });
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
-      // Show demo data when request fails
+      // Show minimal fallback data when request fails
       setDashboardData({
         stats: {
-          totalUsers: 156,
-          totalOrders: 89,
-          totalSales: 45670,
-          totalRevenue: 45670,
-          totalProducts: 12,
-          todayEarnings: 1250,
-          totalWalletBalance: 23450,
-          totalMlmEarnings: 8900,
-          pendingWithdrawals: 5,
-          totalWithdrawalAmount: 3400,
-          pendingPayments: 3
+          totalUsers: 0,
+          totalOrders: 0,
+          totalSales: 0,
+          totalRevenue: 0,
+          totalProducts: 0,
+          todayEarnings: 0,
+          totalWalletBalance: 0,
+          totalMlmEarnings: 0,
+          pendingWithdrawals: 0,
+          totalWithdrawalAmount: 0,
+          pendingPayments: 0
         },
-        salesDynamics: [
-          { date: '2024-01-15', daily_sales: 1200 },
-          { date: '2024-01-16', daily_sales: 1800 },
-          { date: '2024-01-17', daily_sales: 2100 },
-          { date: '2024-01-18', daily_sales: 1600 },
-          { date: '2024-01-19', daily_sales: 2400 },
-          { date: '2024-01-20', daily_sales: 1900 },
-          { date: '2024-01-21', daily_sales: 2200 }
-        ],
-        userGrowth: [
-          { date: '2024-01-15', new_users: 5 },
-          { date: '2024-01-16', new_users: 8 },
-          { date: '2024-01-17', new_users: 12 },
-          { date: '2024-01-18', new_users: 6 },
-          { date: '2024-01-19', new_users: 15 },
-          { date: '2024-01-20', new_users: 9 },
-          { date: '2024-01-21', new_users: 11 }
-        ],
-        recentOrders: [
-          { id: 1, order_number: 'ORD-001', product_name: 'Baobab Fruit Extract', customer_name: 'John Doe', total_amount: 450, order_status: 'completed', created_at: '2024-01-21' },
-          { id: 2, order_number: 'ORD-002', product_name: 'Baobab Powder', customer_name: 'Jane Smith', total_amount: 320, order_status: 'pending', created_at: '2024-01-21' }
-        ],
-        mlmBreakdown: [
-          { type: 'commission', total_amount: 3400, transaction_count: 45 },
-          { type: 'referral_bonus', total_amount: 2800, transaction_count: 28 },
-          { type: 'level_bonus', total_amount: 2700, transaction_count: 32 }
-        ],
-        recentWithdrawals: [
-          { id: 1, full_name: 'Alice Johnson', amount: 500, status: 'pending', bank_name: 'GTBank', account_number: '0123456789' },
-          { id: 2, full_name: 'Bob Wilson', amount: 750, status: 'approved', bank_name: 'Access Bank', account_number: '0987654321' }
-        ]
+        salesDynamics: [],
+        userGrowth: [],
+        recentOrders: [],
+        mlmBreakdown: [],
+        recentWithdrawals: []
       });
     } finally {
       setLoading(false);

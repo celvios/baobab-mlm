@@ -159,7 +159,15 @@ export default function Dashboard() {
     );
   }
 
-  const products = getFeaturedProducts();
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      const featuredProducts = await getFeaturedProducts();
+      setProducts(featuredProducts);
+    };
+    loadProducts();
+  }, []);
 
   // Use real order and transaction data
   const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');

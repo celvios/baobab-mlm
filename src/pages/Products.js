@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeftIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
 import PaymentProcess from '../components/PaymentProcess';
 import MarketUpdates from '../components/MarketUpdates';
 import Toast from '../components/Toast';
 import { useCart } from '../contexts/CartContext';
-import { products as allProducts, getProductById } from '../data/products';
+import { fetchProducts, getProductById } from '../data/products';
 
 export default function Products() {
   const [currentView, setCurrentView] = useState('grid');
@@ -19,7 +19,19 @@ export default function Products() {
     setShowToast(true);
   };
 
-  const products = Array.from({ length: 9 }, (_, i) => allProducts[i % allProducts.length]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      const products = await fetchProducts();
+      setAllProducts(products);
+      setLoading(false);
+    };
+    loadProducts();
+  }, []);
+
+  const products = Array.from({ length: 9 }, (_, i) => allProducts[i % allProducts.length]).filter(Boolean);
   const myProducts = allProducts.slice(0, 6);
 
   const benefits = [
@@ -30,6 +42,18 @@ export default function Products() {
     'Aids weight management & detoxification',
     'Supports reproductive health for men & women'
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <MarketUpdates />
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+          <span className="ml-3 text-gray-600">Loading products...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (currentView === 'detail') {
     return (

@@ -1,4 +1,7 @@
-export const products = [
+import apiService from '../services/api';
+
+// Fallback products for when API is unavailable
+const fallbackProducts = [
   {
     id: 1,
     name: 'Lentoc Tea',
@@ -64,61 +67,50 @@ export const products = [
     category: 'Beverages',
     inStock: true,
     benefits: ['Strengthens immunity', 'Supports heart & digestive health', 'Improves memory & brain function', 'Reduces inflammation & cholesterol', 'Promotes glowing skin']
-  },
-  {
-    id: 7,
-    name: 'Baobab + Moringa + Ginger Powder',
-    description: 'A triple superfood blend for energy, immunity, and digestion.',
-    price: 3500,
-    image: '/images/leaf-1.png',
-    bgColor: 'from-green-100 to-lime-100',
-    category: 'Supplements',
-    inStock: true,
-    benefits: ['Vitamin-rich and mineral-dense', 'Anti-inflammatory & antioxidant powerhouse', 'Supports blood sugar balance', 'Enhances metabolism & digestion', 'Sustained energy release']
-  },
-  {
-    id: 8,
-    name: 'Baobab Body Lotion',
-    description: 'Luxurious body lotion enriched with baobab oil for all-day moisture and skin protection.',
-    price: 4500,
-    image: '/images/leaf-3.png',
-    bgColor: 'from-blue-100 to-cyan-100',
-    category: 'Skincare',
-    inStock: true,
-    benefits: ['24-hour hydration', 'Fast absorption', 'Anti-aging formula', 'Suitable for sensitive skin']
-  },
-  {
-    id: 9,
-    name: 'Baobab Hair Oil',
-    description: 'Nourishing hair oil with pure baobab extract for stronger, shinier, and healthier hair.',
-    price: 3800,
-    image: '/images/Intersect.png',
-    bgColor: 'from-yellow-100 to-amber-100',
-    category: 'Beauty',
-    inStock: true,
-    benefits: ['Strengthens hair follicles', 'Adds natural shine', 'Reduces hair breakage', 'Promotes hair growth']
-  },
-  {
-    id: 10,
-    name: 'Baobab Energy Capsules',
-    description: 'Concentrated baobab extract in convenient capsule form for daily wellness support.',
-    price: 5000,
-    image: '/images/IMG_4996 2.png',
-    bgColor: 'from-orange-100 to-red-100',
-    category: 'Supplements',
-    inStock: true,
-    benefits: ['Convenient daily dose', 'High potency formula', 'Boosts energy levels', 'Supports immune system']
   }
 ];
 
-export const getProductById = (id) => {
-  return products.find(product => product.id === parseInt(id));
+let cachedProducts = null;
+
+export const fetchProducts = async () => {
+  try {
+    const response = await apiService.request('/products');
+    const products = response.products || response;
+    
+    // Transform API products to match expected format
+    const transformedProducts = products.map((product, index) => ({
+      id: product.id,
+      name: product.name || product.product_name,
+      description: product.description,
+      price: product.price,
+      image: product.image || '/images/IMG_4996 2.png',
+      bgColor: fallbackProducts[index % fallbackProducts.length]?.bgColor || 'from-gray-100 to-gray-200',
+      category: product.category || 'General',
+      inStock: product.in_stock !== false,
+      benefits: product.benefits || ['Health benefits', 'Natural ingredients']
+    }));
+    
+    cachedProducts = transformedProducts;
+    return transformedProducts;
+  } catch (error) {
+    console.error('Failed to fetch products from API:', error);
+    return fallbackProducts;
+  }
 };
 
-export const getProductsByCategory = (category) => {
-  return products.filter(product => product.category === category);
+export const products = cachedProducts || fallbackProducts;
+
+export const getProductById = async (id) => {
+  const allProducts = await fetchProducts();
+  return allProducts.find(product => product.id === parseInt(id));
 };
 
-export const getFeaturedProducts = () => {
-  return products.slice(0, 2);
+export const getProductsByCategory = async (category) => {
+  const allProducts = await fetchProducts();
+  return allProducts.filter(product => product.category === category);
+};
+
+export const getFeaturedProducts = async () => {
+  const allProducts = await fetchProducts();
+  return allProducts.slice(0, 2);
 };

@@ -19,62 +19,7 @@ export default function UsersManagement() {
     pendingUsers: 0
   });
 
-  const mockUsers = [
-    {
-      id: 1,
-      email: 'reg@gmail.com',
-      status: 'Onboarded Users',
-      stage: 'Feeder',
-      date: '24',
-      amount: '#13,500',
-      action: 'View'
-    },
-    {
-      id: 2,
-      email: 'reg@gmail.com',
-      status: 'Onboarded Users',
-      stage: 'Feeder',
-      date: '24',
-      amount: '#13,500',
-      action: 'View'
-    },
-    {
-      id: 3,
-      email: 'reg@gmail.com',
-      status: 'Onboarded Users',
-      stage: 'Feeder',
-      date: '24',
-      amount: '#13,500',
-      action: 'View'
-    },
-    {
-      id: 4,
-      email: 'reg@gmail.com',
-      status: 'Onboarded Users',
-      stage: 'Feeder',
-      date: '24',
-      amount: '#13,500',
-      action: 'View'
-    },
-    {
-      id: 5,
-      email: 'reg@gmail.com',
-      status: 'Onboarded Users',
-      stage: 'Feeder',
-      date: '24',
-      amount: '#13,500',
-      action: 'View'
-    },
-    {
-      id: 6,
-      email: 'reg@gmail.com',
-      status: 'Onboarded Users',
-      stage: 'Feeder',
-      date: '24',
-      amount: '#13,500',
-      action: 'View'
-    }
-  ];
+  // Removed mock users - using real API data only
 
   useEffect(() => {
     fetchUsers();

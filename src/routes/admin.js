@@ -5,7 +5,7 @@ const { getDashboardStats } = require('../controllers/adminDashboardController')
 const { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, getProductStats } = require('../controllers/adminProductController');
 const { getUsers, getUserDetails, createUser, updateUser, deactivateUser } = require('../controllers/adminUserController');
 const { getOrders, updateOrderStatus, getOrderStats, bulkUpdateOrders } = require('../controllers/adminOrderController');
-const { getDepositRequests, approveDeposit } = require('../controllers/paymentController');
+const { getDepositRequests, approveDeposit, rejectDeposit } = require('../controllers/paymentController');
 const { getWithdrawals, updateWithdrawalStatus, bulkApproveWithdrawals, getWithdrawalStats } = require('../controllers/adminWithdrawalController');
 const { getStages, createStage, updateStage, getStageStats } = require('../controllers/adminStagesController');
 const { getEmailList, sendEmail, getEmailHistory, removeUserFromList } = require('../controllers/adminEmailController');
@@ -72,6 +72,7 @@ router.put('/orders/bulk-update', adminAuth, bulkUpdateOrders);
 // Deposit management (protected)
 router.get('/deposit-requests', adminAuth, getDepositRequests);
 router.post('/approve-deposit', adminAuth, approveDeposit);
+router.post('/reject-deposit', adminAuth, rejectDeposit);
 
 // Withdrawal management (protected)
 router.get('/withdrawals', adminAuth, getWithdrawals);

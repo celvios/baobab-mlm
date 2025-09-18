@@ -238,6 +238,15 @@ class ApiService {
     });
   }
 
+  // Products methods
+  async getProducts() {
+    return this.request('/products');
+  }
+
+  async getProductById(productId) {
+    return this.request(`/products/${productId}`);
+  }
+
   // Wallet purchase
   async purchaseWithWallet(orderData) {
     return this.request('/wallet/purchase', {
