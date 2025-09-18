@@ -25,7 +25,9 @@ export const SettingsProvider = ({ children }) => {
   const fetchSettings = async () => {
     try {
       const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/settings`, {
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      const apiUrl = baseUrl.endsWith('/api') ? `${baseUrl}/settings` : `${baseUrl}/api/settings`;
+      const response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -54,7 +56,9 @@ export const SettingsProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchSettings();
+    // Temporarily disable settings fetch to avoid 404 errors
+    // fetchSettings();
+    setSettings(prev => ({ ...prev, loading: false }));
   }, []);
 
   const updateSettings = (newSettings) => {
