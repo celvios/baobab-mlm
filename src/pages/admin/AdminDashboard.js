@@ -5,7 +5,7 @@ import { LineChart, BarChart } from '../../components/SimpleChart';
 import { useSettings } from '../../contexts/SettingsContext';
 
 // Use your live server API URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 console.log('API Base URL:', API_BASE_URL);
 
 export default function AdminDashboard() {
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
       console.log('Fetching from:', `${API_BASE_URL}/admin/dashboard/stats`);
       console.log('Token:', token);
       
-      const response = await fetch(`${API_BASE_URL}/api/admin/dashboard/stats`, {
+      const response = await fetch(`${API_BASE_URL}/admin/dashboard/stats`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
