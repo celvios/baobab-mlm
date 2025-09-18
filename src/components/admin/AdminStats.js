@@ -4,8 +4,8 @@ const AdminStats = ({ stats }) => {
   const statCards = [
     { title: 'Total Users', value: stats?.totalUsers || 0, icon: '👥' },
     { title: 'Active Orders', value: stats?.activeOrders || 0, icon: '📦' },
-    { title: 'Pending Withdrawals', value: stats?.pendingWithdrawals || 0, icon: '💰' },
-    { title: 'Total Revenue', value: `₦${(stats?.totalRevenue || 0).toLocaleString()}`, icon: '💳' }
+    { title: 'Deposit Requests', value: stats?.pendingPayments || 0, icon: '💳' },
+    { title: 'Pending Withdrawals', value: stats?.pendingWithdrawals || 0, icon: '💰' }
   ];
 
   return (
