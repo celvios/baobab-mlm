@@ -78,7 +78,7 @@ export default function AdminDashboard() {
           totalMlmEarnings: 0,
           pendingWithdrawals: 0,
           totalWithdrawalAmount: 0,
-          pendingPayments: 0
+          pendingDeposits: 0
         },
         salesDynamics: [],
         userGrowth: [],
@@ -174,12 +174,12 @@ export default function AdminDashboard() {
             </div>
             
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Pending Payments</h3>
+              <h3 className="text-gray-600 text-xs sm:text-sm mb-2">Deposit Requests</h3>
               <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-2">
-                {dashboardData?.stats?.pendingPayments || 0}
+                {dashboardData?.stats?.pendingDeposits || 0}
               </div>
               <p className="text-gray-500 text-xs sm:text-sm">
-                Payment Confirmations
+                Pending Deposits
               </p>
             </div>
             

@@ -71,12 +71,7 @@ export default function OrdersManagement() {
     }
   };
 
-  const [dummyOrders] = useState([
-    { id: 1, date: '01/01/25', orderNo: 'Ord39hdre...', customer: 'John Doe', product: 'Lentoc Tea', qty: 1, amount: 13500, status: 'Pending' },
-    { id: 2, date: '01/01/25', orderNo: 'Ord40kls...', customer: 'Jane Smith', product: 'Face Powder', qty: 2, amount: 12000, status: 'Processing' },
-    { id: 3, date: '01/01/25', orderNo: 'Ord41mno...', customer: 'Mike Johnson', product: 'Lip Gloss', qty: 1, amount: 12000, status: 'Delivered' },
-    { id: 4, date: '01/01/25', orderNo: 'Ord42pqr...', customer: 'Sarah Wilson', product: 'Organic Soap', qty: 3, amount: 18000, status: 'Shipped' }
-  ]);
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -172,7 +167,7 @@ export default function OrdersManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {(orders.length > 0 ? orders : dummyOrders).map((order, index) => (
+                {orders.map((order, index) => (
                   <tr key={order.id}>
                     <td className="px-6 py-4 text-sm">{index + 1}</td>
                     <td className="px-6 py-4 text-sm">{order.created_at ? new Date(order.created_at).toLocaleDateString() : order.date}</td>
@@ -220,6 +215,11 @@ export default function OrdersManagement() {
                 ))}
               </tbody>
             </table>
+            {orders.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-500">No orders found</div>
+              </div>
+            )}
           </div>
         </div>
       </div>

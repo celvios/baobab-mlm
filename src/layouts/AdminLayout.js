@@ -55,7 +55,7 @@ export default function AdminLayout() {
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: HomeIcon },
     { name: 'Users Management', href: '/admin/users', icon: UserGroupIcon },
-    { name: 'Deposit Requests', href: '/admin/deposits', icon: CurrencyDollarIcon },
+    { name: 'Deposit Requests', href: '/admin/deposit-requests', icon: CurrencyDollarIcon },
     { name: 'Product Management', href: '/admin/products', icon: ShoppingBagIcon },
     { name: 'Orders Management', href: '/admin/orders', icon: ClipboardDocumentListIcon },
     { name: 'Blog Management', href: '/admin/blog', icon: DocumentTextIcon },

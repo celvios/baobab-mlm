@@ -71,12 +71,7 @@ export default function CashoutRequests() {
     }
   };
 
-  const [dummyRequests] = useState([
-    { id: 1, user: 'John Doe', email: 'john@email.com', amount: 45000, stage: 'Bronze', date: '01/01/25', status: 'Pending', repurchase: 'Required' },
-    { id: 2, user: 'Jane Smith', email: 'jane@email.com', amount: 72000, stage: 'Silver', date: '01/01/25', status: 'Approved', repurchase: 'Completed' },
-    { id: 3, user: 'Mike Johnson', email: 'mike@email.com', amount: 18000, stage: 'Feeder', date: '31/12/24', status: 'Processing', repurchase: 'Completed' },
-    { id: 4, user: 'Sarah Wilson', email: 'sarah@email.com', amount: 288000, stage: 'Gold', date: '31/12/24', status: 'Pending', repurchase: 'Required' }
-  ]);
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -193,7 +188,7 @@ export default function CashoutRequests() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {(requests.length > 0 ? requests : dummyRequests).map((request, index) => (
+                {requests.map((request, index) => (
                   <tr key={request.id}>
                     <td className="px-6 py-4 text-sm">{index + 1}</td>
                     <td className="px-6 py-4">
@@ -261,6 +256,11 @@ export default function CashoutRequests() {
                 ))}
               </tbody>
             </table>
+            {requests.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-500">No withdrawal requests found</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
