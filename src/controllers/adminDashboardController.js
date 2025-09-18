@@ -5,6 +5,8 @@ const getDashboardStats = async (req, res) => {
     // Get comprehensive stats from user dashboard data sources
     const [
       usersResult, 
+      onboardedUsersResult,
+      pendingUsersResult,
       ordersResult, 
       productsResult, 
       earningsResult, 
@@ -15,6 +17,8 @@ const getDashboardStats = async (req, res) => {
       mlmEarningsResult
     ] = await Promise.all([
       pool.query('SELECT COUNT(*) as total_users FROM users'),
+      pool.query('SELECT COUNT(*) as onboarded_users FROM users WHERE status = \'active\' AND current_stage != \'feeder\''),
+      pool.query('SELECT COUNT(*) as pending_users FROM users WHERE status = \'pending\' OR current_stage = \'feeder\''),
       pool.query('SELECT COUNT(*) as total_orders, COALESCE(SUM(total_amount), 0) as total_sales FROM orders'),
       pool.query('SELECT COUNT(*) as total_products FROM products'),
       pool.query('SELECT COALESCE(SUM(amount), 0) as today_earnings FROM transactions WHERE DATE(created_at) = CURRENT_DATE AND type = \'commission\''),
@@ -90,6 +94,8 @@ const getDashboardStats = async (req, res) => {
       success: true,
       stats: {
         totalUsers: parseInt(usersResult.rows[0].total_users),
+        onboardedUsers: parseInt(onboardedUsersResult.rows[0].onboarded_users),
+        pendingUsers: parseInt(pendingUsersResult.rows[0].pending_users),
         totalOrders: parseInt(ordersResult.rows[0].total_orders),
         totalSales: parseFloat(ordersResult.rows[0].total_sales),
         totalRevenue: parseFloat(revenueResult.rows[0].total_revenue),

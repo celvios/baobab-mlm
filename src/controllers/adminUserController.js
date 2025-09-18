@@ -6,7 +6,11 @@ const getUsers = async (req, res) => {
     const { page = 1, limit = 10, status = '', search = '' } = req.query;
     const offset = (page - 1) * limit;
 
-    let query = 'SELECT id, full_name, email, phone, status, current_stage, created_at, is_active FROM users WHERE 1=1';
+    let query = `SELECT u.id, u.full_name, u.email, u.phone, u.status, u.current_stage, u.created_at, u.is_active,
+                        COALESCE(SUM(o.total_amount), 0) as total_orders
+                 FROM users u
+                 LEFT JOIN orders o ON u.id = o.user_id
+                 WHERE 1=1`;
     let countQuery = 'SELECT COUNT(*) FROM users WHERE 1=1';
     const params = [];
     let paramIndex = 1;
@@ -25,7 +29,8 @@ const getUsers = async (req, res) => {
       paramIndex++;
     }
 
-    query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    query += ` GROUP BY u.id, u.full_name, u.email, u.phone, u.status, u.current_stage, u.created_at, u.is_active
+               ORDER BY u.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     params.push(limit, offset);
 
     const [users, count] = await Promise.all([
