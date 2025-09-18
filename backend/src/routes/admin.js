@@ -4,6 +4,7 @@ const { adminLogin, adminLogout, getAdminProfile } = require('../controllers/adm
 const { getDashboardStats } = require('../controllers/adminDashboardController');
 const { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, getProductStats } = require('../controllers/adminProductController');
 const { getUsers, getUserDetails, createUser, updateUser, deactivateUser } = require('../controllers/adminUserController');
+const pool = require('../config/database');
 const { getOrders, updateOrderStatus, getOrderStats, bulkUpdateOrders } = require('../controllers/adminOrderController');
 const { getWithdrawals, updateWithdrawalStatus, bulkApproveWithdrawals, getWithdrawalStats } = require('../controllers/adminWithdrawalController');
 const { getStages, createStage, updateStage, getStageStats } = require('../controllers/adminStagesController');
@@ -73,6 +74,73 @@ router.get('/withdrawals', adminAuth, getWithdrawals);
 router.get('/withdrawals/stats', adminAuth, getWithdrawalStats);
 router.put('/withdrawals/:id', adminAuth, updateWithdrawalStatus);
 router.put('/withdrawals/bulk-approve', adminAuth, bulkApproveWithdrawals);
+
+// Deposit requests management (protected)
+router.get('/deposit-requests', adminAuth, async (req, res) => {
+  try {
+    const result = await require('../config/database').query(`
+      SELECT 
+        pc.id, pc.user_id, pc.amount, pc.proof_url, pc.created_at,
+        u.full_name, u.email
+      FROM payment_confirmations pc
+      JOIN users u ON pc.user_id = u.id
+      WHERE pc.status = 'pending' AND pc.type = 'deposit'
+      ORDER BY pc.created_at DESC
+    `);
+    res.json({ depositRequests: result.rows });
+  } catch (error) {
+    console.error('Get deposit requests error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+});
+
+router.post('/approve-deposit', adminAuth, async (req, res) => {
+  try {
+    const { requestId, userId, amount } = req.body;
+    const pool = require('../config/database');
+    
+    // Credit user wallet
+    await pool.query(
+      'UPDATE wallets SET balance = balance + $1 WHERE user_id = $2',
+      [amount, userId]
+    );
+    
+    // Create transaction record
+    await pool.query(
+      'INSERT INTO transactions (user_id, type, amount, description) VALUES ($1, $2, $3, $4)',
+      [userId, 'credit', amount, 'Wallet deposit approved']
+    );
+    
+    // Update payment confirmation status
+    await pool.query(
+      'UPDATE payment_confirmations SET status = $1, confirmed_by = $2, confirmed_at = CURRENT_TIMESTAMP WHERE id = $3',
+      ['confirmed', req.admin.id, requestId]
+    );
+    
+    res.json({ message: 'Deposit approved successfully' });
+  } catch (error) {
+    console.error('Approve deposit error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+});
+
+router.post('/reject-deposit', adminAuth, async (req, res) => {
+  try {
+    const { requestId } = req.body;
+    const pool = require('../config/database');
+    
+    // Update payment confirmation status
+    await pool.query(
+      'UPDATE payment_confirmations SET status = $1, confirmed_by = $2, confirmed_at = CURRENT_TIMESTAMP WHERE id = $3',
+      ['rejected', req.admin.id, requestId]
+    );
+    
+    res.json({ message: 'Deposit rejected' });
+  } catch (error) {
+    console.error('Reject deposit error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+});
 
 // MLM Stages & Rewards (protected)
 router.get('/stages', adminAuth, getStages);

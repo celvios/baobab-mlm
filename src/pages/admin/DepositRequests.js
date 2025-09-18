@@ -28,9 +28,13 @@ export default function DepositRequests() {
       const data = await response.json();
       if (response.ok) {
         setDepositRequests(data.depositRequests || []);
+      } else {
+        console.error('API Error:', data.message);
+        setDepositRequests([]);
       }
     } catch (error) {
       console.error('Failed to fetch deposit requests:', error);
+      setDepositRequests([]);
     } finally {
       setLoading(false);
     }

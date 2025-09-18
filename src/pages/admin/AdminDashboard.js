@@ -313,9 +313,7 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-};
-
-export default AdminDashboard;centOrders.map((order, index) => (
+}
                         <tr key={order.id} className="border-b border-gray-100">
                           <td className="py-4 text-sm">{index + 1}</td>
                           <td className="py-4 text-sm">

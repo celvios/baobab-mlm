@@ -34,8 +34,12 @@ export default function AdminLayout() {
     try {
       const token = localStorage.getItem('adminToken');
       if (token) {
-        await axios.post(`${API_BASE_URL}/admin/logout`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+        await fetch(`${API_BASE_URL}/admin/logout`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
       }
     } catch (error) {
