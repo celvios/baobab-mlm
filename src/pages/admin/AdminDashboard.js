@@ -54,7 +54,7 @@ export default function AdminDashboard() {
             totalMlmEarnings: 0,
             pendingWithdrawals: 0,
             totalWithdrawalAmount: 0,
-            pendingPayments: 0
+            pendingDeposits: 0
           },
           salesDynamics: [],
           userGrowth: [],
@@ -381,9 +381,9 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-center p-3 bg-red-50 rounded-lg">
                     <div className="text-lg font-bold text-red-600">
-                      {dashboardData?.stats?.pendingPayments || 0}
+                      {dashboardData?.stats?.pendingDeposits || 0}
                     </div>
-                    <div className="text-xs text-gray-600">Pending Payments</div>
+                    <div className="text-xs text-gray-600">Deposit Requests</div>
                   </div>
                 </div>
                 <button className="w-full bg-green-600 text-white py-2 sm:py-3 rounded-lg font-medium text-sm sm:text-base">
@@ -507,4 +507,5 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-}
+}" / /   C a c h e   b u s t :   $ ( d a t e ) "    
+ 
