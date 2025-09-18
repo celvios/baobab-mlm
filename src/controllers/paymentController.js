@@ -30,90 +30,62 @@ const uploadPaymentProof = async (req, res) => {
     const { amount } = req.body;
     const proofUrl = req.file ? `/uploads/payment-proofs/${req.file.filename}` : null;
 
-    // Check if this is a joining fee or deposit
-    const userResult = await pool.query('SELECT joining_fee_paid FROM users WHERE id = $1', [userId]);
-    const isJoiningFee = !userResult.rows[0]?.joining_fee_paid;
+    // Create deposit request
+    await pool.query(
+      'INSERT INTO deposit_requests (user_id, amount, proof_url, status) VALUES ($1, $2, $3, $4)',
+      [userId, amount, proofUrl, 'pending']
+    );
 
-    if (isJoiningFee) {
-      // Create payment confirmation record for joining fee
-      await pool.query(
-        'INSERT INTO payment_confirmations (user_id, amount, proof_url, type) VALUES ($1, $2, $3, $4)',
-        [userId, amount, proofUrl, 'joining_fee']
-      );
-
-      // Update user payment proof
-      await pool.query(
-        'UPDATE users SET payment_proof_url = $1, joining_fee_amount = $2 WHERE id = $3',
-        [proofUrl, amount, userId]
-      );
-    } else {
-      // Create deposit request
-      await pool.query(
-        'INSERT INTO payment_confirmations (user_id, amount, proof_url, type) VALUES ($1, $2, $3, $4)',
-        [userId, amount, proofUrl, 'deposit']
-      );
-    }
-
-    res.json({ message: 'Payment proof uploaded successfully' });
+    res.json({ message: 'Deposit request submitted successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-const confirmPayment = async (req, res) => {
+const approveDeposit = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { requestId, userId, amount } = req.body;
     const adminId = req.admin.id;
-    const { creditAmount, type = 'joining_fee' } = req.body;
-
-    if (type === 'joining_fee') {
-      // Update user as paid
-      await pool.query(
-        'UPDATE users SET joining_fee_paid = true, payment_confirmed_by = $1, payment_confirmed_at = CURRENT_TIMESTAMP WHERE id = $2',
-        [adminId, userId]
-      );
-    }
 
     // Credit user wallet
     await pool.query(
-      'UPDATE wallets SET balance = balance + $1, total_earned = total_earned + $1 WHERE user_id = $2',
-      [creditAmount, userId]
+      'UPDATE wallets SET balance = balance + $1 WHERE user_id = $2',
+      [amount, userId]
     );
 
     // Create transaction record
-    const description = type === 'joining_fee' ? 'Joining fee payment confirmed' : 'Wallet deposit confirmed';
     await pool.query(
-      'INSERT INTO transactions (user_id, type, amount, description) VALUES ($1, $2, $3, $4)',
-      [userId, 'credit', creditAmount, description]
+      'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+      [userId, 'credit', amount, 'Wallet deposit approved by admin', 'completed']
     );
 
-    // Update payment confirmation status
+    // Update deposit request status
     await pool.query(
-      'UPDATE payment_confirmations SET status = $1, confirmed_by = $2, confirmed_at = CURRENT_TIMESTAMP WHERE user_id = $3 AND status = $4 AND type = $5',
-      ['confirmed', adminId, userId, 'pending', type]
+      'UPDATE deposit_requests SET status = $1, approved_by = $2, approved_at = CURRENT_TIMESTAMP WHERE id = $3',
+      ['approved', adminId, requestId]
     );
 
-    res.json({ message: 'Payment confirmed and wallet credited' });
+    res.json({ message: 'Deposit approved and wallet credited' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-const getPendingPayments = async (req, res) => {
+const getDepositRequests = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        pc.id, pc.user_id, pc.amount, pc.proof_url, pc.type, pc.created_at,
+        dr.id, dr.user_id, dr.amount, dr.proof_url, dr.created_at,
         u.full_name, u.email
-      FROM payment_confirmations pc
-      JOIN users u ON pc.user_id = u.id
-      WHERE pc.status = 'pending'
-      ORDER BY pc.created_at DESC
+      FROM deposit_requests dr
+      JOIN users u ON dr.user_id = u.id
+      WHERE dr.status = 'pending'
+      ORDER BY dr.created_at DESC
     `);
 
-    res.json({ pendingPayments: result.rows });
+    res.json({ depositRequests: result.rows });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -122,6 +94,6 @@ const getPendingPayments = async (req, res) => {
 
 module.exports = { 
   uploadPaymentProof: [upload.single('paymentProof'), uploadPaymentProof],
-  confirmPayment,
-  getPendingPayments
+  approveDeposit,
+  getDepositRequests
 };

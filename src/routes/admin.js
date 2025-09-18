@@ -5,7 +5,7 @@ const { getDashboardStats } = require('../controllers/adminDashboardController')
 const { getProducts, createProduct, updateProduct, deleteProduct, getProductCategories, getProductStats } = require('../controllers/adminProductController');
 const { getUsers, getUserDetails, createUser, updateUser, deactivateUser } = require('../controllers/adminUserController');
 const { getOrders, updateOrderStatus, getOrderStats, bulkUpdateOrders } = require('../controllers/adminOrderController');
-const { getPendingPayments, confirmPayment } = require('../controllers/paymentController');
+const { getDepositRequests, approveDeposit } = require('../controllers/paymentController');
 const { getWithdrawals, updateWithdrawalStatus, bulkApproveWithdrawals, getWithdrawalStats } = require('../controllers/adminWithdrawalController');
 const { getStages, createStage, updateStage, getStageStats } = require('../controllers/adminStagesController');
 const { getEmailList, sendEmail, getEmailHistory, removeUserFromList } = require('../controllers/adminEmailController');
@@ -69,9 +69,9 @@ router.get('/orders/stats', adminAuth, getOrderStats);
 router.put('/orders/:id', adminAuth, updateOrderStatus);
 router.put('/orders/bulk-update', adminAuth, bulkUpdateOrders);
 
-// Payment management (protected)
-router.get('/pending-payments', adminAuth, getPendingPayments);
-router.post('/confirm-payment', adminAuth, confirmPayment);
+// Deposit management (protected)
+router.get('/deposit-requests', adminAuth, getDepositRequests);
+router.post('/approve-deposit', adminAuth, approveDeposit);
 
 // Withdrawal management (protected)
 router.get('/withdrawals', adminAuth, getWithdrawals);
