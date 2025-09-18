@@ -1,5 +1,34 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { NotificationProvider } from './components/NotificationSystem';
+import { AuthProvider, useAuth } from './hooks/useAuth';
+import { CartProvider } from './contexts/CartContext';
+import { SettingsProvider } from './contexts/SettingsContext';
+import DashboardLayout from './layouts/DashboardLayout';
+import AdminLayout from './layouts/AdminLayout';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import SecurityVerification from './pages/SecurityVerification';
+import ResetPassword from './pages/ResetPassword';
+import Dashboard from './pages/Dashboard';
+import Products from './pages/Products';
+import Orders from './pages/Orders';
+import Team from './pages/Team';
+import TeamTree from './pages/TeamTree';
+import Incentives from './pages/Incentives';
+import RankingsEarnings from './pages/RankingsEarnings';
+import History from './pages/History';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UsersManagement from './pages/admin/UsersManagement';
+import DepositRequests from './pages/admin/DepositRequests';
+import ProductManagement from './pages/admin/ProductManagement';
+import OrdersManagement from './pages/admin/OrdersManagement';
+import BlogManagement from './pages/admin/BlogManagement';
+import CashoutRequests from './pages/admin/CashoutRequests';
+import Emailer from './pages/admin/Emailer';
+import Settings from './pages/admin/Settings';
+import SkeletonLoader from './components/SkeletonLoader';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -28,37 +57,6 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-import { NotificationProvider } from './components/NotificationSystem';
-import { AuthProvider, useAuth } from './hooks/useAuth';
-import { CartProvider } from './contexts/CartContext';
-import { SettingsProvider } from './contexts/SettingsContext';
-import DashboardLayout from './layouts/DashboardLayout';
-import AdminLayout from './layouts/AdminLayout';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import SecurityVerification from './pages/SecurityVerification';
-import ResetPassword from './pages/ResetPassword';
-import Dashboard from './pages/Dashboard';
-import Products from './pages/Products';
-import Orders from './pages/Orders';
-import Team from './pages/Team';
-import TeamTree from './pages/TeamTree';
-import Incentives from './pages/Incentives';
-import RankingsEarnings from './pages/RankingsEarnings';
-import History from './pages/History';
-
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import UsersManagement from './pages/admin/UsersManagement';
-import DepositRequests from './pages/admin/DepositRequests';
-import ProductManagement from './pages/admin/ProductManagement';
-import OrdersManagement from './pages/admin/OrdersManagement';
-import BlogManagement from './pages/admin/BlogManagement';
-import CashoutRequests from './pages/admin/CashoutRequests';
-import Emailer from './pages/admin/Emailer';
-
-import Settings from './pages/admin/Settings';
-import SkeletonLoader from './components/SkeletonLoader';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
