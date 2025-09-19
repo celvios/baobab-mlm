@@ -151,14 +151,6 @@ export default function Dashboard() {
     return colors[index % colors.length];
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
@@ -168,6 +160,14 @@ export default function Dashboard() {
     };
     loadProducts();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   // Use real order and transaction data
   const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');

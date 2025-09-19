@@ -25,7 +25,7 @@ export default function Team() {
         setEarnings(totalEarnings);
         
         // Check feeder requirements from database: registration fee + product purchase
-        const meetsFeederReq = (profile?.registrationFeePaid && profile?.productPurchasePaid) || false;
+        const meetsFeederReq = (userProfile?.registrationFeePaid && userProfile?.productPurchasePaid) || false;
         const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]'); // Keep for display
         setHasFeederRequirements(meetsFeederReq);
         setOrders(userOrders);
