@@ -7,7 +7,8 @@ const { getUsers, getUserDetails, createUser, updateUser, deactivateUser } = req
 const pool = require('../config/database');
 const { getOrders, updateOrderStatus, getOrderStats, bulkUpdateOrders } = require('../controllers/adminOrderController');
 const { getWithdrawals, updateWithdrawalStatus, bulkApproveWithdrawals, getWithdrawalStats } = require('../controllers/adminWithdrawalController');
-const { getStages, createStage, updateStage, getStageStats } = require('../controllers/adminStagesController');
+const { getStages, getStageStats } = require('../controllers/adminStagesController');
+
 const { getEmailList, sendEmail, getEmailHistory, removeUserFromList } = require('../controllers/adminEmailController');
 const { getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, toggleAnnouncementStatus, getAnnouncementStats } = require('../controllers/adminAnnouncementController');
 const { getBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost, publishBlogPost, getBlogStats } = require('../controllers/adminBlogController');
@@ -142,15 +143,11 @@ router.post('/reject-deposit', adminAuth, async (req, res) => {
   }
 });
 
-// MLM Stages & Rewards (protected)
+
+
+// MLM Stages & Rewards (read-only)
 router.get('/stages', adminAuth, getStages);
 router.get('/stages/stats', adminAuth, getStageStats);
-router.post('/stages', adminAuth, [
-  body('name').trim().isLength({ min: 1 }),
-  body('level').isInt({ min: 1 }),
-  body('reward_amount').isNumeric()
-], createStage);
-router.put('/stages/:id', adminAuth, updateStage);
 
 // Email Management (protected)
 router.get('/emails', adminAuth, getEmailList);

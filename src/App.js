@@ -26,6 +26,7 @@ import ProductManagement from './pages/admin/ProductManagement';
 import OrdersManagement from './pages/admin/OrdersManagement';
 import BlogManagement from './pages/admin/BlogManagement';
 import CashoutRequests from './pages/admin/CashoutRequests';
+import StagesRewards from './pages/admin/StagesRewards';
 import Emailer from './pages/admin/Emailer';
 import Settings from './pages/admin/Settings';
 import SkeletonLoader from './components/SkeletonLoader';
@@ -129,6 +130,7 @@ function AppContent() {
             <Route path="orders" element={<OrdersManagement />} />
             <Route path="blog" element={<BlogManagement />} />
             <Route path="cashout" element={<CashoutRequests />} />
+            <Route path="stages" element={<StagesRewards />} />
             <Route path="emailer" element={<Emailer />} />
             <Route path="settings" element={<Settings />} />
           </Route>

@@ -60,6 +60,7 @@ export default function AdminLayout() {
     { name: 'Orders Management', href: '/admin/orders', icon: ClipboardDocumentListIcon },
     { name: 'Blog Management', href: '/admin/blog', icon: DocumentTextIcon },
     { name: 'Cashout Requests', href: '/admin/cashout', icon: CurrencyDollarIcon },
+    { name: 'Stages & Rewards', href: '/admin/stages', icon: GiftIcon },
     { name: 'Emailer', href: '/admin/emailer', icon: SpeakerWaveIcon },
     { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon },
   ];
