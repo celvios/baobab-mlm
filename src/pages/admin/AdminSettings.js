@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiUser, FiBuilding, FiLock, FiMapPin, FiSave } from 'react-icons/fi';
+import { FiUser, FiHome, FiLock, FiMapPin, FiSave } from 'react-icons/fi';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -367,7 +367,7 @@ const AdminSettings = () => {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            <FiBuilding className="inline w-4 h-4 mr-2" />
+            <FiHome className="inline w-4 h-4 mr-2" />
             Business Details
           </button>
           <button
