@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   FiHome, FiUsers, FiShoppingBag, FiPackage, FiDollarSign,
-  FiMail, FiFileText, FiMegaphone, FiAward, FiSettings,
+  FiMail, FiFileText, FiAward, FiSettings,
   FiMenu, FiX, FiLogOut, FiUser, FiSpeaker
 } from 'react-icons/fi';
 
