@@ -33,6 +33,7 @@ import {
   AdminStagesRewards,
   AdminSettings
 } from './pages/admin';
+import AdminSetup from './pages/admin/AdminSetup';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -104,6 +105,7 @@ function AppContent() {
           <Route path="/logout" element={<Logout />} />
           
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/setup" element={<AdminSetup />} />
           
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
