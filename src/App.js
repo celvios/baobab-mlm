@@ -5,7 +5,6 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './contexts/CartContext';
 // import { SettingsProvider } from './contexts/SettingsContext';
 import DashboardLayout from './layouts/DashboardLayout';
-import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SecurityVerification from './pages/SecurityVerification';
@@ -19,17 +18,6 @@ import TeamTree from './pages/TeamTree';
 import Incentives from './pages/Incentives';
 import RankingsEarnings from './pages/RankingsEarnings';
 import History from './pages/History';
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import UsersManagement from './pages/admin/UsersManagement';
-import DepositRequests from './pages/admin/DepositRequests';
-import ProductManagement from './pages/admin/ProductManagement';
-import OrdersManagement from './pages/admin/OrdersManagement';
-import BlogManagement from './pages/admin/BlogManagement';
-import CashoutRequests from './pages/admin/CashoutRequests';
-import StagesRewards from './pages/admin/StagesRewards';
-import Emailer from './pages/admin/Emailer';
-import Settings from './pages/admin/Settings';
 import SkeletonLoader from './components/SkeletonLoader';
 
 class ErrorBoundary extends React.Component {
@@ -74,15 +62,7 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-const AdminProtectedRoute = ({ children }) => {
-  const isAdminAuthenticated = !!localStorage.getItem('adminToken');
-  return isAdminAuthenticated ? children : <Navigate to="/admin/login" replace />;
-};
 
-const AdminPublicRoute = ({ children }) => {
-  const isAdminAuthenticated = !!localStorage.getItem('adminToken');
-  return isAdminAuthenticated ? <Navigate to="/admin" replace /> : children;
-};
 
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -109,7 +89,7 @@ function AppContent() {
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
           <Route path="/logout" element={<Logout />} />
           
-          <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route path="/" element={<ProtectedRoute><div>Dashboard Layout Needed</div></ProtectedRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="products" element={<Products />} />
@@ -119,22 +99,6 @@ function AppContent() {
             <Route path="incentives" element={<Incentives />} />
             <Route path="rankings-earnings" element={<RankingsEarnings />} />
             <Route path="history" element={<History />} />
-          </Route>
-          
-          <Route path="/admin/login" element={<AdminPublicRoute><AdminLogin /></AdminPublicRoute>} />
-          
-          <Route path="/admin" element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<UsersManagement />} />
-            <Route path="deposit-requests" element={<DepositRequests />} />
-            <Route path="products" element={<ProductManagement />} />
-            <Route path="orders" element={<OrdersManagement />} />
-            <Route path="blog" element={<BlogManagement />} />
-            <Route path="cashout" element={<CashoutRequests />} />
-            <Route path="stages" element={<StagesRewards />} />
-            <Route path="emailer" element={<Emailer />} />
-            <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
       </div>
