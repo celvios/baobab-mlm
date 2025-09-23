@@ -47,8 +47,7 @@ export default function AdminLayout() {
     } finally {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
-      addNotification('Logged out successfully', 'success');
-      navigate('/admin/login');
+      navigate('/logout');
     }
   };
 

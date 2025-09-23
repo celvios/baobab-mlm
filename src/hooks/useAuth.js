@@ -69,10 +69,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = (navigate) => {
     apiService.logout();
     setUser(null);
     localStorage.removeItem('user');
+    if (navigate) {
+      navigate('/logout', { replace: true });
+    }
   };
 
   const value = {

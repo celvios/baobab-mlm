@@ -16,6 +16,7 @@ import {
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../hooks/useAuth';
 import CartDropdown from '../components/CartDropdown';
 import PageLoader from '../components/PageLoader';
 
@@ -36,6 +37,7 @@ export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { cartCount } = useCart();
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchUserProfile();
@@ -51,12 +53,7 @@ export default function DashboardLayout() {
   };
 
   const handleLogout = () => {
-    // Use API service logout method
-    apiService.logout();
-    // Clear any stored data
-    localStorage.clear();
-    // Navigate to login
-    navigate('/login', { replace: true });
+    logout(navigate);
   };
 
   return (

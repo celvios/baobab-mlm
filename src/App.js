@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import SecurityVerification from './pages/SecurityVerification';
 import ResetPassword from './pages/ResetPassword';
+import Logout from './pages/Logout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
@@ -106,6 +107,7 @@ function AppContent() {
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/security-verification" element={<PublicRoute><SecurityVerification /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+          <Route path="/logout" element={<Logout />} />
           
           <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
