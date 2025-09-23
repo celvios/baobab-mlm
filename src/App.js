@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './contexts/CartContext';
 // import { SettingsProvider } from './contexts/SettingsContext';
 import DashboardLayout from './layouts/DashboardLayout';
-import DashboardLayout from './layouts/DashboardLayout';
+import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SecurityVerification from './pages/SecurityVerification';
@@ -20,6 +20,19 @@ import Incentives from './pages/Incentives';
 import RankingsEarnings from './pages/RankingsEarnings';
 import History from './pages/History';
 import SkeletonLoader from './components/SkeletonLoader';
+import {
+  AdminLogin,
+  AdminDashboard,
+  AdminUsersManagement,
+  AdminOrdersManagement,
+  AdminProductManagement,
+  AdminWithdrawals,
+  AdminEmailer,
+  AdminBlogManagement,
+  AdminAnnouncements,
+  AdminStagesRewards,
+  AdminSettings
+} from './pages/admin';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -89,6 +102,21 @@ function AppContent() {
           <Route path="/security-verification" element={<PublicRoute><SecurityVerification /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
           <Route path="/logout" element={<Logout />} />
+          
+          <Route path="/admin/login" element={<AdminLogin />} />
+          
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsersManagement />} />
+            <Route path="orders" element={<AdminOrdersManagement />} />
+            <Route path="products" element={<AdminProductManagement />} />
+            <Route path="withdrawals" element={<AdminWithdrawals />} />
+            <Route path="emailer" element={<AdminEmailer />} />
+            <Route path="blog" element={<AdminBlogManagement />} />
+            <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="stages" element={<AdminStagesRewards />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
           
           <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
