@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { XMarkIcon, CurrencyDollarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import ProcessLoader from './ProcessLoader';
 import { useNotification } from './NotificationSystem';
+import apiService from '../services/api';
 
 const nigerianBanks = [
   // Commercial Banks
