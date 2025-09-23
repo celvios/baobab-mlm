@@ -15,9 +15,27 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://baobab-frontend.vercel.app', 'https://baobab-mlm.vercel.app']
-    : ['http://localhost:3000', 'http://localhost:3002', 'http://192.168.1.84:3002'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = process.env.NODE_ENV === 'production' 
+      ? [/\.vercel\.app$/, 'https://baobab-frontend.vercel.app', 'https://baobab-mlm.vercel.app']
+      : ['http://localhost:3000', 'http://localhost:3002', 'http://192.168.1.84:3002'];
+    
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return origin === allowedOrigin;
+      }
+      return allowedOrigin.test(origin);
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
