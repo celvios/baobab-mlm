@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './contexts/CartContext';
 // import { SettingsProvider } from './contexts/SettingsContext';
 import DashboardLayout from './layouts/DashboardLayout';
+import DashboardLayout from './layouts/DashboardLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SecurityVerification from './pages/SecurityVerification';
@@ -89,7 +90,7 @@ function AppContent() {
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
           <Route path="/logout" element={<Logout />} />
           
-          <Route path="/" element={<ProtectedRoute><div>Dashboard Layout Needed</div></ProtectedRoute>}>
+          <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="products" element={<Products />} />

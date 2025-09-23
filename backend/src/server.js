@@ -9,7 +9,7 @@ const withdrawalRoutes = require('./routes/withdrawal');
 const marketUpdatesRoutes = require('./routes/marketUpdates');
 const mlmRoutes = require('./routes/mlm');
 const ordersRoutes = require('./routes/orders');
-const adminRoutes = require('./routes/admin');
+
 
 const app = express();
 
@@ -39,7 +39,7 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/bank', require('./routes/bank'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/wallet', require('./routes/wallet'));
-app.use('/api/admin', adminRoutes);
+
 
 // Health check
 app.get('/api/health', (req, res) => {
