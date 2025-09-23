@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
 import { useCart } from '../contexts/CartContext';
 import { MinusIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import apiService from '../services/api';

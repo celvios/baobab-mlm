@@ -146,7 +146,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
   });
   const [verifyingAccount, setVerifyingAccount] = useState(false);
   const [accountVerified, setAccountVerified] = useState(false);
-  const [resolvedAccountName, setResolvedAccountName] = useState('');
+  const [, setResolvedAccountName] = useState('');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});

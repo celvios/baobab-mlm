@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { XMarkIcon as X, ChevronLeftIcon as ChevronLeft, ChevronRightIcon as ChevronRight } from '@heroicons/react/24/outline';
-import { CheckCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon as X, ChevronLeftIcon as ChevronLeft, ChevronRightIcon as ChevronRight, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { products as allProducts } from '../data/products';
 import apiService from '../services/api';
 import { useNotification } from './NotificationSystem';
@@ -99,11 +98,7 @@ const PurchaseProductModal = ({ isOpen, onClose, userProfile }) => {
     onClose();
   };
 
-  const copyAccountNumber = () => {
-    navigator.clipboard.writeText('0012345678');
-  };
-  
-  const isNewUser = JSON.parse(localStorage.getItem('userOrders') || '[]').length === 0;
+
 
   if (!isOpen) return null;
 
