@@ -20,19 +20,8 @@ import Incentives from './pages/Incentives';
 import RankingsEarnings from './pages/RankingsEarnings';
 import History from './pages/History';
 import SkeletonLoader from './components/SkeletonLoader';
-import {
-  AdminLogin,
-  AdminDashboard,
-  AdminUsersManagement,
-  AdminOrdersManagement,
-  AdminProductManagement,
-  AdminWithdrawals,
-  AdminEmailer,
-  AdminBlogManagement,
-  AdminAnnouncements,
-  AdminStagesRewards,
-  AdminSettings
-} from './pages/admin';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminTest from './pages/admin/AdminTest';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -106,16 +95,8 @@ function AppContent() {
           <Route path="/admin/login" element={<AdminLogin />} />
           
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<AdminUsersManagement />} />
-            <Route path="orders" element={<AdminOrdersManagement />} />
-            <Route path="products" element={<AdminProductManagement />} />
-            <Route path="withdrawals" element={<AdminWithdrawals />} />
-            <Route path="emailer" element={<AdminEmailer />} />
-            <Route path="blog" element={<AdminBlogManagement />} />
-            <Route path="announcements" element={<AdminAnnouncements />} />
-            <Route path="stages" element={<AdminStagesRewards />} />
-            <Route path="settings" element={<AdminSettings />} />
+            <Route index element={<AdminTest />} />
+            <Route path="*" element={<AdminTest />} />
           </Route>
           
           <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
