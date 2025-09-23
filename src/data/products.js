@@ -6,6 +6,7 @@ const fallbackProducts = [
     id: 1,
     name: 'Lentoc Tea',
     description: 'A revitalizing herbal infusion blending powerful botanicals for total-body wellness and natural energy boost.',
+    basePrice: 20, // USD base price
     price: 3000,
     image: '/images/IMG_4996 2.png',
     bgColor: 'from-pink-100 to-orange-100',
@@ -17,6 +18,7 @@ const fallbackProducts = [
     id: 2,
     name: 'Baobab Fruit Powder',
     description: 'A tangy, versatile powder to upgrade your smoothies, baked goods and meals with superfood nutrition.',
+    basePrice: 20, // USD base price
     price: 3000,
     image: '/images/IMG_4996 2.png',
     bgColor: 'from-amber-100 to-yellow-100',
@@ -28,6 +30,7 @@ const fallbackProducts = [
     id: 3,
     name: 'Baobab Lip Gloss',
     description: 'Nourishing lip gloss infused with baobab oil for smooth, hydrated and naturally glossy lips.',
+    basePrice: 40, // USD base price
     price: 6000,
     image: '/images/IMG_4996 2.png',
     bgColor: 'from-rose-100 to-pink-100',
@@ -39,6 +42,7 @@ const fallbackProducts = [
     id: 4,
     name: 'Baobab Natural Soap',
     description: 'Gentle cleansing soap made with pure baobab oil for soft, nourished and healthy-looking skin.',
+    basePrice: 25, // USD base price
     price: 4000,
     image: '/images/IMG_4996 2.png',
     bgColor: 'from-green-100 to-emerald-100',
@@ -50,6 +54,7 @@ const fallbackProducts = [
     id: 5,
     name: 'Baobab Facial Oil',
     description: 'Premium facial oil extracted from baobab seeds for deep nourishment and anti-aging benefits.',
+    basePrice: 25, // USD base price
     price: 4000,
     image: '/images/IMG_4996 2.png',
     bgColor: 'from-purple-100 to-violet-100',
@@ -61,6 +66,7 @@ const fallbackProducts = [
     id: 6,
     name: 'Baobab & Mixed Berries Juice',
     description: 'A refreshing antioxidant-packed drink with a fusion of baobab and nutrient-rich berries.',
+    basePrice: 15, // USD base price
     price: 2500,
     image: '/images/6241b2d41327941b39683db0_Peach%20Gradient%20Image%20(1)-p-800.png',
     bgColor: 'from-red-100 to-pink-100',
