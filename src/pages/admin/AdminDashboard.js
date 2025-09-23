@@ -15,43 +15,19 @@ const AdminDashboard = () => {
   }, []);
 
   const fetchDashboardData = async () => {
-    try {
-      const baseURL = process.env.NODE_ENV === 'production' 
-        ? 'https://baobab-backend.onrender.com'
-        : 'http://localhost:5000';
-      
-      // Use the existing health endpoint to test connection
-      const healthRes = await fetch(`${baseURL}/api/health`);
-      
-      if (healthRes.ok) {
-        // For now, show sample data until backend is fully working
-        setStats({
-          totalUsers: 156,
-          totalOrders: 89,
-          totalRevenue: 2450000,
-          pendingWithdrawals: 12
-        });
-        setRecentActivity([
-          { description: 'New user registered: Sarah Johnson', created_at: new Date(Date.now() - 3600000).toISOString() },
-          { description: 'Order completed: #ORD-2024-001', created_at: new Date(Date.now() - 7200000).toISOString() },
-          { description: 'Withdrawal request: ₦75,000', created_at: new Date(Date.now() - 10800000).toISOString() },
-          { description: 'New user registered: Michael Chen', created_at: new Date(Date.now() - 14400000).toISOString() }
-        ]);
-      } else {
-        throw new Error('Backend not responding');
-      }
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      // Keep stats at 0 if API fails
-      setStats({
-        totalUsers: 0,
-        totalOrders: 0,
-        totalRevenue: 0,
-        pendingWithdrawals: 0
-      });
-      setRecentActivity([]);
-    }
+    // Show realistic sample data for demo
+    setStats({
+      totalUsers: 156,
+      totalOrders: 89,
+      totalRevenue: 2450000,
+      pendingWithdrawals: 12
+    });
+    setRecentActivity([
+      { description: 'New user registered: Sarah Johnson', created_at: new Date(Date.now() - 3600000).toISOString() },
+      { description: 'Order completed: #ORD-2024-001', created_at: new Date(Date.now() - 7200000).toISOString() },
+      { description: 'Withdrawal request: ₦75,000', created_at: new Date(Date.now() - 10800000).toISOString() },
+      { description: 'New user registered: Michael Chen', created_at: new Date(Date.now() - 14400000).toISOString() }
+    ]);
   };
 
   const StatCard = ({ icon: Icon, title, value, color }) => (
