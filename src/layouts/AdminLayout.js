@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   FiHome, FiUsers, FiShoppingBag, FiPackage, FiDollarSign,
   FiMail, FiFileText, FiMegaphone, FiAward, FiSettings,
   FiMenu, FiX, FiLogOut, FiUser, FiSpeaker
 } from 'react-icons/fi';
 
-const AdminLayout = ({ children }) => {
+const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -138,7 +138,7 @@ const AdminLayout = ({ children }) => {
 
         {/* Main content */}
         <main className="flex-1">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>
