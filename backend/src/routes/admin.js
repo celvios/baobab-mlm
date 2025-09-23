@@ -25,6 +25,28 @@ router.get('/stats', adminAuth, async (req, res) => {
   }
 });
 
+// Test endpoint without auth
+router.get('/test-stats', async (req, res) => {
+  try {
+    const [usersResult, ordersResult, revenueResult, withdrawalsResult] = await Promise.all([
+      pool.query('SELECT COUNT(*) as count FROM users WHERE role != $1', ['admin']),
+      pool.query('SELECT COUNT(*) as count FROM orders'),
+      pool.query('SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE order_status = $1', ['completed']),
+      pool.query('SELECT COUNT(*) as count FROM withdrawal_requests WHERE status = $1', ['pending'])
+    ]);
+
+    res.json({
+      totalUsers: parseInt(usersResult.rows[0].count),
+      totalOrders: parseInt(ordersResult.rows[0].count),
+      totalRevenue: parseFloat(revenueResult.rows[0].total),
+      pendingWithdrawals: parseInt(withdrawalsResult.rows[0].count)
+    });
+  } catch (error) {
+    console.error('Error fetching test stats:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Recent activity
 router.get('/recent-activity', adminAuth, async (req, res) => {
   try {

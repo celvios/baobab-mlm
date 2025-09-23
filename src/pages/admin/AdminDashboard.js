@@ -21,9 +21,7 @@ const AdminDashboard = () => {
         : 'http://localhost:5000';
       
       const [statsRes, activityRes] = await Promise.all([
-        fetch(`${baseURL}/api/admin/stats`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        }),
+        fetch(`${baseURL}/api/admin/test-stats`),
         fetch(`${baseURL}/api/admin/recent-activity`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         })
@@ -40,18 +38,14 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      // Set mock data for now
+      // Keep stats at 0 if API fails
       setStats({
-        totalUsers: 1247,
-        totalOrders: 892,
-        totalRevenue: 15680000,
-        pendingWithdrawals: 23
+        totalUsers: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingWithdrawals: 0
       });
-      setRecentActivity([
-        { description: 'New user registered: John Doe', created_at: new Date().toISOString() },
-        { description: 'New order placed: #ORD001', created_at: new Date().toISOString() },
-        { description: 'Withdrawal request: ₦50,000', created_at: new Date().toISOString() }
-      ]);
+      setRecentActivity([]);
     }
   };
 
