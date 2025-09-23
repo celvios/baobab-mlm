@@ -73,12 +73,12 @@ const AdminLayout = () => {
 
       {/* Static sidebar for desktop */}
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-        <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
+        <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-black">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
-              <h1 className="text-xl font-bold text-green-600">Baobab Admin</h1>
+              <h1 className="text-xl font-bold text-white">Baobab Admin</h1>
             </div>
-            <nav className="mt-5 flex-1 px-2 bg-white space-y-1">
+            <nav className="mt-5 flex-1 px-2 bg-black space-y-1">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
@@ -87,11 +87,11 @@ const AdminLayout = () => {
                     to={item.href}
                     className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
                       isActive
-                        ? 'bg-green-100 text-green-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-green-600 text-white'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                     }`}
                   >
-                    <item.icon className={`mr-3 flex-shrink-0 h-6 w-6 ${isActive ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                    <item.icon className={`mr-3 flex-shrink-0 h-6 w-6 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'}`} />
                     {item.name}
                   </Link>
                 );

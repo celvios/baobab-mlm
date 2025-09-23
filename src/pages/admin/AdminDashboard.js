@@ -16,14 +16,33 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('/api/admin/dashboard', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      const data = await response.json();
-      setStats(data.stats);
-      setRecentActivity(data.recentActivity);
+      const [statsRes, activityRes] = await Promise.all([
+        fetch('/api/admin/stats', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        }),
+        fetch('/api/admin/recent-activity', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        })
+      ]);
+      
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
+      }
+      
+      if (activityRes.ok) {
+        const activityData = await activityRes.json();
+        setRecentActivity(activityData.activities || []);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Set fallback data
+      setStats({
+        totalUsers: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingWithdrawals: 0
+      });
     }
   };
 
