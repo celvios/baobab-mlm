@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FiHome, FiUsers, FiShoppingBag, FiPackage, FiDollarSign,
   FiMail, FiFileText, FiMegaphone, FiAward, FiSettings,
-  FiMenu, FiX, FiLogOut, FiUser
+  FiMenu, FiX, FiLogOut, FiUser, FiSpeaker
 } from 'react-icons/fi';
 
 const AdminLayout = ({ children }) => {
@@ -19,7 +19,7 @@ const AdminLayout = ({ children }) => {
     { name: 'Cashout Requests', href: '/admin/withdrawals', icon: FiDollarSign },
     { name: 'Email Management', href: '/admin/emailer', icon: FiMail },
     { name: 'Blog Management', href: '/admin/blog', icon: FiFileText },
-    { name: 'Announcements', href: '/admin/announcements', icon: FiMegaphone },
+    { name: 'Announcements', href: '/admin/announcements', icon: FiSpeaker },
     { name: 'Stages & Rewards', href: '/admin/stages', icon: FiAward },
     { name: 'Settings', href: '/admin/settings', icon: FiSettings },
   ];

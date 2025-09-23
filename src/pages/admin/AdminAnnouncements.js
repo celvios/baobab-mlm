@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiEye, FiMegaphone } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiEye, FiSpeaker } from 'react-icons/fi';
 
 const AdminAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -195,7 +195,7 @@ const AdminAnnouncements = () => {
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-4">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <FiMegaphone className="w-5 h-5 text-blue-600" />
+                  <FiSpeaker className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
