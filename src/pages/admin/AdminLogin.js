@@ -18,7 +18,7 @@ const AdminLogin = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch('https://baobab-backend.onrender.com/api/admin/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

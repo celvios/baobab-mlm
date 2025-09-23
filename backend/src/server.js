@@ -57,6 +57,7 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/bank', require('./routes/bank'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/wallet', require('./routes/wallet'));
+app.use('/api/admin/auth', require('./routes/adminAuth'));
 app.use('/api/admin', require('./routes/admin'));
 
 
