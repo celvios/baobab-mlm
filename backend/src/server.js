@@ -65,6 +65,38 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Baobab MLM API is running', timestamp: new Date().toISOString() });
 });
 
+// Admin stats endpoint
+app.get('/api/admin-stats', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    const [usersResult, ordersResult, revenueResult, withdrawalsResult] = await Promise.all([
+      client.query('SELECT COUNT(*) as count FROM users WHERE role != $1', ['admin']),
+      client.query('SELECT COUNT(*) as count FROM orders'),
+      client.query('SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE order_status = $1', ['completed']),
+      client.query('SELECT COUNT(*) as count FROM withdrawal_requests WHERE status = $1', ['pending'])
+    ]);
+
+    client.release();
+    
+    res.json({
+      totalUsers: parseInt(usersResult.rows[0].count),
+      totalOrders: parseInt(ordersResult.rows[0].count),
+      totalRevenue: parseFloat(revenueResult.rows[0].total),
+      pendingWithdrawals: parseInt(withdrawalsResult.rows[0].count)
+    });
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Settings endpoint for frontend
 app.get('/api/settings', async (req, res) => {
   const { Pool } = require('pg');
