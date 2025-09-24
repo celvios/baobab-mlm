@@ -106,7 +106,7 @@ const AdminWithdrawals = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredWithdrawals.map((withdrawal) => (
+              {filteredWithdrawals.length > 0 ? filteredWithdrawals.map((withdrawal) => (
                 <tr key={withdrawal.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -170,7 +170,13 @@ const AdminWithdrawals = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                    No cashout requests found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

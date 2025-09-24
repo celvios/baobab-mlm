@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiMail, FiSend, FiTrash2, FiEye, FiPlus } from 'react-icons/fi';
+import { FiMail, FiSend, FiTrash2, FiEye } from 'react-icons/fi';
 import apiService from '../../services/api';
 
 const AdminEmailer = () => {
@@ -10,13 +10,10 @@ const AdminEmailer = () => {
   const [loading, setLoading] = useState(false);
 
   const ComposeEmail = () => {
-    const [emailData, setEmailData] = useState({
-      subject: '',
-      message: '',
-      category: 'all',
-      selectedUsers: []
-    });
-    const [selectedUsersList, setSelectedUsersList] = useState([]);
+    const [subject, setSubject] = useState('');
+    const [message, setMessage] = useState('');
+    const [category, setCategory] = useState('all');
+    const [selectedUsers, setSelectedUsers] = useState([]);
 
     useEffect(() => {
       fetchAllUsers();
@@ -36,14 +33,16 @@ const AdminEmailer = () => {
       setLoading(true);
       try {
         await apiService.sendEmail({
-          subject: emailData.subject,
-          message: emailData.message,
-          category: emailData.category,
-          selectedUsers: emailData.selectedUsers
+          subject: subject,
+          message: message,
+          category: category,
+          selectedUsers: selectedUsers
         });
         alert('Email sent successfully!');
-        setEmailData({ subject: '', message: '', category: 'all', selectedUsers: [] });
-        setSelectedUsersList([]);
+        setSubject('');
+        setMessage('');
+        setCategory('all');
+        setSelectedUsers([]);
         setActiveTab('history');
       } catch (error) {
         console.error('Error sending email:', error);
@@ -53,17 +52,6 @@ const AdminEmailer = () => {
       }
     };
 
-    const handleUserSelection = (userId) => {
-      const updatedSelected = emailData.selectedUsers.includes(userId)
-        ? emailData.selectedUsers.filter(id => id !== userId)
-        : [...emailData.selectedUsers, userId];
-      
-      setEmailData({...emailData, selectedUsers: updatedSelected});
-      
-      const selectedUsers = allUsers.filter(user => updatedSelected.includes(user.id));
-      setSelectedUsersList(selectedUsers);
-    };
-
     return (
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h2 className="text-lg font-semibold mb-4">Compose Email</h2>
@@ -71,8 +59,8 @@ const AdminEmailer = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Recipients</label>
             <select
-              value={emailData.category}
-              onChange={(e) => setEmailData({...emailData, category: e.target.value})}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="all">All Users ({allUsers.length})</option>
@@ -88,8 +76,8 @@ const AdminEmailer = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
             <input
               type="text"
-              value={emailData.subject || ''}
-              onChange={(e) => setEmailData({...emailData, subject: e.target.value})}
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Enter email subject"
               required
@@ -99,36 +87,14 @@ const AdminEmailer = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
             <textarea
-              value={emailData.message || ''}
-              onChange={(e) => setEmailData({...emailData, message: e.target.value}))
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               rows="8"
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Enter your message here..."
               required
             />
           </div>
-          
-          {emailData.category === 'all' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Specific Users (Optional)</label>
-              <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2">
-                {allUsers.map(user => (
-                  <label key={user.id} className="flex items-center space-x-2 p-1 hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      checked={emailData.selectedUsers.includes(user.id)}
-                      onChange={() => handleUserSelection(user.id)}
-                      className="rounded"
-                    />
-                    <span className="text-sm">{user.full_name} ({user.email})</span>
-                  </label>
-                ))}
-              </div>
-              {selectedUsersList.length > 0 && (
-                <p className="text-sm text-gray-600 mt-2">{selectedUsersList.length} users selected</p>
-              )}
-            </div>
-          )}
           
           <button
             type="submit"
@@ -226,19 +192,6 @@ const AdminEmailer = () => {
       }
     };
 
-    const removeFromMailingList = async (userId) => {
-      if (window.confirm('Remove this user from mailing list?')) {
-        try {
-          await apiService.removeUserFromEmailList(userId);
-          fetchMailingList();
-          alert('User removed from mailing list');
-        } catch (error) {
-          console.error('Error removing user from mailing list:', error);
-          alert('Failed to remove user: ' + error.message);
-        }
-      }
-    };
-
     return (
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="p-6 border-b">
@@ -251,7 +204,6 @@ const AdminEmailer = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscribed</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -267,7 +219,6 @@ const AdminEmailer = () => {
                       <div className="ml-3">
                         <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
-                        <div className="text-xs text-gray-400">{user.current_stage || 'No Stage'}</div>
                       </div>
                     </div>
                   </td>
@@ -280,14 +231,6 @@ const AdminEmailer = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(user.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => removeFromMailingList(user.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <FiTrash2 className="w-4 h-4" />
-                    </button>
                   </td>
                 </tr>
               ))}
