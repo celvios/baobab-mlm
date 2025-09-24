@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
+import apiService from '../../services/api';
 
 const AdminLogin = () => {
   const [formData, setFormData] = useState({
@@ -18,24 +19,12 @@ const AdminLogin = () => {
     setError('');
 
     try {
-      const response = await fetch('https://baobab-backend.onrender.com/api/admin/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('adminToken', data.token);
-        navigate('/admin');
-      } else {
-        setError(data.message || 'Login failed');
-      }
+      const data = await apiService.adminLogin(formData.email, formData.password);
+      localStorage.setItem('adminToken', data.token);
+      localStorage.setItem('adminUser', JSON.stringify(data.admin));
+      navigate('/admin');
     } catch (error) {
-      setError('Network error. Please try again.');
+      setError(error.message || 'Login failed');
     } finally {
       setLoading(false);
     }

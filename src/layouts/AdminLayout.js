@@ -5,11 +5,25 @@ import {
   FiMail, FiFileText, FiAward, FiSettings,
   FiMenu, FiX, FiLogOut, FiUser, FiSpeaker
 } from 'react-icons/fi';
+import { useAdminAuth } from '../hooks/useAdminAuth';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated, loading, admin, logout } = useAdminAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: FiHome },
@@ -25,8 +39,7 @@ const AdminLayout = () => {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    navigate('/admin/login');
+    logout();
   };
 
   return (
@@ -122,7 +135,7 @@ const AdminLayout = () => {
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <FiUser className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm text-gray-700">Admin User</span>
+                  <span className="text-sm text-gray-700">{admin?.fullName || admin?.email || 'Admin'}</span>
                 </div>
                 <button
                   onClick={handleLogout}
