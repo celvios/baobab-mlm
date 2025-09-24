@@ -207,6 +207,48 @@ router.post('/users/:userId/credit-test', async (req, res) => {
   }
 });
 
+// Credit user with notification
+router.post('/users/:userId/credit-with-notification', async (req, res) => {
+  const { userId } = req.params;
+  const { amount } = req.body;
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Get user info
+    const userResult = await client.query('SELECT full_name FROM users WHERE id = $1', [userId]);
+    const userName = userResult.rows[0]?.full_name || 'User';
+    
+    // Update wallet
+    await client.query(
+      'UPDATE wallets SET balance = balance + $1, total_earned = total_earned + $1 WHERE user_id = $2',
+      [amount, userId]
+    );
+    
+    // Create transaction
+    await client.query(
+      'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+      [userId, 'credit', amount, 'Admin credit', 'completed']
+    );
+    
+    // Create market update for user
+    await client.query(
+      'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+      [userId, 'Account Credited', `Your account has been credited with ₦${amount.toLocaleString()}. Your new balance is now available for use.`, 'credit']
+    );
+    
+    await client.query('COMMIT');
+    res.json({ message: 'User credited successfully with notification' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error crediting user with notification:', error);
+    res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
+  }
+});
+
 // Credit user
 router.post('/users/:userId/credit', adminAuth, async (req, res) => {
   const { userId } = req.params;
@@ -349,10 +391,11 @@ router.get('/recent-activity', adminAuth, async (req, res) => {
       WHERE role != 'admin'
       UNION ALL
       SELECT 
-        'User credited: ₦' || amount::text as description,
-        created_at
-      FROM transactions
-      WHERE type = 'credit'
+        'Credited ' || u.full_name || ': ₦' || t.amount::text as description,
+        t.created_at
+      FROM transactions t
+      JOIN users u ON t.user_id = u.id
+      WHERE t.type = 'credit' AND t.description = 'Admin credit'
       ORDER BY created_at DESC
       LIMIT 10
     `);

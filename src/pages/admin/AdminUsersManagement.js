@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiFilter, FiEye, FiEdit, FiTrash2, FiPlus, FiDollarSign, FiX } from 'react-icons/fi';
 import apiService from '../../services/api';
+import Toast from '../../components/Toast';
 
 const AdminUsersManagement = () => {
   const [users, setUsers] = useState([]);
@@ -19,6 +20,7 @@ const AdminUsersManagement = () => {
     creditAmount: 0
   });
   const [creditAmount, setCreditAmount] = useState('');
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -53,13 +55,15 @@ const AdminUsersManagement = () => {
   const handleCreditUser = async (e) => {
     e.preventDefault();
     try {
-      await apiService.creditUser(creditUser.id, parseFloat(creditAmount));
+      await apiService.creditUserWithNotification(creditUser.id, parseFloat(creditAmount));
+      setToast({ message: `Successfully credited ₦${parseFloat(creditAmount).toLocaleString()} to ${creditUser.full_name}`, type: 'success' });
       setShowCreditModal(false);
       setCreditAmount('');
       setCreditUser(null);
       fetchUsers();
     } catch (error) {
       console.error('Error crediting user:', error);
+      setToast({ message: 'Failed to credit user. Please try again.', type: 'error' });
     }
   };
 
@@ -410,6 +414,13 @@ const AdminUsersManagement = () => {
             </form>
           </div>
         </div>
+      )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

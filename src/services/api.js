@@ -298,6 +298,13 @@ class ApiService {
     });
   }
 
+  async creditUserWithNotification(userId, amount) {
+    return this.request(`/admin/users/${userId}/credit-with-notification`, {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+  }
+
   async getAdminOrders() {
     return this.request('/admin/orders');
   }
