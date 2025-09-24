@@ -13,6 +13,7 @@ router.get('/stats', adminAuth, async (req, res) => {
       pool.query(`
         SELECT COALESCE(
           (SELECT SUM(total_amount) FROM orders WHERE order_status = 'completed') +
+          (SELECT SUM(total_earned) FROM wallets) +
           (SELECT SUM(amount) FROM transactions WHERE type = 'credit' AND status = 'completed'),
           0
         ) as total
