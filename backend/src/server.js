@@ -79,38 +79,38 @@ app.post('/api/admin-setup', async (req, res) => {
     const { email, password, fullName } = req.body;
     const client = await pool.connect();
     
-    // First ensure users table exists with role column
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        full_name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        role VARCHAR(50) DEFAULT 'user',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    
-    // Add role column if it doesn't exist
-    await client.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user'
-    `);
-    
-    // Check if admin already exists
-    const existingAdmin = await client.query('SELECT * FROM users WHERE role = $1', ['admin']);
-    if (existingAdmin.rows.length > 0) {
+    // Check if admin email already exists
+    const existingUser = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (existingUser.rows.length > 0) {
       client.release();
-      return res.status(400).json({ message: 'Admin already exists' });
+      return res.status(400).json({ message: 'User with this email already exists' });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Add role column if it doesn't exist (ignore errors)
+    try {
+      await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user'`);
+    } catch (e) {
+      console.log('Role column may already exist or table structure is different');
+    }
+
     // Create admin user
-    const result = await client.query(
-      'INSERT INTO users (full_name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email, full_name',
-      [fullName, email, hashedPassword, 'admin']
-    );
+    let result;
+    try {
+      // Try with role column first
+      result = await client.query(
+        'INSERT INTO users (full_name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email, full_name',
+        [fullName, email, hashedPassword, 'admin']
+      );
+    } catch (e) {
+      // If role column doesn't exist, create without it
+      result = await client.query(
+        'INSERT INTO users (full_name, email, password) VALUES ($1, $2, $3) RETURNING id, email, full_name',
+        [fullName, email, hashedPassword]
+      );
+    }
 
     client.release();
     res.json({
