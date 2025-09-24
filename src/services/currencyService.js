@@ -1,4 +1,4 @@
-const API_KEY = 'e3a4b965095aaeaeec259e9a';
+const API_KEY = process.env.REACT_APP_EXCHANGE_API_KEY || 'e3a4b965095aaeaeec259e9a';
 const BASE_URL = 'https://v6.exchangerate-api.com/v6';
 
 // African countries and their currencies
