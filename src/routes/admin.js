@@ -102,7 +102,7 @@ router.post('/stages', adminAuth, [
 router.put('/stages/:id', adminAuth, updateStage);
 
 // Email Management (protected)
-router.get('/emails', adminAuth, getEmailList);
+router.get('/emails/list', adminAuth, getEmailList);
 router.get('/emails/history', adminAuth, getEmailHistory);
 router.get('/emails/stats', adminAuth, getEmailStats);
 router.post('/emails/send', adminAuth, [
@@ -114,7 +114,7 @@ router.post('/emails/bulk-send', adminAuth, [
   body('message').trim().isLength({ min: 1 })
 ], sendBulkEmail);
 router.post('/emails/test', adminAuth, testEmailConnection);
-router.delete('/emails/users/:id', adminAuth, removeUserFromList);
+router.delete('/emails/remove-user/:id', adminAuth, removeUserFromList);
 
 // Announcements (protected)
 router.get('/announcements', adminAuth, getAnnouncements);

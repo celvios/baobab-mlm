@@ -340,6 +340,28 @@ class ApiService {
     });
   }
 
+  // Admin Email methods
+  async getEmailList(category = 'all', search = '') {
+    return this.request(`/admin/emails/list?category=${category}&search=${search}`);
+  }
+
+  async sendEmail(emailData) {
+    return this.request('/admin/emails/send', {
+      method: 'POST',
+      body: JSON.stringify(emailData),
+    });
+  }
+
+  async getEmailHistory(page = 1, limit = 10) {
+    return this.request(`/admin/emails/history?page=${page}&limit=${limit}`);
+  }
+
+  async removeUserFromEmailList(userId) {
+    return this.request(`/admin/emails/remove-user/${userId}`, {
+      method: 'DELETE',
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');

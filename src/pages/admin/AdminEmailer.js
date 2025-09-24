@@ -1,35 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { FiMail, FiSend, FiTrash2, FiEye, FiPlus } from 'react-icons/fi';
+import apiService from '../../services/api';
 
 const AdminEmailer = () => {
   const [activeTab, setActiveTab] = useState('compose');
   const [emailHistory, setEmailHistory] = useState([]);
   const [mailingList, setMailingList] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const ComposeEmail = () => {
     const [emailData, setEmailData] = useState({
       subject: '',
       message: '',
-      recipients: 'all'
+      category: 'all',
+      selectedUsers: []
     });
+    const [selectedUsersList, setSelectedUsersList] = useState([]);
+
+    useEffect(() => {
+      fetchAllUsers();
+    }, []);
+
+    const fetchAllUsers = async () => {
+      try {
+        const response = await apiService.getEmailList();
+        setAllUsers(response.emails || []);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
 
     const handleSendEmail = async (e) => {
       e.preventDefault();
+      setLoading(true);
       try {
-        await fetch('/api/admin/emails/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-          },
-          body: JSON.stringify(emailData)
+        await apiService.sendEmail({
+          subject: emailData.subject,
+          message: emailData.message,
+          category: emailData.category,
+          selectedUsers: emailData.selectedUsers
         });
         alert('Email sent successfully!');
-        setEmailData({ subject: '', message: '', recipients: 'all' });
+        setEmailData({ subject: '', message: '', category: 'all', selectedUsers: [] });
+        setSelectedUsersList([]);
         setActiveTab('history');
       } catch (error) {
         console.error('Error sending email:', error);
+        alert('Failed to send email: ' + error.message);
+      } finally {
+        setLoading(false);
       }
+    };
+
+    const handleUserSelection = (userId) => {
+      const updatedSelected = emailData.selectedUsers.includes(userId)
+        ? emailData.selectedUsers.filter(id => id !== userId)
+        : [...emailData.selectedUsers, userId];
+      
+      setEmailData({...emailData, selectedUsers: updatedSelected});
+      
+      const selectedUsers = allUsers.filter(user => updatedSelected.includes(user.id));
+      setSelectedUsersList(selectedUsers);
     };
 
     return (
@@ -39,14 +71,16 @@ const AdminEmailer = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Recipients</label>
             <select
-              value={emailData.recipients}
-              onChange={(e) => setEmailData({...emailData, recipients: e.target.value})}
+              value={emailData.category}
+              onChange={(e) => setEmailData({...emailData, category: e.target.value})}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="all">All Users</option>
-              <option value="active">Active Users Only</option>
-              <option value="inactive">Inactive Users Only</option>
-              <option value="custom">Custom List</option>
+              <option value="all">All Users ({allUsers.length})</option>
+              <option value="feeder">Feeder Level</option>
+              <option value="bronze">Bronze Level</option>
+              <option value="silver">Silver Level</option>
+              <option value="gold">Gold Level</option>
+              <option value="diamond">Diamond Level</option>
             </select>
           </div>
           
@@ -74,12 +108,35 @@ const AdminEmailer = () => {
             />
           </div>
           
+          {emailData.category === 'all' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Specific Users (Optional)</label>
+              <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-2">
+                {allUsers.map(user => (
+                  <label key={user.id} className="flex items-center space-x-2 p-1 hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={emailData.selectedUsers.includes(user.id)}
+                      onChange={() => handleUserSelection(user.id)}
+                      className="rounded"
+                    />
+                    <span className="text-sm">{user.fullName} ({user.email})</span>
+                  </label>
+                ))}
+              </div>
+              {selectedUsersList.length > 0 && (
+                <p className="text-sm text-gray-600 mt-2">{selectedUsersList.length} users selected</p>
+              )}
+            </div>
+          )}
+          
           <button
             type="submit"
-            className="bg-green-600 text-white px-6 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700"
+            disabled={loading}
+            className="bg-green-600 text-white px-6 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700 disabled:opacity-50"
           >
             <FiSend className="w-4 h-4" />
-            <span>Send Email</span>
+            <span>{loading ? 'Sending...' : 'Send Email'}</span>
           </button>
         </form>
       </div>
@@ -93,11 +150,8 @@ const AdminEmailer = () => {
 
     const fetchEmailHistory = async () => {
       try {
-        const response = await fetch('/api/admin/emails/history', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-        });
-        const data = await response.json();
-        setEmailHistory(data.emails);
+        const response = await apiService.getEmailHistory();
+        setEmailHistory(response.emails || []);
       } catch (error) {
         console.error('Error fetching email history:', error);
       }
@@ -127,10 +181,10 @@ const AdminEmailer = () => {
                     <div className="text-sm text-gray-500">{email.message.substring(0, 50)}...</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {email.recipient_count} users
+                    {email.sentCount || email.recipientCount} users
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(email.sent_at).toLocaleDateString()}
+                    {new Date(email.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -165,11 +219,8 @@ const AdminEmailer = () => {
 
     const fetchMailingList = async () => {
       try {
-        const response = await fetch('/api/admin/emails/mailing-list', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-        });
-        const data = await response.json();
-        setMailingList(data.users);
+        const response = await apiService.getEmailList();
+        setMailingList(response.emails || []);
       } catch (error) {
         console.error('Error fetching mailing list:', error);
       }
@@ -178,13 +229,12 @@ const AdminEmailer = () => {
     const removeFromMailingList = async (userId) => {
       if (window.confirm('Remove this user from mailing list?')) {
         try {
-          await fetch(`/api/admin/emails/mailing-list/${userId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-          });
+          await apiService.removeUserFromEmailList(userId);
           fetchMailingList();
+          alert('User removed from mailing list');
         } catch (error) {
           console.error('Error removing user from mailing list:', error);
+          alert('Failed to remove user: ' + error.message);
         }
       }
     };
@@ -211,24 +261,25 @@ const AdminEmailer = () => {
                     <div className="flex items-center">
                       <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                         <span className="text-green-600 text-sm font-medium">
-                          {user.full_name.charAt(0).toUpperCase()}
+                          {user.fullName.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
+                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-xs text-gray-400">{user.level} • {user.referralCount} referrals</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      user.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {user.status}
+                      {user.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(user.created_at).toLocaleDateString()}
+                    {new Date(user.joinedAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
