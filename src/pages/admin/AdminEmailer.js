@@ -88,8 +88,8 @@ const AdminEmailer = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
             <input
               type="text"
-              value={emailData.subject}
-              onChange={(e) => setEmailData({...emailData, subject: e.target.value})}
+              value={emailData.subject || ''}
+              onChange={(e) => setEmailData(prev => ({...prev, subject: e.target.value}))}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Enter email subject"
               required
@@ -99,8 +99,8 @@ const AdminEmailer = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
             <textarea
-              value={emailData.message}
-              onChange={(e) => setEmailData({...emailData, message: e.target.value})}
+              value={emailData.message || ''}
+              onChange={(e) => setEmailData(prev => ({...prev, message: e.target.value}))}
               rows="8"
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Enter your message here..."
