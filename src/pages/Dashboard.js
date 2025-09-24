@@ -42,6 +42,29 @@ export default function Dashboard() {
       return '0';
     }
   };
+
+  const getCurrencyInfo = () => {
+    const locale = navigator.language || 'en-US';
+    const country = locale.split('-')[1] || 'US';
+    
+    const currencyMap = {
+      'NG': { symbol: '₦', rate: 1500, code: 'NGN' },
+      'US': { symbol: '$', rate: 1, code: 'USD' },
+      'GB': { symbol: '£', rate: 0.8, code: 'GBP' },
+      'CA': { symbol: 'C$', rate: 1.35, code: 'CAD' },
+      'AU': { symbol: 'A$', rate: 1.5, code: 'AUD' },
+      'ZA': { symbol: 'R', rate: 18, code: 'ZAR' },
+      'KE': { symbol: 'KSh', rate: 150, code: 'KES' },
+      'GH': { symbol: '₵', rate: 12, code: 'GHS' }
+    };
+    
+    return currencyMap[country] || currencyMap['NG']; // Default to Nigeria
+  };
+
+  const convertToLocalCurrency = (usdAmount) => {
+    const currency = getCurrencyInfo();
+    return (usdAmount * currency.rate).toLocaleString();
+  };
   
   useEffect(() => {
     fetchDashboardData();
@@ -113,28 +136,34 @@ export default function Dashboard() {
   };
 
   const handleAddToCart = (product) => {
-    // Get existing cart from localStorage
-    const existingCart = JSON.parse(localStorage.getItem('userCart') || '[]');
-    
-    // Check if product already exists in cart
-    const existingItem = existingCart.find(item => item.id === product.id);
-    
-    if (existingItem) {
-      // Increase quantity
-      existingItem.quantity += 1;
-    } else {
-      // Add new item
-      existingCart.push({
-        ...product,
-        quantity: 1
-      });
+    try {
+      // Get existing cart from localStorage
+      const existingCart = JSON.parse(localStorage.getItem('userCart') || '[]');
+      
+      // Check if product already exists in cart
+      const existingItem = existingCart.find(item => item.id === product.id);
+      
+      if (existingItem) {
+        // Increase quantity
+        existingItem.quantity += 1;
+      } else {
+        // Add new item
+        existingCart.push({
+          ...product,
+          quantity: 1
+        });
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('userCart', JSON.stringify(existingCart));
+      
+      // Show success toast
+      setShowToast(true);
+      
+      console.log('Product added to cart:', product.name);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
     }
-    
-    // Save to localStorage
-    localStorage.setItem('userCart', JSON.stringify(existingCart));
-    
-    // Show success toast
-    setShowToast(true);
   };
 
   // Show payment upload modal if user hasn't paid joining fee
@@ -229,8 +258,8 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <p className="text-white/70 text-sm mb-1">Wallet Balance</p>
-                      <p className="text-3xl font-bold mb-1">₦{formatCurrency(userProfile?.wallet?.balance)}</p>
-                      <p className="text-white/70 text-sm">${((userProfile?.wallet?.balance || 0) / 1500).toFixed(2)}</p>
+                      <p className="text-3xl font-bold mb-1">{getCurrencyInfo().symbol}{convertToLocalCurrency((userProfile?.wallet?.balance || 0) / 1500)}</p>
+                      <p className="text-white/70 text-sm">${((userProfile?.wallet?.balance || 0) / 1500).toFixed(2)} USD</p>
                     </div>
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <CurrencyDollarIcon className="h-5 w-5" />
@@ -278,8 +307,8 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-900 mb-3">MLM Earnings</h2>
               <div className="bg-gray-100 p-6 rounded-2xl shadow-card h-48 flex flex-col justify-between">
                 <div>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">₦{formatCurrency(userProfile?.wallet?.mlmEarnings)}</p>
-                  <p className="text-gray-500 text-sm">${((userProfile?.wallet?.mlmEarnings || 0) / 1500).toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">{getCurrencyInfo().symbol}{convertToLocalCurrency((userProfile?.wallet?.mlmEarnings || 0) / 1500)}</p>
+                  <p className="text-gray-500 text-sm">${((userProfile?.wallet?.mlmEarnings || 0) / 1500).toFixed(2)} USD</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
                 <Link to="/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
@@ -323,9 +352,14 @@ export default function Dashboard() {
                       <p className="text-gray-600 text-xs sm:text-sm mb-3">{product.description}</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
-                      <p className="text-base sm:text-lg font-semibold text-gray-900">${formatCurrency(product.price)}</p>
+                      <p className="text-base sm:text-lg font-semibold text-gray-900">${(product.basePrice || product.price || 0).toLocaleString()}</p>
                       <button 
-                        onClick={() => handleAddToCart(product)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Add to cart clicked for:', product.name);
+                          handleAddToCart(product);
+                        }}
                         className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
                       >
                         Add to Cart
