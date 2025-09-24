@@ -11,7 +11,7 @@ const AdminSetup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://baobab-backend.onrender.com/api/admin/auth/setup', {
+      const response = await fetch('https://baobab-backend.onrender.com/api/admin-setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

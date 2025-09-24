@@ -66,6 +66,46 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Baobab MLM API is running', timestamp: new Date().toISOString() });
 });
 
+// Admin setup endpoint
+app.post('/api/admin-setup', async (req, res) => {
+  const { Pool } = require('pg');
+  const bcrypt = require('bcryptjs');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const { email, password, fullName } = req.body;
+    const client = await pool.connect();
+    
+    // Check if admin already exists
+    const existingAdmin = await client.query('SELECT * FROM users WHERE role = $1', ['admin']);
+    if (existingAdmin.rows.length > 0) {
+      client.release();
+      return res.status(400).json({ message: 'Admin already exists' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create admin user
+    const result = await client.query(
+      'INSERT INTO users (full_name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, email, full_name',
+      [fullName, email, hashedPassword, 'admin']
+    );
+
+    client.release();
+    res.json({
+      message: 'Admin created successfully',
+      admin: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Admin setup error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Admin stats endpoint
 app.get('/api/admin-stats', async (req, res) => {
   const { Pool } = require('pg');
