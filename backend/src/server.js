@@ -59,6 +59,7 @@ app.use('/api/payment', require('./routes/payment'));
 app.use('/api/wallet', require('./routes/wallet'));
 app.use('/api/admin/auth', require('./routes/adminAuth'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/products', require('./routes/products'));
 
 
 // Health check
@@ -451,6 +452,30 @@ app.get('/api/setup-admin', async (req, res) => {
     res.json({ message: 'Admin setup completed successfully!' });
   } catch (error) {
     console.error('Admin setup error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fix market_updates table
+app.get('/api/fix-market-updates', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Add is_read column if it doesn't exist
+    await client.query(`
+      ALTER TABLE market_updates ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE
+    `);
+    
+    client.release();
+    res.json({ message: 'Market updates table fixed successfully!' });
+  } catch (error) {
+    console.error('Fix market updates error:', error);
     res.status(500).json({ error: error.message });
   }
 });
