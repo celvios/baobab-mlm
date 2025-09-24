@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import apiService from '../../services/api';
 
 const AdminSetup = () => {
   const [formData, setFormData] = useState({
@@ -7,27 +8,18 @@ const AdminSetup = () => {
     fullName: 'Admin User'
   });
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      // Test if backend is working
-      const healthResponse = await fetch('https://baobab-backend.onrender.com/api/health');
-      if (!healthResponse.ok) {
-        throw new Error('Backend is not responding');
-      }
-      
-      // Setup database first
-      const setupResponse = await fetch('https://baobab-backend.onrender.com/api/setup-database');
-      const setupData = await setupResponse.json();
-      
-      // Create admin using existing endpoint
-      const adminResponse = await fetch('https://baobab-backend.onrender.com/api/setup-admin');
-      const adminData = await adminResponse.json();
-      
-      setMessage('Admin setup completed! Use email: admin@baobabmlm.com, password: password');
+      const response = await apiService.setupAdmin(formData);
+      setMessage('Admin created successfully! You can now login with your credentials.');
     } catch (error) {
-      setMessage('Error: ' + error.message + '. Backend may be down.');
+      setMessage('Error: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,8 +52,12 @@ const AdminSetup = () => {
             className="w-full p-2 border rounded"
             required
           />
-          <button type="submit" className="w-full bg-green-600 text-white p-2 rounded">
-            Create Admin
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-green-600 text-white p-2 rounded disabled:opacity-50"
+          >
+            {loading ? 'Creating Admin...' : 'Create Admin'}
           </button>
         </form>
         {message && <p className="mt-4 text-center">{message}</p>}

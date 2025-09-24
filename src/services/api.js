@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://baobab-backend.onrender.com';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://baobab-mlm.onrender.com';
 
 class ApiService {
   constructor() {
@@ -253,6 +253,27 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
+  }
+
+  // Admin methods
+  async setupAdmin(adminData) {
+    return this.request('/admin/auth/setup', {
+      method: 'POST',
+      body: JSON.stringify(adminData),
+    });
+  }
+
+  async adminLogin(email, password) {
+    const response = await this.request('/admin/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    
+    if (response.token) {
+      this.setToken(response.token);
+    }
+    
+    return response;
   }
 
   logout() {
