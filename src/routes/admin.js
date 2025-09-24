@@ -105,10 +105,7 @@ router.put('/stages/:id', adminAuth, updateStage);
 router.get('/emails/list', adminAuth, getEmailList);
 router.get('/emails/history', adminAuth, getEmailHistory);
 router.get('/emails/stats', adminAuth, getEmailStats);
-router.post('/emails/send', adminAuth, [
-  body('subject').trim().isLength({ min: 1 }),
-  body('message').trim().isLength({ min: 1 })
-], sendEmail);
+router.post('/emails/send', adminAuth, sendEmail);
 router.post('/emails/bulk-send', adminAuth, [
   body('subject').trim().isLength({ min: 1 }),
   body('message').trim().isLength({ min: 1 })
