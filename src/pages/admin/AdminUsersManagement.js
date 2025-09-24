@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiEye, FiEdit, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiEye, FiEdit, FiTrash2, FiPlus, FiDollarSign, FiX } from 'react-icons/fi';
+import apiService from '../../services/api';
 
 const AdminUsersManagement = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showNewUserForm, setShowNewUserForm] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
+  const [creditUser, setCreditUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    password: '',
+    creditAmount: 0
+  });
+  const [creditAmount, setCreditAmount] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -13,14 +26,44 @@ const AdminUsersManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      const data = await response.json();
-      setUsers(data.users);
+      setLoading(true);
+      const data = await apiService.getUsers();
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      await apiService.createUser(newUserData);
+      setShowNewUserForm(false);
+      setNewUserData({ fullName: '', email: '', phone: '', password: '', creditAmount: 0 });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error creating user:', error);
+    }
+  };
+
+  const handleCreditUser = async (e) => {
+    e.preventDefault();
+    try {
+      await apiService.creditUser(creditUser.id, parseFloat(creditAmount));
+      setShowCreditModal(false);
+      setCreditAmount('');
+      setCreditUser(null);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error crediting user:', error);
+    }
+  };
+
+  const openCreditModal = (user) => {
+    setCreditUser(user);
+    setShowCreditModal(true);
   };
 
   const filteredUsers = users.filter(user => {
@@ -55,7 +98,10 @@ const AdminUsersManagement = () => {
           <h1 className="text-2xl font-bold text-gray-900">Users Management</h1>
           <p className="text-gray-600">Manage all system users</p>
         </div>
-        <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700">
+        <button 
+          onClick={() => setShowNewUserForm(true)}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700"
+        >
           <FiPlus className="w-4 h-4" />
           <span>Add New User</span>
         </button>
@@ -134,22 +180,28 @@ const AdminUsersManagement = () => {
                     {user.team_size || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₦{(user.total_earnings || 0).toLocaleString()}
+                    ₦{(user.balance || 0).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleViewUser(user)}
                         className="text-blue-600 hover:text-blue-900"
+                        title="View User"
                       >
                         <FiEye className="w-4 h-4" />
                       </button>
-                      <button className="text-green-600 hover:text-green-900">
-                        <FiEdit className="w-4 h-4" />
+                      <button 
+                        onClick={() => openCreditModal(user)}
+                        className="text-green-600 hover:text-green-900"
+                        title="Credit User"
+                      >
+                        <FiDollarSign className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeactivateUser(user.id)}
                         className="text-red-600 hover:text-red-900"
+                        title="Deactivate User"
                       >
                         <FiTrash2 className="w-4 h-4" />
                       </button>
@@ -161,6 +213,106 @@ const AdminUsersManagement = () => {
           </table>
         </div>
       </div>
+
+      {/* New User Form Modal */}
+      {showNewUserForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Add New User</h3>
+              <button onClick={() => setShowNewUserForm(false)}>
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={newUserData.fullName}
+                onChange={(e) => setNewUserData({...newUserData, fullName: e.target.value})}
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={newUserData.email}
+                onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="tel"
+                placeholder="Phone"
+                value={newUserData.phone}
+                onChange={(e) => setNewUserData({...newUserData, phone: e.target.value})}
+                className="w-full p-2 border rounded"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={newUserData.password}
+                onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
+                className="w-full p-2 border rounded"
+                required
+              />
+              <input
+                type="number"
+                placeholder="Credit Amount (₦)"
+                value={newUserData.creditAmount}
+                onChange={(e) => setNewUserData({...newUserData, creditAmount: parseFloat(e.target.value) || 0})}
+                className="w-full p-2 border rounded"
+              />
+              <div className="flex space-x-2">
+                <button type="submit" className="flex-1 bg-green-600 text-white p-2 rounded hover:bg-green-700">
+                  Create User
+                </button>
+                <button type="button" onClick={() => setShowNewUserForm(false)} className="flex-1 bg-gray-300 text-gray-700 p-2 rounded hover:bg-gray-400">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Credit User Modal */}
+      {showCreditModal && creditUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Credit User</h3>
+              <button onClick={() => setShowCreditModal(false)}>
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">Credit amount for:</p>
+              <p className="font-semibold">{creditUser.full_name}</p>
+              <p className="text-sm text-gray-500">{creditUser.email}</p>
+            </div>
+            <form onSubmit={handleCreditUser} className="space-y-4">
+              <input
+                type="number"
+                placeholder="Amount to credit (₦)"
+                value={creditAmount}
+                onChange={(e) => setCreditAmount(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+                min="1"
+              />
+              <div className="flex space-x-2">
+                <button type="submit" className="flex-1 bg-green-600 text-white p-2 rounded hover:bg-green-700">
+                  Credit User
+                </button>
+                <button type="button" onClick={() => setShowCreditModal(false)} className="flex-1 bg-gray-300 text-gray-700 p-2 rounded hover:bg-gray-400">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

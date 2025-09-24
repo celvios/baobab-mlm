@@ -9,7 +9,13 @@ router.get('/stats', adminAuth, async (req, res) => {
     const [usersResult, ordersResult, revenueResult, withdrawalsResult] = await Promise.all([
       pool.query('SELECT COUNT(*) as count FROM users WHERE role != $1', ['admin']),
       pool.query('SELECT COUNT(*) as count FROM orders'),
-      pool.query('SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status = $1', ['completed']),
+      pool.query(`
+        SELECT COALESCE(
+          (SELECT SUM(total_amount) FROM orders WHERE order_status = 'completed') +
+          (SELECT SUM(amount) FROM transactions WHERE type = 'credit' AND status = 'completed'),
+          0
+        ) as total
+      `),
       pool.query('SELECT COUNT(*) as count FROM withdrawal_requests WHERE status = $1', ['pending'])
     ]);
 
@@ -47,6 +53,99 @@ router.get('/test-stats', async (req, res) => {
   }
 });
 
+// Get all users
+router.get('/users', adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.*, w.balance, w.total_earned
+      FROM users u
+      LEFT JOIN wallets w ON u.id = w.user_id
+      WHERE u.role != 'admin'
+      ORDER BY u.created_at DESC
+    `);
+    res.json({ users: result.rows });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Create new user
+router.post('/users', adminAuth, async (req, res) => {
+  const { fullName, email, phone, password, creditAmount } = req.body;
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create user
+    const userResult = await client.query(
+      'INSERT INTO users (full_name, email, phone, password) VALUES ($1, $2, $3, $4) RETURNING *',
+      [fullName, email, phone, hashedPassword]
+    );
+    
+    const user = userResult.rows[0];
+    
+    // Create wallet
+    await client.query(
+      'INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, $2, $3)',
+      [user.id, creditAmount || 0, creditAmount || 0]
+    );
+    
+    // Create transaction if credit amount provided
+    if (creditAmount && creditAmount > 0) {
+      await client.query(
+        'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+        [user.id, 'credit', creditAmount, 'Admin credit', 'completed']
+      );
+    }
+    
+    await client.query('COMMIT');
+    res.json({ message: 'User created successfully', user });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating user:', error);
+    res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
+  }
+});
+
+// Credit user
+router.post('/users/:userId/credit', adminAuth, async (req, res) => {
+  const { userId } = req.params;
+  const { amount } = req.body;
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Update wallet
+    await client.query(
+      'UPDATE wallets SET balance = balance + $1, total_earned = total_earned + $1 WHERE user_id = $2',
+      [amount, userId]
+    );
+    
+    // Create transaction
+    await client.query(
+      'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+      [userId, 'credit', amount, 'Admin credit', 'completed']
+    );
+    
+    await client.query('COMMIT');
+    res.json({ message: 'User credited successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error crediting user:', error);
+    res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
+  }
+});
+
 // Recent activity
 router.get('/recent-activity', adminAuth, async (req, res) => {
   try {
@@ -58,9 +157,10 @@ router.get('/recent-activity', adminAuth, async (req, res) => {
       WHERE role != 'admin'
       UNION ALL
       SELECT 
-        'New order placed: #' || id as description,
+        'User credited: ₦' || amount::text as description,
         created_at
-      FROM orders
+      FROM transactions
+      WHERE type = 'credit'
       ORDER BY created_at DESC
       LIMIT 10
     `);

@@ -280,6 +280,24 @@ class ApiService {
     return this.request('/admin-stats');
   }
 
+  async getUsers() {
+    return this.request('/admin/users');
+  }
+
+  async createUser(userData) {
+    return this.request('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async creditUser(userId, amount) {
+    return this.request(`/admin/users/${userId}/credit`, {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');
