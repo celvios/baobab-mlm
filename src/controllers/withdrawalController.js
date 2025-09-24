@@ -38,8 +38,8 @@ const requestWithdrawal = async (req, res) => {
 
     // Create transaction record
     await pool.query(
-      'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'withdrawal_request', amount, 'Withdrawal request submitted', 'pending']
+      'INSERT INTO transactions (user_id, type, amount, description, status, reference) VALUES ($1, $2, $3, $4, $5, $6)',
+      [userId, 'withdrawal_request', amount, 'Withdrawal request submitted', 'pending', `WR${result.rows[0].id}`]
     );
 
     res.status(201).json({

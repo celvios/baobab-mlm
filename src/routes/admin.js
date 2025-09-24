@@ -7,6 +7,8 @@ const { getUsers, getUserDetails, createUser, updateUser, deactivateUser } = req
 const { getOrders, updateOrderStatus, getOrderStats, bulkUpdateOrders } = require('../controllers/adminOrderController');
 const { getDepositRequests, approveDeposit, rejectDeposit } = require('../controllers/paymentController');
 const { getWithdrawals, updateWithdrawalStatus, bulkApproveWithdrawals, getWithdrawalStats } = require('../controllers/adminWithdrawalController');
+const { getWithdrawalRequests, processWithdrawal } = require('../controllers/adminWithdrawalController');
+const { creditUser, approveDeposit, getRecentActivity } = require('../controllers/adminWalletController');
 const { getStages, createStage, updateStage, getStageStats } = require('../controllers/adminStagesController');
 const { getEmailList, sendEmail, getEmailHistory, removeUserFromList } = require('../controllers/adminEmailController');
 const { getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, toggleAnnouncementStatus, getAnnouncementStats } = require('../controllers/adminAnnouncementController');
@@ -75,10 +77,18 @@ router.post('/approve-deposit', adminAuth, approveDeposit);
 router.post('/reject-deposit', adminAuth, rejectDeposit);
 
 // Withdrawal management (protected)
-router.get('/withdrawals', adminAuth, getWithdrawals);
+router.get('/withdrawals', adminAuth, getWithdrawalRequests);
 router.get('/withdrawals/stats', adminAuth, getWithdrawalStats);
-router.put('/withdrawals/:id', adminAuth, updateWithdrawalStatus);
+router.put('/withdrawals/:id', adminAuth, processWithdrawal);
 router.put('/withdrawals/bulk-approve', adminAuth, bulkApproveWithdrawals);
+
+// Wallet management (protected)
+router.post('/credit-user', adminAuth, [
+  body('userId').isInt(),
+  body('amount').isNumeric()
+], creditUser);
+router.post('/approve-deposit/:depositId', adminAuth, approveDeposit);
+router.get('/recent-activity', adminAuth, getRecentActivity);
 
 // MLM Stages & Rewards (protected)
 router.get('/stages', adminAuth, getStages);

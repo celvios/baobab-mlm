@@ -36,14 +36,15 @@ const createOrder = async (req, res) => {
 
     // Create transaction record
     await pool.query(`
-      INSERT INTO transactions (user_id, type, amount, description, status)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO transactions (user_id, type, amount, description, status, reference)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `, [
       userId, 
-      'product_purchase', 
-      -totalAmount, 
+      'debit', 
+      totalAmount, 
       `Product purchase: ${productName}`,
-      'pending'
+      'pending',
+      orderNumber
     ]);
 
     // Check stage progression and create notifications
@@ -292,15 +293,22 @@ const deleteOrder = async (req, res) => {
     const userId = req.user.id;
     const { orderId } = req.params;
 
-    const result = await pool.query(`
-      DELETE FROM orders 
-      WHERE id = $1 AND user_id = $2
-      RETURNING *
-    `, [orderId, userId]);
-
-    if (result.rows.length === 0) {
+    // First get order details for transaction record
+    const orderResult = await pool.query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [orderId, userId]);
+    if (orderResult.rows.length === 0) {
       return res.status(404).json({ message: 'Order not found' });
     }
+
+    const order = orderResult.rows[0];
+
+    // Delete the order
+    await pool.query('DELETE FROM orders WHERE id = $1 AND user_id = $2', [orderId, userId]);
+
+    // Create transaction record for deletion
+    await pool.query(`
+      INSERT INTO transactions (user_id, type, amount, description, status)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [userId, 'order_deleted', order.total_amount, `Order deleted: ${order.product_name}`, 'completed']);
 
     res.json({ message: 'Order deleted successfully' });
   } catch (error) {
@@ -313,11 +321,20 @@ const deleteAllOrders = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const result = await pool.query(`
-      DELETE FROM orders 
-      WHERE user_id = $1
-      RETURNING COUNT(*)
-    `, [userId]);
+    // Get all orders for transaction records
+    const ordersResult = await pool.query('SELECT * FROM orders WHERE user_id = $1', [userId]);
+    const orders = ordersResult.rows;
+
+    // Delete all orders
+    const result = await pool.query('DELETE FROM orders WHERE user_id = $1', [userId]);
+
+    // Create transaction records for all deletions
+    for (const order of orders) {
+      await pool.query(`
+        INSERT INTO transactions (user_id, type, amount, description, status)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [userId, 'order_deleted', order.total_amount, `Order deleted: ${order.product_name}`, 'completed']);
+    }
 
     res.json({ 
       message: 'All orders deleted successfully',

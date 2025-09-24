@@ -153,10 +153,12 @@ const getTransactionHistory = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const result = await pool.query(`
-      SELECT id, type, amount, description, status, reference, created_at
-      FROM transactions 
-      WHERE user_id = $1 
-      ORDER BY created_at DESC 
+      SELECT t.id, t.type, t.amount, t.description, t.status, t.reference, t.created_at,
+             a.name as admin_name
+      FROM transactions t
+      LEFT JOIN admins a ON t.admin_id = a.id
+      WHERE t.user_id = $1 
+      ORDER BY t.created_at DESC 
       LIMIT $2 OFFSET $3
     `, [userId, limit, offset]);
 
@@ -171,7 +173,10 @@ const getTransactionHistory = async (req, res) => {
         description: t.description,
         status: t.status,
         reference: t.reference,
-        createdAt: t.created_at
+        adminName: t.admin_name,
+        createdAt: t.created_at,
+        isCredit: ['credit', 'deposit_approved', 'commission', 'referral_bonus'].includes(t.type),
+        isDebit: ['debit', 'withdrawal', 'product_purchase', 'order_deleted'].includes(t.type)
       })),
       pagination: {
         page: parseInt(page),
