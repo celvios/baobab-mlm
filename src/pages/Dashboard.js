@@ -132,6 +132,11 @@ export default function Dashboard() {
 
   const handleAddToCart = (product) => {
     try {
+      if (!product || !product.name) {
+        console.error('Invalid product');
+        return;
+      }
+      
       // Get existing cart from localStorage
       const existingCart = JSON.parse(localStorage.getItem('userCart') || '[]');
       

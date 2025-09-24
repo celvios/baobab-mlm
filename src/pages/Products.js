@@ -13,6 +13,8 @@ export default function Products() {
   const [showPayment, setShowPayment] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
   const { addToCart } = useCart();
 
   const { formatPrice, loading: currencyLoading, getCurrencySymbol } = useCurrency();
@@ -31,10 +33,29 @@ export default function Products() {
 
   const handleAddToCart = (product, qty = 1) => {
     try {
-      addToCart(product, qty);
+      if (!product || !product.name) {
+        setToastMessage('Invalid product selected');
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
+      
+      const result = addToCart(product, qty);
+      
+      if (result && result.success === false) {
+        setToastMessage(result.error || 'Failed to add product to cart');
+        setToastType('error');
+      } else {
+        setToastMessage(`${product.name} added to cart successfully!`);
+        setToastType('success');
+      }
+      
       setShowToast(true);
     } catch (error) {
       console.error('Error adding to cart:', error);
+      setToastMessage('An error occurred while adding to cart');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -314,9 +335,13 @@ export default function Products() {
       
       {showToast && (
         <Toast 
-          message="Product added to cart successfully!"
-          type="success"
-          onClose={() => setShowToast(false)}
+          message={toastMessage}
+          type={toastType}
+          onClose={() => {
+            setShowToast(false);
+            setToastMessage('');
+            setToastType('success');
+          }}
         />
       )}
     </div>

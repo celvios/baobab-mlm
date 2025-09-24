@@ -21,17 +21,27 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   const addToCart = (product, quantity = 1) => {
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.id === product.id);
-      if (existingItem) {
-        return prev.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
+    try {
+      if (!product || !product.id) {
+        throw new Error('Invalid product');
       }
-      return [...prev, { ...product, quantity }];
-    });
+      
+      setCartItems(prev => {
+        const existingItem = prev.find(item => item.id === product.id);
+        if (existingItem) {
+          return prev.map(item =>
+            item.id === product.id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          );
+        }
+        return [...prev, { ...product, quantity }];
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      return { success: false, error: error.message };
+    }
   };
 
   const removeFromCart = (productId) => {
