@@ -281,7 +281,7 @@ class ApiService {
   }
 
   async getUsers() {
-    return this.request('/admin/users');
+    return this.request('/admin/users-test');
   }
 
   async createUser(userData) {

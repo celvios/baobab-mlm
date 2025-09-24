@@ -53,6 +53,23 @@ router.get('/test-stats', async (req, res) => {
   }
 });
 
+// Test users endpoint without auth
+router.get('/users-test', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.*, w.balance, w.total_earned
+      FROM users u
+      LEFT JOIN wallets w ON u.id = w.user_id
+      WHERE u.role != 'admin' OR u.role IS NULL
+      ORDER BY u.created_at DESC
+    `);
+    res.json({ users: result.rows });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Get all users
 router.get('/users', adminAuth, async (req, res) => {
   try {
