@@ -139,6 +139,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
   const [step, setStep] = useState(1); // 1: Form, 2: Security, 3: Success
   const [formData, setFormData] = useState({
     amount: '',
+    source: 'wallet', // 'wallet' or 'mlm'
     bank: '',
     bankCode: '',
     accountNumber: '',
@@ -150,7 +151,8 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [userBalance, setUserBalance] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [mlmEarnings, setMlmEarnings] = useState(0);
   const { addNotification } = useNotification();
 
   React.useEffect(() => {
@@ -159,73 +161,37 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
       const fetchBalance = async () => {
         try {
           const walletData = await apiService.getWallet();
-          setUserBalance(walletData.balance || 0);
+          setWalletBalance(walletData.balance || 0);
+          setMlmEarnings(walletData.mlmEarnings || 0);
         } catch (error) {
           console.error('Error fetching wallet:', error);
-          setUserBalance(0);
+          setWalletBalance(0);
+          setMlmEarnings(0);
         }
       };
       fetchBalance();
     }
   }, [isOpen]);
 
-  const verifyBankAccount = async () => {
-    if (!formData.bankCode || !formData.accountNumber || formData.accountNumber.length < 10) {
-      return;
-    }
-
-    setVerifyingAccount(true);
-    setAccountVerified(false);
-    setResolvedAccountName('');
-    setErrors({});
-
-    try {
-      // Use real Paystack API for bank verification
-      const response = await fetch('/api/bank/verify-account', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          accountNumber: formData.accountNumber,
-          bankCode: formData.bankCode
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        setResolvedAccountName(result.accountName);
-        setAccountVerified(true);
-        setFormData({...formData, accountName: result.accountName});
-        addNotification('Account verified successfully!', 'success');
-      } else {
-        setAccountVerified(false);
-        setErrors({accountNumber: result.message || 'Account verification failed'});
-        addNotification(result.message || 'Account verification failed', 'error');
-      }
-    } catch (error) {
-      setAccountVerified(false);
-      setErrors({accountNumber: 'Failed to verify account. Please try again.'});
-      addNotification('Failed to verify account. Please check details.', 'error');
-    } finally {
-      setVerifyingAccount(false);
-    }
+  const getCurrentBalance = () => {
+    return formData.source === 'wallet' ? walletBalance : mlmEarnings;
   };
+
+
 
   const validateForm = () => {
     const newErrors = {};
+    const currentBalance = getCurrentBalance();
     
     if (!formData.amount || formData.amount <= 0) {
       newErrors.amount = 'Please enter a valid amount';
-    } else if (parseFloat(formData.amount) > userBalance) {
+    } else if (parseFloat(formData.amount) > currentBalance) {
       newErrors.amount = 'Insufficient balance';
     }
     
     if (!formData.bank) newErrors.bank = 'Please select a bank';
     if (!formData.accountNumber) newErrors.accountNumber = 'Please enter account number';
-    if (!accountVerified) newErrors.accountNumber = 'Please verify your account number';
+    if (!formData.accountName) newErrors.accountName = 'Please enter account name';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -261,6 +227,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
     const withdrawal = {
       id: Date.now(),
       amount: parseFloat(formData.amount),
+      source: formData.source,
       bank: formData.bank,
       accountNumber: formData.accountNumber,
       accountName: formData.accountName,
@@ -273,6 +240,13 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
     existingWithdrawals.push(withdrawal);
     localStorage.setItem('userWithdrawals', JSON.stringify(existingWithdrawals));
     
+    // Update local balances
+    if (formData.source === 'wallet') {
+      setWalletBalance(prev => prev - parseFloat(formData.amount));
+    } else {
+      setMlmEarnings(prev => prev - parseFloat(formData.amount));
+    }
+    
     await new Promise(resolve => setTimeout(resolve, 2000));
     setLoading(false);
     setStep(3);
@@ -280,7 +254,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
 
   const handleClose = () => {
     setStep(1);
-    setFormData({ amount: '', bank: '', bankCode: '', accountNumber: '', accountName: '' });
+    setFormData({ amount: '', source: 'wallet', bank: '', bankCode: '', accountNumber: '', accountName: '' });
     setVerificationCode(['', '', '', '', '', '']);
     setErrors({});
     setAccountVerified(false);
@@ -311,8 +285,10 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
               <div className="bg-primary-50 rounded-xl p-4 mb-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-primary-700 font-medium">Available Balance</p>
-                    <p className="text-2xl font-bold text-primary-900">${userBalance.toFixed(2)}</p>
+                    <p className="text-sm text-primary-700 font-medium">
+                      {formData.source === 'wallet' ? 'Wallet Balance' : 'MLM Earnings'}
+                    </p>
+                    <p className="text-2xl font-bold text-primary-900">${getCurrentBalance().toFixed(2)}</p>
                   </div>
                   <div className="p-3 bg-primary-100 rounded-xl">
                     <CurrencyDollarIcon className="h-6 w-6 text-primary-600" />
@@ -321,6 +297,18 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">Withdraw From</label>
+                  <select
+                    className="w-full px-4 py-3 border border-gray-200 bg-gray-50 focus:bg-white rounded-xl shadow-card focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                    value={formData.source}
+                    onChange={(e) => setFormData({...formData, source: e.target.value})}
+                  >
+                    <option value="wallet">Wallet Earnings (${walletBalance.toFixed(2)})</option>
+                    <option value="mlm">MLM Earnings (${mlmEarnings.toFixed(2)})</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-3">Amount</label>
                   <input
@@ -360,43 +348,24 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
                     </select>
                     {errors.bank && <p className="text-sm text-red-600">{errors.bank}</p>}
 
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        maxLength="10"
-                        className="w-full px-4 py-3 pr-24 border border-gray-200 bg-gray-50 focus:bg-white rounded-xl shadow-card focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
-                        placeholder="Account Number"
-                        value={formData.accountNumber}
-                        onChange={(e) => {
-                          setFormData({...formData, accountNumber: e.target.value});
-                          setAccountVerified(false);
-                          setResolvedAccountName('');
-                        }}
-                        onBlur={verifyBankAccount}
-                      />
-                      {verifyingAccount && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <ProcessLoader size="sm" />
-                        </div>
-                      )}
-                      {accountVerified && (
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                        </div>
-                      )}
-                    </div>
+                    <input
+                      type="text"
+                      required
+                      maxLength="10"
+                      className="w-full px-4 py-3 border border-gray-200 bg-gray-50 focus:bg-white rounded-xl shadow-card focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                      placeholder="Account Number"
+                      value={formData.accountNumber}
+                      onChange={(e) => setFormData({...formData, accountNumber: e.target.value})}
+                    />
                     {errors.accountNumber && <p className="text-sm text-red-600">{errors.accountNumber}</p>}
 
                     <input
                       type="text"
                       required
-                      className={`w-full px-4 py-3 border border-gray-200 rounded-xl shadow-card focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 ${
-                        accountVerified ? 'bg-green-50 text-green-800' : 'bg-gray-50 focus:bg-white'
-                      }`}
+                      className="w-full px-4 py-3 border border-gray-200 bg-gray-50 focus:bg-white rounded-xl shadow-card focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                       placeholder="Account Name"
                       value={formData.accountName}
-                      readOnly={accountVerified}
+                      onChange={(e) => setFormData({...formData, accountName: e.target.value})}
                     />
                     {errors.accountName && <p className="text-sm text-red-600">{errors.accountName}</p>}
                   </div>

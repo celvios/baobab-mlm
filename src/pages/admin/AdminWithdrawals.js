@@ -12,11 +12,21 @@ const AdminWithdrawals = () => {
 
   const fetchWithdrawals = async () => {
     try {
-      const response = await fetch('/api/admin/withdrawals', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      const data = await response.json();
-      setWithdrawals(data.withdrawals);
+      // Get withdrawals from localStorage for now
+      const userWithdrawals = JSON.parse(localStorage.getItem('userWithdrawals') || '[]');
+      const formattedWithdrawals = userWithdrawals.map(withdrawal => ({
+        id: withdrawal.id,
+        user_name: 'Current User',
+        user_email: 'user@example.com',
+        amount: withdrawal.amount,
+        source: withdrawal.source || 'wallet',
+        bank_name: withdrawal.bank,
+        account_number: withdrawal.accountNumber,
+        account_name: withdrawal.accountName,
+        status: withdrawal.status,
+        created_at: withdrawal.date
+      }));
+      setWithdrawals(formattedWithdrawals);
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
     }
@@ -24,14 +34,12 @@ const AdminWithdrawals = () => {
 
   const updateWithdrawalStatus = async (withdrawalId, status) => {
     try {
-      await fetch(`/api/admin/withdrawals/${withdrawalId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        },
-        body: JSON.stringify({ status })
-      });
+      // Update withdrawal status in localStorage
+      const userWithdrawals = JSON.parse(localStorage.getItem('userWithdrawals') || '[]');
+      const updatedWithdrawals = userWithdrawals.map(withdrawal => 
+        withdrawal.id === withdrawalId ? { ...withdrawal, status } : withdrawal
+      );
+      localStorage.setItem('userWithdrawals', JSON.stringify(updatedWithdrawals));
       fetchWithdrawals();
     } catch (error) {
       console.error('Error updating withdrawal status:', error);
@@ -98,6 +106,7 @@ const AdminWithdrawals = () => {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank Details</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
@@ -121,7 +130,14 @@ const AdminWithdrawals = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ₦{withdrawal.amount.toLocaleString()}
+                    ${withdrawal.amount.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      withdrawal.source === 'wallet' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                    }`}>
+                      {withdrawal.source === 'wallet' ? 'Wallet' : 'MLM Earnings'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{withdrawal.bank_name}</div>
