@@ -21,19 +21,17 @@ const getEmailList = async (req, res) => {
     const { category = 'all', search = '' } = req.query;
     
     let query = `
-      SELECT u.id, u.email, u.full_name, u.mlm_level, u.created_at, u.is_active,
-             COALESCE(w.balance, 0) as wallet_balance,
+      SELECT u.id, u.email, u.full_name, u.current_stage, u.created_at, u.is_active,
              COUNT(ref.id) as referral_count
       FROM users u
-      LEFT JOIN wallets w ON u.id = w.user_id
       LEFT JOIN users ref ON ref.referred_by = u.referral_code
-      WHERE u.is_active = true
+      WHERE 1=1
     `;
     const params = [];
     let paramIndex = 1;
     
     if (category !== 'all') {
-      query += ` AND u.mlm_level = $${paramIndex}`;
+      query += ` AND u.current_stage = $${paramIndex}`;
       params.push(category);
       paramIndex++;
     }
@@ -44,35 +42,14 @@ const getEmailList = async (req, res) => {
       paramIndex++;
     }
     
-    query += ` GROUP BY u.id, u.email, u.full_name, u.mlm_level, u.created_at, u.is_active, w.balance
+    query += ` GROUP BY u.id, u.email, u.full_name, u.current_stage, u.created_at, u.is_active
                ORDER BY u.created_at DESC`;
     
     const result = await pool.query(query, params);
     
-    // Get email statistics
-    const statsResult = await pool.query(`
-      SELECT 
-        COUNT(*) as total_users,
-        COUNT(CASE WHEN mlm_level = 'feeder' THEN 1 END) as feeder_users,
-        COUNT(CASE WHEN mlm_level = 'bronze' THEN 1 END) as bronze_users,
-        COUNT(CASE WHEN mlm_level = 'silver' THEN 1 END) as silver_users,
-        COUNT(CASE WHEN mlm_level = 'gold' THEN 1 END) as gold_users,
-        COUNT(CASE WHEN mlm_level = 'diamond' THEN 1 END) as diamond_users
-      FROM users WHERE is_active = true
-    `);
-    
     res.json({ 
-      emails: result.rows.map(user => ({
-        id: user.id,
-        email: user.email,
-        fullName: user.full_name,
-        level: user.mlm_level || 'no_stage',
-        walletBalance: parseFloat(user.wallet_balance),
-        referralCount: parseInt(user.referral_count),
-        joinedAt: user.created_at,
-        isActive: user.is_active
-      })),
-      stats: statsResult.rows[0]
+      emails: result.rows,
+      total: result.rows.length
     });
   } catch (error) {
     console.error('Get email list error:', error);
@@ -93,15 +70,15 @@ const sendEmail = async (req, res) => {
     
     if (selectedUsers.length > 0) {
       // Send to specific selected users
-      recipientQuery = 'SELECT id, email, full_name FROM users WHERE id = ANY($1) AND is_active = true';
+      recipientQuery = 'SELECT id, email, full_name FROM users WHERE id = ANY($1)';
       params = [selectedUsers];
     } else {
       // Send to category
-      recipientQuery = 'SELECT id, email, full_name FROM users WHERE is_active = true';
+      recipientQuery = 'SELECT id, email, full_name FROM users WHERE 1=1';
       params = [];
       
       if (category !== 'all') {
-        recipientQuery += ' AND mlm_level = $1';
+        recipientQuery += ' AND current_stage = $1';
         params.push(category);
       }
     }

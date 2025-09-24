@@ -24,8 +24,8 @@ const AdminEmailer = () => {
 
     const fetchAllUsers = async () => {
       try {
-        const response = await apiService.getEmailList();
-        setAllUsers(response.emails || []);
+        const response = await apiService.getAllUsers();
+        setAllUsers(response.users || []);
       } catch (error) {
         console.error('Error fetching users:', error);
       }
@@ -120,7 +120,7 @@ const AdminEmailer = () => {
                       onChange={() => handleUserSelection(user.id)}
                       className="rounded"
                     />
-                    <span className="text-sm">{user.fullName} ({user.email})</span>
+                    <span className="text-sm">{user.full_name} ({user.email})</span>
                   </label>
                 ))}
               </div>
@@ -219,8 +219,8 @@ const AdminEmailer = () => {
 
     const fetchMailingList = async () => {
       try {
-        const response = await apiService.getEmailList();
-        setMailingList(response.emails || []);
+        const response = await apiService.getAllUsers();
+        setMailingList(response.users || []);
       } catch (error) {
         console.error('Error fetching mailing list:', error);
       }
@@ -261,25 +261,25 @@ const AdminEmailer = () => {
                     <div className="flex items-center">
                       <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                         <span className="text-green-600 text-sm font-medium">
-                          {user.fullName.charAt(0).toUpperCase()}
+                          {user.full_name.charAt(0).toUpperCase()}
                         </span>
                       </div>
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                        <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
-                        <div className="text-xs text-gray-400">{user.level} • {user.referralCount} referrals</div>
+                        <div className="text-xs text-gray-400">{user.current_stage || 'No Stage'}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      user.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {user.isActive ? 'Active' : 'Inactive'}
+                      {user.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(user.joinedAt).toLocaleDateString()}
+                    {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button

@@ -345,6 +345,10 @@ class ApiService {
     return this.request(`/admin/emails/list?category=${category}&search=${search}`);
   }
 
+  async getAllUsers() {
+    return this.request('/admin/users');
+  }
+
   async sendEmail(emailData) {
     return this.request('/admin/emails/send', {
       method: 'POST',
