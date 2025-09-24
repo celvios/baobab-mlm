@@ -30,8 +30,12 @@ export default function Products() {
   };
 
   const handleAddToCart = (product, qty = 1) => {
-    addToCart(product, qty);
-    setShowToast(true);
+    try {
+      addToCart(product, qty);
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
   };
 
   const [allProducts, setAllProducts] = useState([]);
@@ -310,7 +314,7 @@ export default function Products() {
       
       {showToast && (
         <Toast 
-          message="Added to cart successfully!"
+          message="Product added to cart successfully!"
           type="success"
           onClose={() => setShowToast(false)}
         />

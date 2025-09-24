@@ -20,7 +20,6 @@ import BalanceChart from '../components/BalanceChart';
 import MarketUpdates from '../components/MarketUpdates';
 import { getFeaturedProducts } from '../data/products';
 import { useCurrency } from '../hooks/useCurrency';
-import CurrencyTest from '../components/CurrencyTest';
 
 export default function Dashboard() {
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
@@ -57,24 +56,14 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const convertBalances = async () => {
-      if (userProfile?.wallet && !currencyLoading) {
-        try {
-          const convertedBalance = await convertPrice(userProfile.wallet.balance || 0);
-          const convertedEarnings = await convertPrice(userProfile.wallet.mlmEarnings || 0);
-          
-          setConvertedBalances({
-            balance: convertedBalance,
-            mlmEarnings: convertedEarnings
-          });
-        } catch (error) {
-          console.error('Error converting balances:', error);
-        }
-      }
-    };
-
-    convertBalances();
-  }, [userProfile, currencyLoading, convertPrice]);
+    if (userProfile?.wallet) {
+      // Use the wallet values directly without conversion since they should already be in the correct currency
+      setConvertedBalances({
+        balance: userProfile.wallet.balance || 0,
+        mlmEarnings: userProfile.wallet.mlmEarnings || 0
+      });
+    }
+  }, [userProfile]);
 
   const fetchDashboardData = async () => {
     try {
@@ -239,7 +228,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <CurrencyTest />
       {/* Header */}
       <div className="mb-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back, {userProfile?.fullName?.split(' ')[0] || 'User'}</h1>
@@ -266,7 +254,7 @@ export default function Dashboard() {
                     <div>
                       <p className="text-white/70 text-sm mb-1">Wallet Balance</p>
                       <p className="text-3xl font-bold mb-1">{formatPrice(convertedBalances.balance)}</p>
-                      <p className="text-white/70 text-sm">${Number(userProfile?.wallet?.balance || 0).toFixed(2)} USD</p>
+                      <p className="text-white/70 text-sm">≈ ${Number((convertedBalances.balance || 0) / 1500).toFixed(2)} USD</p>
                     </div>
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <CurrencyDollarIcon className="h-5 w-5" />
@@ -315,7 +303,7 @@ export default function Dashboard() {
               <div className="bg-gray-100 p-6 rounded-2xl shadow-card h-48 flex flex-col justify-between">
                 <div>
                   <p className="text-3xl font-bold text-gray-900 mb-1">{formatPrice(convertedBalances.mlmEarnings)}</p>
-                  <p className="text-gray-500 text-sm">${Number(userProfile?.wallet?.mlmEarnings || 0).toFixed(2)} USD</p>
+                  <p className="text-gray-500 text-sm">≈ ${Number((convertedBalances.mlmEarnings || 0) / 1500).toFixed(2)} USD</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
                 <Link to="/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
