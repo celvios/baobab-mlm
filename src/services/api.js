@@ -257,7 +257,7 @@ class ApiService {
 
   // Admin methods
   async setupAdmin(adminData) {
-    return this.request('/admin/auth/setup', {
+    return this.request('/admin-setup', {
       method: 'POST',
       body: JSON.stringify(adminData),
     });
