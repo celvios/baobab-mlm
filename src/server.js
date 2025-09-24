@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
+const initDatabase = require('./config/initDatabase');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
@@ -576,6 +577,8 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server running on port ${PORT}`);
+  // Initialize database tables on startup
+  await initDatabase();
 });
