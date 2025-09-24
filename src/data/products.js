@@ -89,13 +89,14 @@ export const fetchProducts = async () => {
     
     // Transform API products to match expected format with currency conversion
     const transformedProducts = await Promise.all(products.map(async (product, index) => {
-      const convertedPrice = await currencyService.convertPrice(product.basePrice || product.price || 20);
+      const basePrice = Number(product.basePrice || product.price || 20);
+      const convertedPrice = await currencyService.convertPrice(basePrice);
       
       return {
         id: product.id,
         name: product.name || product.product_name,
         description: product.description,
-        basePrice: product.basePrice || product.price || 20, // USD price
+        basePrice: basePrice, // USD price
         price: Math.round(convertedPrice), // Local currency price
         localPrice: currencyService.formatPrice(convertedPrice),
         image: product.image || '/images/IMG_4996 2.png',
@@ -112,9 +113,11 @@ export const fetchProducts = async () => {
     console.error('Failed to fetch products from API:', error);
     // Convert fallback products to local currency
     const convertedFallback = await Promise.all(fallbackProducts.map(async (product) => {
-      const convertedPrice = await currencyService.convertPrice(product.basePrice);
+      const basePrice = Number(product.basePrice || 20);
+      const convertedPrice = await currencyService.convertPrice(basePrice);
       return {
         ...product,
+        basePrice: basePrice,
         price: Math.round(convertedPrice),
         localPrice: currencyService.formatPrice(convertedPrice)
       };
