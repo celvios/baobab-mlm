@@ -316,7 +316,6 @@ const deleteAllOrders = async (req, res) => {
     const result = await pool.query(`
       DELETE FROM orders 
       WHERE user_id = $1
-      RETURNING COUNT(*)
     `, [userId]);
 
     res.json({ 
