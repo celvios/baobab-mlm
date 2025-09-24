@@ -22,6 +22,15 @@ const AdminUsersManagement = () => {
   const [creditAmount, setCreditAmount] = useState('');
   const [toast, setToast] = useState(null);
 
+  const formatCurrency = (value) => {
+    try {
+      const num = Number(value) || 0;
+      return `$${num.toLocaleString()}`;
+    } catch (error) {
+      return '$0';
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -56,7 +65,7 @@ const AdminUsersManagement = () => {
     e.preventDefault();
     try {
       await apiService.creditUserWithNotification(creditUser.id, parseFloat(creditAmount));
-      setToast({ message: `Successfully credited $${(parseFloat(creditAmount) || 0).toLocaleString()} to ${creditUser?.full_name || 'User'}`, type: 'success' });
+      setToast({ message: `Successfully credited ${formatCurrency(creditAmount)} to ${creditUser?.full_name || 'User'}`, type: 'success' });
       setShowCreditModal(false);
       setCreditAmount('');
       setCreditUser(null);
@@ -202,7 +211,7 @@ const AdminUsersManagement = () => {
                     {user.team_size || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${(user.balance || 0).toLocaleString()}
+                    {formatCurrency(user.balance)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -359,11 +368,11 @@ const AdminUsersManagement = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-green-50 p-4 rounded-lg">
                     <label className="block text-sm font-medium text-green-700 mb-1">Current Balance</label>
-                    <p className="text-lg font-bold text-green-900">${(selectedUser?.balance || 0).toLocaleString()}</p>
+                    <p className="text-lg font-bold text-green-900">{formatCurrency(selectedUser?.balance)}</p>
                   </div>
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <label className="block text-sm font-medium text-blue-700 mb-1">Total Earned</label>
-                    <p className="text-lg font-bold text-blue-900">${(selectedUser?.total_earned || 0).toLocaleString()}</p>
+                    <p className="text-lg font-bold text-blue-900">{formatCurrency(selectedUser?.total_earned)}</p>
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg">
                     <label className="block text-sm font-medium text-purple-700 mb-1">Registration Fee</label>
