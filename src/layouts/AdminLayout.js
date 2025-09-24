@@ -30,11 +30,10 @@ const AdminLayout = () => {
     { name: 'Users Management', href: '/admin/users', icon: FiUsers },
     { name: 'Orders Management', href: '/admin/orders', icon: FiShoppingBag },
     { name: 'Product Management', href: '/admin/products', icon: FiPackage },
+    { name: 'Deposit Requests', href: '/admin/deposits', icon: FiDollarSign },
     { name: 'Cashout Requests', href: '/admin/withdrawals', icon: FiDollarSign },
     { name: 'Email Management', href: '/admin/emailer', icon: FiMail },
     { name: 'Blog Management', href: '/admin/blog', icon: FiFileText },
-    { name: 'Announcements', href: '/admin/announcements', icon: FiSpeaker },
-    { name: 'Stages & Rewards', href: '/admin/stages', icon: FiAward },
     { name: 'Settings', href: '/admin/settings', icon: FiSettings },
   ];
 

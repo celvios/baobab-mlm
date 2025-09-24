@@ -45,31 +45,47 @@ const uploadPaymentProof = async (req, res) => {
 
 const approveDeposit = async (req, res) => {
   try {
-    const { requestId, userId, amount } = req.body;
+    const { depositId, amount } = req.body;
     const adminId = req.admin.id;
+
+    // Get deposit request details
+    const depositResult = await pool.query('SELECT * FROM deposit_requests WHERE id = $1', [depositId]);
+    if (depositResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Deposit request not found' });
+    }
+
+    const deposit = depositResult.rows[0];
+    const userId = deposit.user_id;
+    const depositAmount = amount || deposit.amount;
+
+    // Ensure wallet exists
+    await pool.query(
+      'INSERT INTO wallets (user_id, balance) VALUES ($1, 0) ON CONFLICT (user_id) DO NOTHING',
+      [userId]
+    );
 
     // Credit user wallet
     await pool.query(
-      'UPDATE wallets SET balance = balance + $1 WHERE user_id = $2',
-      [amount, userId]
+      'UPDATE wallets SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2',
+      [depositAmount, userId]
     );
 
     // Create transaction record
     await pool.query(
-      'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'credit', amount, 'Wallet deposit approved by admin', 'completed']
+      'INSERT INTO transactions (user_id, type, amount, description, status, admin_id) VALUES ($1, $2, $3, $4, $5, $6)',
+      [userId, 'credit', depositAmount, 'Deposit approved by admin', 'completed', adminId]
     );
 
     // Update deposit request status
     await pool.query(
       'UPDATE deposit_requests SET status = $1, approved_by = $2, approved_at = CURRENT_TIMESTAMP WHERE id = $3',
-      ['approved', adminId, requestId]
+      ['approved', adminId, depositId]
     );
 
-    res.json({ message: 'Deposit approved and wallet credited' });
+    res.json({ message: 'Deposit approved and wallet credited successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Approve deposit error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 
@@ -77,36 +93,35 @@ const getDepositRequests = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        dr.id, dr.user_id, dr.amount, dr.proof_url, dr.created_at,
-        u.full_name, u.email
+        dr.id, dr.user_id, dr.amount, dr.proof_url, dr.status, dr.created_at,
+        u.full_name as user_name, u.email as user_email
       FROM deposit_requests dr
       JOIN users u ON dr.user_id = u.id
-      WHERE dr.status = 'pending'
       ORDER BY dr.created_at DESC
     `);
 
-    res.json({ depositRequests: result.rows });
+    res.json({ deposits: result.rows });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Get deposit requests error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 
 const rejectDeposit = async (req, res) => {
   try {
-    const { requestId } = req.body;
+    const { depositId } = req.body;
     const adminId = req.admin.id;
 
     // Update deposit request status to rejected
     await pool.query(
       'UPDATE deposit_requests SET status = $1, rejected_by = $2, rejected_at = CURRENT_TIMESTAMP WHERE id = $3',
-      ['rejected', adminId, requestId]
+      ['rejected', adminId, depositId]
     );
 
-    res.json({ message: 'Deposit request rejected' });
+    res.json({ message: 'Deposit request rejected successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Reject deposit error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 

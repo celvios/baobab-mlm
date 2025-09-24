@@ -29,10 +29,9 @@ import {
   AdminWithdrawals,
   AdminEmailer,
   AdminBlogManagement,
-  AdminAnnouncements,
-  AdminStagesRewards,
   AdminSettings
 } from './pages/admin';
+import AdminDeposits from './pages/admin/AdminDeposits';
 import AdminSetup from './pages/admin/AdminSetup';
 
 class ErrorBoundary extends React.Component {
@@ -112,11 +111,10 @@ function AppContent() {
             <Route path="users" element={<AdminUsersManagement />} />
             <Route path="orders" element={<AdminOrdersManagement />} />
             <Route path="products" element={<AdminProductManagement />} />
+            <Route path="deposits" element={<AdminDeposits />} />
             <Route path="withdrawals" element={<AdminWithdrawals />} />
             <Route path="emailer" element={<AdminEmailer />} />
             <Route path="blog" element={<AdminBlogManagement />} />
-            <Route path="announcements" element={<AdminAnnouncements />} />
-            <Route path="stages" element={<AdminStagesRewards />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
           

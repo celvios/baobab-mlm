@@ -366,6 +366,25 @@ class ApiService {
     });
   }
 
+  // Deposit methods
+  async getDepositRequests() {
+    return this.request('/admin/deposit-requests');
+  }
+
+  async approveDeposit(depositId, data) {
+    return this.request('/admin/approve-deposit', {
+      method: 'POST',
+      body: JSON.stringify({ depositId, ...data }),
+    });
+  }
+
+  async rejectDeposit(depositId) {
+    return this.request('/admin/reject-deposit', {
+      method: 'POST',
+      body: JSON.stringify({ depositId }),
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');
