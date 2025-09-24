@@ -129,10 +129,7 @@ router.delete('/announcements/:id', adminAuth, deleteAnnouncement);
 // Blog Management (protected)
 router.get('/blog', adminAuth, getBlogPosts);
 router.get('/blog/stats', adminAuth, getBlogStats);
-router.post('/blog', adminAuth, [
-  body('title').trim().isLength({ min: 1 }),
-  body('content').trim().isLength({ min: 1 })
-], createBlogPost);
+router.post('/blog', adminAuth, createBlogPost);
 router.put('/blog/:id', adminAuth, updateBlogPost);
 router.put('/blog/:id/publish', adminAuth, publishBlogPost);
 router.delete('/blog/:id', adminAuth, deleteBlogPost);
