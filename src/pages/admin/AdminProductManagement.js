@@ -43,25 +43,48 @@ const AdminProductManagement = () => {
 
   const CreateProductModal = () => {
     const [formData, setFormData] = useState({
-      name: '',
-      description: '',
-      price: '',
-      category: '',
-      stock_quantity: '',
-      image_url: ''
+      name: editingProduct?.name || '',
+      description: editingProduct?.description || '',
+      price: editingProduct?.price || '',
+      category: editingProduct?.category || '',
+      stock_quantity: editingProduct?.stock || '',
+      image_url: editingProduct?.image_url || ''
     });
+    const [imageFile, setImageFile] = useState(null);
+
+    useEffect(() => {
+      if (editingProduct) {
+        setFormData({
+          name: editingProduct.name || '',
+          description: editingProduct.description || '',
+          price: editingProduct.price || '',
+          category: editingProduct.category || '',
+          stock_quantity: editingProduct.stock || '',
+          image_url: editingProduct.image_url || ''
+        });
+      }
+    }, [editingProduct]);
 
     const handleSubmit = async (e) => {
       e.preventDefault();
       try {
+        let productData = { ...formData };
+        
+        // Handle image upload (for now, we'll use a placeholder)
+        if (imageFile) {
+          // In a real app, you'd upload to a service like AWS S3
+          productData.image_url = URL.createObjectURL(imageFile);
+        }
+        
         if (editingProduct) {
-          await apiService.updateProduct(editingProduct.id, formData);
+          await apiService.updateProduct(editingProduct.id, productData);
         } else {
-          await apiService.createProduct(formData);
+          await apiService.createProduct(productData);
         }
         
         setShowCreateModal(false);
         setEditingProduct(null);
+        setImageFile(null);
         fetchProducts();
       } catch (error) {
         console.error('Error saving product:', error);
@@ -79,6 +102,7 @@ const AdminProductManagement = () => {
               onClick={() => {
                 setShowCreateModal(false);
                 setEditingProduct(null);
+                setImageFile(null);
               }}
               className="text-gray-400 hover:text-gray-600"
             >
@@ -101,14 +125,21 @@ const AdminProductManagement = () => {
               className="w-full p-2 border rounded-lg h-20"
               required
             />
-            <input
-              type="number"
-              placeholder="Price"
-              value={formData.price}
-              onChange={(e) => setFormData({...formData, price: e.target.value})}
-              className="w-full p-2 border rounded-lg"
-              required
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                $
+              </span>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={formData.price}
+                onChange={(e) => setFormData({...formData, price: e.target.value})}
+                className="w-full pl-8 pr-4 p-2 border rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
             <input
               type="text"
               placeholder="Category"
@@ -125,13 +156,22 @@ const AdminProductManagement = () => {
               className="w-full p-2 border rounded-lg"
               required
             />
-            <input
-              type="url"
-              placeholder="Image URL"
-              value={formData.image_url}
-              onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-              className="w-full p-2 border rounded-lg"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Image
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImageFile(e.target.files[0])}
+                className="w-full p-2 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+              />
+              {formData.image_url && (
+                <div className="mt-2">
+                  <img src={formData.image_url} alt="Current" className="w-20 h-20 object-cover rounded" />
+                </div>
+              )}
+            </div>
             <div className="flex space-x-2">
               <button
                 type="submit"
@@ -164,7 +204,10 @@ const AdminProductManagement = () => {
           <p className="text-gray-600">Manage your product catalog</p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => {
+            setEditingProduct(null);
+            setShowCreateModal(true);
+          }}
           className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700"
         >
           <FiPlus className="w-4 h-4" />

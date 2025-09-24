@@ -479,6 +479,42 @@ app.get('/api/add-pickup-column', async (req, res) => {
   }
 });
 
+// Create sample products for testing
+app.get('/api/create-sample-products', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    const sampleProducts = [
+      { name: 'Premium Health Supplement', description: 'High-quality health supplement for daily wellness', price: 25000, category: 'Health', stock: 100 },
+      { name: 'Organic Tea Blend', description: 'Natural organic tea blend for relaxation', price: 15000, category: 'Beverages', stock: 50 },
+      { name: 'Fitness Tracker', description: 'Smart fitness tracker with heart rate monitor', price: 45000, category: 'Electronics', stock: 25 }
+    ];
+    
+    for (const product of sampleProducts) {
+      // Check if product exists
+      const existing = await client.query('SELECT id FROM products WHERE name = $1', [product.name]);
+      if (existing.rows.length === 0) {
+        await client.query(
+          'INSERT INTO products (name, description, price, category, stock) VALUES ($1, $2, $3, $4, $5)',
+          [product.name, product.description, product.price, product.category, product.stock]
+        );
+      }
+    }
+    
+    client.release();
+    res.json({ message: 'Sample products created successfully!' });
+  } catch (error) {
+    console.error('Sample products creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create sample users for testing
 app.get('/api/create-sample-users', async (req, res) => {
   const { Pool } = require('pg');
