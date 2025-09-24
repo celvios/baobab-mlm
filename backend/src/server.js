@@ -455,6 +455,52 @@ app.get('/api/setup-admin', async (req, res) => {
   }
 });
 
+// Create sample users for testing
+app.get('/api/create-sample-users', async (req, res) => {
+  const { Pool } = require('pg');
+  const bcrypt = require('bcryptjs');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    const sampleUsers = [
+      { name: 'John Doe', email: 'john@example.com', phone: '+234123456789' },
+      { name: 'Jane Smith', email: 'jane@example.com', phone: '+234987654321' },
+      { name: 'Mike Johnson', email: 'mike@example.com', phone: '+234555666777' }
+    ];
+    
+    for (const user of sampleUsers) {
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      
+      // Check if user exists
+      const existing = await client.query('SELECT id FROM users WHERE email = $1', [user.email]);
+      if (existing.rows.length === 0) {
+        // Create user
+        const userResult = await client.query(
+          'INSERT INTO users (full_name, email, phone, password, is_active) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+          [user.name, user.email, user.phone, hashedPassword, true]
+        );
+        
+        // Create wallet
+        await client.query(
+          'INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, $2, $3)',
+          [userResult.rows[0].id, Math.floor(Math.random() * 50000), Math.floor(Math.random() * 100000)]
+        );
+      }
+    }
+    
+    client.release();
+    res.json({ message: 'Sample users created successfully!' });
+  } catch (error) {
+    console.error('Sample users creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Fix database tables
 app.get('/api/fix-database', async (req, res) => {
   const { Pool } = require('pg');
