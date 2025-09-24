@@ -79,6 +79,23 @@ app.post('/api/admin-setup', async (req, res) => {
     const { email, password, fullName } = req.body;
     const client = await pool.connect();
     
+    // First ensure users table exists with role column
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Add role column if it doesn't exist
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user'
+    `);
+    
     // Check if admin already exists
     const existingAdmin = await client.query('SELECT * FROM users WHERE role = $1', ['admin']);
     if (existingAdmin.rows.length > 0) {
