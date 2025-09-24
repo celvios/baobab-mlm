@@ -46,14 +46,10 @@ export default function Orders() {
       setError(null);
       const response = await apiService.getOrders();
       setOrders(response.orders || []);
-      // Sync with localStorage only if API call succeeds
-      localStorage.setItem('userOrders', JSON.stringify(response.orders || []));
     } catch (error) {
       console.error('Error fetching orders:', error);
-      // Only fallback to localStorage if it's a network error, not if orders were deleted
-      const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      setOrders(userOrders);
-      setError('Using local orders - API unavailable');
+      setOrders([]);
+      setError('Failed to load orders');
     } finally {
       setLoading(false);
     }
@@ -131,51 +127,24 @@ export default function Orders() {
   };
 
   const confirmDeleteOrder = async () => {
-    if (!selectedOrder?.originalOrder) {
-      addNotification('Unable to delete order', 'error');
-      return;
-    }
-
     try {
-      // Try API deletion first
-      if (selectedOrder.originalOrder.id) {
-        await apiService.deleteOrder(selectedOrder.originalOrder.id);
-        addNotification('Order deleted successfully', 'success');
-      }
-      
-      // Update local state immediately
-      const updatedOrders = orders.filter(order => 
-        order.id !== selectedOrder.originalOrder.id && 
-        order.orderNumber !== selectedOrder.originalOrder.orderNumber
-      );
-      setOrders(updatedOrders);
-      
-      // Update localStorage
-      localStorage.setItem('userOrders', JSON.stringify(updatedOrders));
-      
+      await apiService.deleteOrder(selectedOrder.originalOrder.id);
+      setOrders(orders.filter(order => order.id !== selectedOrder.originalOrder.id));
+      addNotification('Order deleted successfully', 'success');
     } catch (error) {
-      console.error('API deletion failed:', error);
-      addNotification('Failed to delete order from server', 'error');
+      addNotification('Failed to delete order', 'error');
     }
-    
     setShowDeleteModal(false);
   };
 
   const confirmDeleteAll = async () => {
     try {
-      // Try to delete all from API first
       await apiService.deleteAllOrders();
-      addNotification('All orders deleted successfully', 'success');
-      
-      // Clear local state and localStorage
       setOrders([]);
-      localStorage.setItem('userOrders', JSON.stringify([]));
-      
+      addNotification('All orders deleted successfully', 'success');
     } catch (error) {
-      console.error('API deletion failed:', error);
-      addNotification('Failed to delete orders from server', 'error');
+      addNotification('Failed to delete orders', 'error');
     }
-    
     setShowDeleteAllModal(false);
   };
 
