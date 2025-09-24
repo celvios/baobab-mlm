@@ -385,6 +385,31 @@ class ApiService {
     });
   }
 
+  // Blog methods
+  async getBlogPosts() {
+    return this.request('/admin/blog');
+  }
+
+  async createBlogPost(blogData) {
+    return this.request('/admin/blog', {
+      method: 'POST',
+      body: JSON.stringify(blogData),
+    });
+  }
+
+  async updateBlogPost(blogId, blogData) {
+    return this.request(`/admin/blog/${blogId}`, {
+      method: 'PUT',
+      body: JSON.stringify(blogData),
+    });
+  }
+
+  async deleteBlogPost(blogId) {
+    return this.request(`/admin/blog/${blogId}`, {
+      method: 'DELETE',
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');

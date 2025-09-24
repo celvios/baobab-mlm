@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit, FiTrash2, FiEye, FiSearch } from 'react-icons/fi';
+import apiService from '../../services/api';
 
 const AdminBlogManagement = () => {
   const [blogs, setBlogs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingBlog, setEditingBlog] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchBlogs();
@@ -13,71 +15,93 @@ const AdminBlogManagement = () => {
 
   const fetchBlogs = async () => {
     try {
-      const response = await fetch('/api/admin/blogs', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      const data = await response.json();
-      setBlogs(data.blogs);
+      setLoading(true);
+      const response = await apiService.getBlogPosts();
+      setBlogs(response.posts || []);
     } catch (error) {
       console.error('Error fetching blogs:', error);
+      setBlogs([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteBlog = async (blogId) => {
     if (window.confirm('Are you sure you want to delete this blog post?')) {
       try {
-        await fetch(`/api/admin/blogs/${blogId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-        });
+        await apiService.deleteBlogPost(blogId);
         fetchBlogs();
+        alert('Blog post deleted successfully');
       } catch (error) {
         console.error('Error deleting blog:', error);
+        alert('Failed to delete blog post');
       }
     }
   };
 
   const filteredBlogs = blogs.filter(blog =>
-    blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    blog.category.toLowerCase().includes(searchTerm.toLowerCase())
+    blog.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    blog.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const CreateBlogModal = () => {
-    const [formData, setFormData] = useState({
-      title: '',
-      content: '',
-      category: '',
-      featured_image: '',
-      status: 'draft'
-    });
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [category, setCategory] = useState('');
+    const [featuredImage, setFeaturedImage] = useState('');
+    const [status, setStatus] = useState('draft');
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
       if (editingBlog) {
-        setFormData(editingBlog);
+        setTitle(editingBlog.title || '');
+        setContent(editingBlog.content || '');
+        setCategory(editingBlog.category || '');
+        setFeaturedImage(editingBlog.featured_image || '');
+        setStatus(editingBlog.status || 'draft');
       }
     }, [editingBlog]);
 
     const handleSubmit = async (e) => {
       e.preventDefault();
+      setSubmitting(true);
+      
       try {
-        const method = editingBlog ? 'PUT' : 'POST';
-        const url = editingBlog ? `/api/admin/blogs/${editingBlog.id}` : '/api/admin/blogs';
-        
-        await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-          },
-          body: JSON.stringify(formData)
-        });
+        const blogData = {
+          title,
+          content,
+          category,
+          featured_image: featuredImage,
+          status
+        };
+
+        if (editingBlog) {
+          await apiService.updateBlogPost(editingBlog.id, blogData);
+          alert('Blog post updated successfully');
+        } else {
+          await apiService.createBlogPost(blogData);
+          alert('Blog post created successfully');
+        }
         
         setShowCreateModal(false);
         setEditingBlog(null);
         fetchBlogs();
       } catch (error) {
         console.error('Error saving blog:', error);
+        alert('Failed to save blog post');
+      } finally {
+        setSubmitting(false);
       }
+    };
+
+    const handleClose = () => {
+      setShowCreateModal(false);
+      setEditingBlog(null);
+      setTitle('');
+      setContent('');
+      setCategory('');
+      setFeaturedImage('');
+      setStatus('draft');
     };
 
     return (
@@ -90,36 +114,36 @@ const AdminBlogManagement = () => {
             <input
               type="text"
               placeholder="Blog Title"
-              value={formData.title}
-              onChange={(e) => setFormData({...formData, title: e.target.value})}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               className="w-full p-2 border rounded-lg"
               required
             />
             <input
               type="text"
               placeholder="Category"
-              value={formData.category}
-              onChange={(e) => setFormData({...formData, category: e.target.value})}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
               className="w-full p-2 border rounded-lg"
               required
             />
             <input
               type="url"
               placeholder="Featured Image URL"
-              value={formData.featured_image}
-              onChange={(e) => setFormData({...formData, featured_image: e.target.value})}
+              value={featuredImage}
+              onChange={(e) => setFeaturedImage(e.target.value)}
               className="w-full p-2 border rounded-lg"
             />
             <textarea
               placeholder="Blog Content"
-              value={formData.content}
-              onChange={(e) => setFormData({...formData, content: e.target.value})}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
               className="w-full p-2 border rounded-lg h-40"
               required
             />
             <select
-              value={formData.status}
-              onChange={(e) => setFormData({...formData, status: e.target.value})}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
               className="w-full p-2 border rounded-lg"
             >
               <option value="draft">Draft</option>
@@ -128,16 +152,14 @@ const AdminBlogManagement = () => {
             <div className="flex space-x-2">
               <button
                 type="submit"
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                disabled={submitting}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
               >
-                {editingBlog ? 'Update' : 'Create'}
+                {submitting ? 'Saving...' : (editingBlog ? 'Update' : 'Create')}
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setEditingBlog(null);
-                }}
+                onClick={handleClose}
                 className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
               >
                 Cancel
@@ -191,60 +213,74 @@ const AdminBlogManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredBlogs.map((blog) => (
-                <tr key={blog.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
-                        {blog.featured_image ? (
-                          <img src={blog.featured_image} alt={blog.title} className="w-12 h-12 rounded-lg object-cover" />
-                        ) : (
-                          <span className="text-gray-500 text-xs">IMG</span>
-                        )}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{blog.title}</div>
-                        <div className="text-sm text-gray-500">{blog.content?.substring(0, 60)}...</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {blog.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      blog.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {blog.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(blog.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">
-                        <FiEye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingBlog(blog);
-                          setShowCreateModal(true);
-                        }}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        <FiEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteBlog(blog.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                    Loading blog posts...
                   </td>
                 </tr>
-              ))}
+              ) : filteredBlogs.length > 0 ? (
+                filteredBlogs.map((blog) => (
+                  <tr key={blog.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mr-4">
+                          {blog.featured_image ? (
+                            <img src={blog.featured_image} alt={blog.title} className="w-12 h-12 rounded-lg object-cover" />
+                          ) : (
+                            <span className="text-gray-500 text-xs">IMG</span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{blog.title}</div>
+                          <div className="text-sm text-gray-500">{blog.content?.substring(0, 60)}...</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {blog.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        blog.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {blog.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(blog.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button className="text-blue-600 hover:text-blue-900">
+                          <FiEye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingBlog(blog);
+                            setShowCreateModal(true);
+                          }}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          <FiEdit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteBlog(blog.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                    No blog posts found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
