@@ -346,7 +346,7 @@ class ApiService {
   }
 
   async getAllUsers() {
-    return this.request('/admin/users');
+    return this.request('/admin/users?limit=1000');
   }
 
   async sendEmail(emailData) {
