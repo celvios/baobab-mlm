@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const adminAuth = require('../middleware/adminAuth');
+const { getBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost, publishBlogPost, getBlogStats } = require('../../../src/controllers/adminBlogController');
 
 // Admin dashboard stats
 router.get('/stats', adminAuth, async (req, res) => {
@@ -408,5 +409,13 @@ router.get('/recent-activity', adminAuth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Blog management routes
+router.get('/blog', adminAuth, getBlogPosts);
+router.post('/blog', adminAuth, createBlogPost);
+router.put('/blog/:id', adminAuth, updateBlogPost);
+router.delete('/blog/:id', adminAuth, deleteBlogPost);
+router.put('/blog/:id/publish', adminAuth, publishBlogPost);
+router.get('/blog/stats', adminAuth, getBlogStats);
 
 module.exports = router;

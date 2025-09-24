@@ -19,11 +19,11 @@ import CartDropdown from '../components/CartDropdown';
 import PageLoader from '../components/PageLoader';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Products', href: '/products', icon: ShoppingBagIcon },
-  { name: 'My Orders', href: '/orders', icon: ClipboardDocumentListIcon },
-  { name: 'My Team', href: '/team', icon: UserGroupIcon },
-  { name: 'History', href: '/history', icon: ClockIcon },
+  { name: 'Dashboard', href: '/user/dashboard', icon: HomeIcon },
+  { name: 'Products', href: '/user/products', icon: ShoppingBagIcon },
+  { name: 'My Orders', href: '/user/orders', icon: ClipboardDocumentListIcon },
+  { name: 'My Team', href: '/user/team', icon: UserGroupIcon },
+  { name: 'History', href: '/user/history', icon: ClockIcon },
 ];
 
 export default function DashboardLayout() {

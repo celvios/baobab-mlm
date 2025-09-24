@@ -6,6 +6,7 @@ import { CartProvider } from './contexts/CartContext';
 // import { SettingsProvider } from './contexts/SettingsContext';
 import DashboardLayout from './layouts/DashboardLayout';
 import AdminLayout from './layouts/AdminLayout';
+import Homepage from './pages/Homepage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SecurityVerification from './pages/SecurityVerification';
@@ -89,7 +90,7 @@ const PublicRoute = ({ children }) => {
     );
   }
   
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
+  return isAuthenticated ? <Navigate to="/user/dashboard" replace /> : children;
 };
 
 function AppContent() {
@@ -97,6 +98,7 @@ function AppContent() {
     <Router>
       <div className="App">
         <Routes>
+          <Route path="/" element={<Homepage />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/security-verification" element={<PublicRoute><SecurityVerification /></PublicRoute>} />
@@ -118,8 +120,8 @@ function AppContent() {
             <Route path="settings" element={<AdminSettings />} />
           </Route>
           
-          <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="/user" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+            <Route index element={<Navigate to="/user/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="products" element={<Products />} />
             <Route path="orders" element={<Orders />} />
