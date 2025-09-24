@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiUsers, FiShoppingBag, FiDollarSign, FiTrendingUp, FiEye } from 'react-icons/fi';
+import apiService from '../../services/api';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -9,25 +10,34 @@ const AdminDashboard = () => {
     pendingWithdrawals: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
-    // Show realistic sample data for demo
-    setStats({
-      totalUsers: 156,
-      totalOrders: 89,
-      totalRevenue: 2450000,
-      pendingWithdrawals: 12
-    });
-    setRecentActivity([
-      { description: 'New user registered: Sarah Johnson', created_at: new Date(Date.now() - 3600000).toISOString() },
-      { description: 'Order completed: #ORD-2024-001', created_at: new Date(Date.now() - 7200000).toISOString() },
-      { description: 'Withdrawal request: ₦75,000', created_at: new Date(Date.now() - 10800000).toISOString() },
-      { description: 'New user registered: Michael Chen', created_at: new Date(Date.now() - 14400000).toISOString() }
-    ]);
+    try {
+      setLoading(true);
+      const data = await apiService.getAdminStats();
+      setStats(data);
+      
+      // For now, keep sample recent activity until we have a real endpoint
+      setRecentActivity([
+        { description: 'Dashboard loaded with real data', created_at: new Date().toISOString() }
+      ]);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+      // Fallback to sample data if API fails
+      setStats({
+        totalUsers: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingWithdrawals: 0
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const StatCard = ({ icon: Icon, title, value, color }) => (
@@ -43,6 +53,16 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">

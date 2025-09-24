@@ -276,6 +276,10 @@ class ApiService {
     return response;
   }
 
+  async getAdminStats() {
+    return this.request('/admin-stats');
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');
