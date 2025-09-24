@@ -10,12 +10,10 @@ const AdminEmailer = () => {
   const [loading, setLoading] = useState(false);
 
   const ComposeEmail = () => {
-    const [formData, setFormData] = useState({
-      subject: '',
-      message: '',
-      category: 'all',
-      selectedUsers: []
-    });
+    const [subject, setSubject] = useState('');
+    const [message, setMessage] = useState('');
+    const [category, setCategory] = useState('all');
+    const [selectedUsers, setSelectedUsers] = useState([]);
 
     useEffect(() => {
       fetchAllUsers();
@@ -30,25 +28,21 @@ const AdminEmailer = () => {
       }
     };
 
-    const handleInputChange = (field, value) => {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
-    };
-
     const handleSendEmail = async (e) => {
       e.preventDefault();
       setLoading(true);
       try {
-        await apiService.sendEmail(formData);
-        alert('Email sent successfully!');
-        setFormData({
-          subject: '',
-          message: '',
-          category: 'all',
-          selectedUsers: []
+        await apiService.sendEmail({
+          subject,
+          message,
+          category,
+          selectedUsers
         });
+        alert('Email sent successfully!');
+        setSubject('');
+        setMessage('');
+        setCategory('all');
+        setSelectedUsers([]);
         setActiveTab('history');
       } catch (error) {
         console.error('Error sending email:', error);
@@ -65,8 +59,8 @@ const AdminEmailer = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Recipients</label>
             <select
-              value={formData.category}
-              onChange={(e) => handleInputChange('category', e.target.value)}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             >
               <option value="all">All Users ({allUsers.length})</option>
@@ -79,38 +73,34 @@ const AdminEmailer = () => {
           </div>
           
           <div>
-            <label htmlFor="email-subject" className="block text-sm font-medium text-gray-700 mb-2">
-              Subject
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
             <input
-              id="email-subject"
               type="text"
-              value={formData.subject}
-              onChange={(e) => handleInputChange('subject', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               placeholder="Enter email subject"
+              autoComplete="off"
               required
             />
           </div>
           
           <div>
-            <label htmlFor="email-message" className="block text-sm font-medium text-gray-700 mb-2">
-              Message
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
             <textarea
-              id="email-message"
-              value={formData.message}
-              onChange={(e) => handleInputChange('message', e.target.value)}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-vertical"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-vertical"
               placeholder="Enter your message here..."
+              autoComplete="off"
               required
             />
           </div>
           
           <button
             type="submit"
-            disabled={loading || !formData.subject.trim() || !formData.message.trim()}
+            disabled={loading || !subject.trim() || !message.trim()}
             className="w-full bg-green-600 text-white px-6 py-3 rounded-md font-medium flex items-center justify-center space-x-2 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <FiSend className="w-4 h-4" />
