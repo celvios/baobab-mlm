@@ -11,15 +11,23 @@ const AdminSetup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://baobab-backend.onrender.com/api/admin-setup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await response.json();
-      setMessage(data.message);
+      // Test if backend is working
+      const healthResponse = await fetch('https://baobab-backend.onrender.com/api/health');
+      if (!healthResponse.ok) {
+        throw new Error('Backend is not responding');
+      }
+      
+      // Setup database first
+      const setupResponse = await fetch('https://baobab-backend.onrender.com/api/setup-database');
+      const setupData = await setupResponse.json();
+      
+      // Create admin using existing endpoint
+      const adminResponse = await fetch('https://baobab-backend.onrender.com/api/setup-admin');
+      const adminData = await adminResponse.json();
+      
+      setMessage('Admin setup completed! Use email: admin@baobabmlm.com, password: password');
     } catch (error) {
-      setMessage('Error: ' + error.message);
+      setMessage('Error: ' + error.message + '. Backend may be down.');
     }
   };
 
