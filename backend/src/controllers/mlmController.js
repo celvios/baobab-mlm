@@ -62,14 +62,14 @@ const getLevelProgress = async (req, res) => {
       infinity: { next: null, required: 0 }
     };
 
-    const current = levelRequirements[mlm_level];
-    const progress = current.next ? Math.min((parseInt(referral_count) / current.required) * 100, 100) : 100;
+    const current = levelRequirements[mlm_level] || levelRequirements['feeder'];
+    const progress = current && current.next ? Math.min((parseInt(referral_count) / current.required) * 100, 100) : 100;
 
     res.json({
-      currentLevel: mlm_level,
-      nextLevel: current.next,
-      currentReferrals: parseInt(referral_count),
-      requiredReferrals: current.required,
+      currentLevel: mlm_level || 'feeder',
+      nextLevel: current ? current.next : 'bronze',
+      currentReferrals: parseInt(referral_count) || 0,
+      requiredReferrals: current ? current.required : 6,
       progress: Math.round(progress)
     });
   } catch (error) {
