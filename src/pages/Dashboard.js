@@ -32,6 +32,15 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [marketUpdates, setMarketUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const formatCurrency = (value) => {
+    try {
+      const num = Number(value) || 0;
+      return num.toLocaleString();
+    } catch (error) {
+      return '0';
+    }
+  };
   
   useEffect(() => {
     fetchDashboardData();
@@ -180,7 +189,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: 'Product Order',
       type: 'Outgoing',
-      amount: `$${order.amount.toLocaleString()}`,
+      amount: `$${formatCurrency(order.amount)}`,
       status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'
     })),
     ...withdrawals.map((withdrawal, index) => ({
@@ -189,7 +198,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: 'Withdrawal',
       type: 'Outgoing',
-      amount: `$${withdrawal.amount.toLocaleString()}`,
+      amount: `$${formatCurrency(withdrawal.amount)}`,
       status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending'
     })),
     ...transactions.map((tx, index) => ({
@@ -198,7 +207,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction',
       type: tx.amount > 0 ? 'Incoming' : 'Outgoing',
-      amount: `$${Math.abs(tx.amount).toLocaleString()}`,
+      amount: `$${formatCurrency(Math.abs(tx.amount))}`,
       status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending'
     }))
   ].slice(0, 5); // Show only latest 5 entries
@@ -230,7 +239,7 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <p className="text-white/70 text-sm mb-1">Wallet Balance</p>
-                      <p className="text-3xl font-bold mb-1">₦{(userProfile?.wallet?.balance || 0).toLocaleString()}</p>
+                      <p className="text-3xl font-bold mb-1">₦{formatCurrency(userProfile?.wallet?.balance)}</p>
                       <p className="text-white/70 text-sm">${((userProfile?.wallet?.balance || 0) / 1500).toFixed(2)}</p>
                     </div>
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -279,7 +288,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-900 mb-3">MLM Earnings</h2>
               <div className="bg-gray-100 p-6 rounded-2xl shadow-card h-48 flex flex-col justify-between">
                 <div>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">₦{(userProfile?.wallet?.mlmEarnings || 0).toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">₦{formatCurrency(userProfile?.wallet?.mlmEarnings)}</p>
                   <p className="text-gray-500 text-sm">${((userProfile?.wallet?.mlmEarnings || 0) / 1500).toFixed(2)}</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
@@ -324,7 +333,7 @@ export default function Dashboard() {
                       <p className="text-gray-600 text-xs sm:text-sm mb-3">{product.description}</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
-                      <p className="text-base sm:text-lg font-semibold text-gray-900">₦{product.price.toLocaleString()}</p>
+                      <p className="text-base sm:text-lg font-semibold text-gray-900">₦{formatCurrency(product.price)}</p>
                       {(userProfile?.wallet?.balance || 0) >= product.price ? (
                         <button 
                           onClick={() => handleQuickPurchase(product)}
