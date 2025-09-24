@@ -455,6 +455,30 @@ app.get('/api/setup-admin', async (req, res) => {
   }
 });
 
+// Add pickup column to orders table
+app.get('/api/add-pickup-column', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Add is_picked_up column to orders table
+    await client.query(`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS is_picked_up BOOLEAN DEFAULT FALSE
+    `);
+    
+    client.release();
+    res.json({ message: 'Pickup column added to orders table successfully!' });
+  } catch (error) {
+    console.error('Add pickup column error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create sample users for testing
 app.get('/api/create-sample-users', async (req, res) => {
   const { Pool } = require('pg');

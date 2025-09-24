@@ -207,6 +207,43 @@ router.post('/users/:userId/credit', adminAuth, async (req, res) => {
   }
 });
 
+// Get all orders for admin
+router.get('/orders', adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT o.*, u.full_name as user_name, u.email as user_email
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      ORDER BY o.created_at DESC
+    `);
+    res.json({ orders: result.rows });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update order status
+router.put('/orders/:orderId', adminAuth, async (req, res) => {
+  const { orderId } = req.params;
+  const updateData = req.body;
+  
+  try {
+    const setClause = Object.keys(updateData).map((key, index) => `${key} = $${index + 2}`).join(', ');
+    const values = [orderId, ...Object.values(updateData)];
+    
+    await pool.query(
+      `UPDATE orders SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      values
+    );
+    
+    res.json({ message: 'Order updated successfully' });
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Recent activity
 router.get('/recent-activity', adminAuth, async (req, res) => {
   try {

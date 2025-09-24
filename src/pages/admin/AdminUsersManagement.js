@@ -102,31 +102,13 @@ const AdminUsersManagement = () => {
           <h1 className="text-2xl font-bold text-gray-900">Users Management</h1>
           <p className="text-gray-600">Manage all system users</p>
         </div>
-        <div className="flex space-x-2">
-          <button 
-            onClick={async () => {
-              try {
-                const response = await fetch('https://baobab-mlm.onrender.com/api/admin/users-test');
-                const data = await response.json();
-                console.log('Direct API test:', data);
-                alert(`API Response: ${JSON.stringify(data, null, 2)}`);
-              } catch (error) {
-                console.error('Direct API test error:', error);
-                alert(`Error: ${error.message}`);
-              }
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Test API
-          </button>
-          <button 
-            onClick={() => setShowNewUserForm(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span>Add New User</span>
-          </button>
-        </div>
+        <button 
+          onClick={() => setShowNewUserForm(true)}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700"
+        >
+          <FiPlus className="w-4 h-4" />
+          <span>Add New User</span>
+        </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border">

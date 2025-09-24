@@ -298,6 +298,17 @@ class ApiService {
     });
   }
 
+  async getAdminOrders() {
+    return this.request('/admin/orders');
+  }
+
+  async updateOrderStatus(orderId, statusData) {
+    return this.request(`/admin/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify(statusData),
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');
