@@ -2,41 +2,26 @@ const pool = require('../config/database');
 
 const getBlogPosts = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status = '', search = '' } = req.query;
-    const offset = (page - 1) * limit;
+    // Create blog_posts table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS blog_posts (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        status VARCHAR(20) DEFAULT 'draft',
+        featured_image TEXT,
+        author_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-    let query = 'SELECT * FROM blog_posts WHERE 1=1';
-    let countQuery = 'SELECT COUNT(*) FROM blog_posts WHERE 1=1';
-    const params = [];
-    let paramIndex = 1;
-
-    if (status) {
-      query += ` AND status = $${paramIndex}`;
-      countQuery += ` AND status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
-    }
-
-    if (search) {
-      query += ` AND (title ILIKE $${paramIndex} OR content ILIKE $${paramIndex})`;
-      countQuery += ` AND (title ILIKE $${paramIndex} OR content ILIKE $${paramIndex})`;
-      params.push(`%${search}%`);
-      paramIndex++;
-    }
-
-    query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-    params.push(limit, offset);
-
-    const [posts, count] = await Promise.all([
-      pool.query(query, params),
-      pool.query(countQuery, params.slice(0, -2))
-    ]);
+    const result = await pool.query('SELECT * FROM blog_posts ORDER BY created_at DESC');
 
     res.json({
-      posts: posts.rows,
-      total: parseInt(count.rows[0].count),
-      page: parseInt(page),
-      totalPages: Math.ceil(count.rows[0].count / limit)
+      posts: result.rows,
+      total: result.rows.length
     });
   } catch (error) {
     console.error('Get blog posts error:', error);
@@ -46,17 +31,26 @@ const getBlogPosts = async (req, res) => {
 
 const createBlogPost = async (req, res) => {
   try {
-    const { title, content, excerpt, category, status = 'draft', featured_image } = req.body;
+    const { title, content, category, status = 'draft', featured_image } = req.body;
+
+    // Create blog_posts table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS blog_posts (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        status VARCHAR(20) DEFAULT 'draft',
+        featured_image TEXT,
+        author_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
     const result = await pool.query(
-      'INSERT INTO blog_posts (title, content, excerpt, category, status, featured_image, author_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [title, content, excerpt, category, status, featured_image, req.admin.id]
-    );
-
-    // Log admin activity
-    await pool.query(
-      'INSERT INTO admin_activity_logs (admin_id, action, details) VALUES ($1, $2, $3)',
-      [req.admin.id, 'create_blog_post', `Created blog post: ${title}`]
+      'INSERT INTO blog_posts (title, content, category, status, featured_image, author_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [title, content, category, status, featured_image, req.admin?.id || 1]
     );
 
     res.status(201).json({ post: result.rows[0] });
