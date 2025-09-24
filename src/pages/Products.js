@@ -285,12 +285,13 @@ export default function Products() {
         quantity={quantity}
       />
       
-      <Toast 
-        message="Added to cart successfully!"
-        type="success"
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+      {showToast && (
+        <Toast 
+          message="Added to cart successfully!"
+          type="success"
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 }

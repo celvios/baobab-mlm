@@ -31,9 +31,9 @@ const PurchaseProductModal = ({ isOpen, onClose, userProfile }) => {
   const handlePurchase = async () => {
     if (!selectedProduct) return;
     
-    const productPrice = selectedProduct.price;
+    const productPriceNGN = selectedProduct.price * 1500; // Convert USD to NGN
     
-    if (walletBalance < productPrice) {
+    if (walletBalance < productPriceNGN) {
       addNotification('Insufficient wallet balance', 'error');
       return;
     }
@@ -42,7 +42,7 @@ const PurchaseProductModal = ({ isOpen, onClose, userProfile }) => {
     try {
       const orderData = {
         productName: selectedProduct.name,
-        productPrice: productPrice,
+        productPrice: productPriceNGN,
         quantity: 1,
         deliveryType: 'pickup',
         pickupStation: 'Ikeja High Tower, Lagos'
@@ -59,7 +59,7 @@ const PurchaseProductModal = ({ isOpen, onClose, userProfile }) => {
         date: new Date().toLocaleDateString('en-GB'),
         product: selectedProduct.name,
         quantity: 1,
-        amount: productPrice,
+        amount: productPriceNGN,
         status: 'confirmed',
         paymentStatus: 'successful',
         deliveryStatus: 'pending',
@@ -212,16 +212,20 @@ const PurchaseProductModal = ({ isOpen, onClose, userProfile }) => {
                   <span className="font-medium">{selectedProduct?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Price:</span>
-                  <span className="font-medium">₦{selectedProduct?.price.toLocaleString()}</span>
+                  <span className="text-gray-600">Price (USD):</span>
+                  <span className="font-medium">${selectedProduct?.price.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Price (NGN):</span>
+                  <span className="font-medium">₦{((selectedProduct?.price || 0) * 1500).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Quantity:</span>
                   <span className="font-medium">1</span>
                 </div>
                 <div className="flex justify-between border-t pt-3 font-semibold">
-                  <span>Total:</span>
-                  <span>₦{selectedProduct?.price.toLocaleString()}</span>
+                  <span>Total (NGN):</span>
+                  <span>₦{((selectedProduct?.price || 0) * 1500).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -233,13 +237,13 @@ const PurchaseProductModal = ({ isOpen, onClose, userProfile }) => {
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-gray-700">After Purchase:</span>
-                <span className={`font-semibold ${walletBalance >= (selectedProduct?.price || 0) ? 'text-green-600' : 'text-red-600'}`}>
-                  ₦{(walletBalance - (selectedProduct?.price || 0)).toLocaleString()}
+                <span className={`font-semibold ${walletBalance >= ((selectedProduct?.price || 0) * 1500) ? 'text-green-600' : 'text-red-600'}`}>
+                  ₦{(walletBalance - ((selectedProduct?.price || 0) * 1500)).toLocaleString()}
                 </span>
               </div>
             </div>
 
-            {walletBalance < (selectedProduct?.price || 0) && (
+            {walletBalance < ((selectedProduct?.price || 0) * 1500) && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <p className="text-red-700 text-sm">
                   Insufficient wallet balance. Please add funds to your wallet first.
@@ -284,9 +288,9 @@ const PurchaseProductModal = ({ isOpen, onClose, userProfile }) => {
             
             <button
               onClick={handleNext}
-              disabled={(currentStep === 1 && !selectedProduct) || loading || (currentStep === 2 && walletBalance < (selectedProduct?.price || 0))}
+              disabled={(currentStep === 1 && !selectedProduct) || loading || (currentStep === 2 && walletBalance < ((selectedProduct?.price || 0) * 1500))}
               className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
-                (currentStep === 1 && !selectedProduct) || loading || (currentStep === 2 && walletBalance < (selectedProduct?.price || 0))
+                (currentStep === 1 && !selectedProduct) || loading || (currentStep === 2 && walletBalance < ((selectedProduct?.price || 0) * 1500))
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-black text-white hover:bg-gray-800'
               }`}

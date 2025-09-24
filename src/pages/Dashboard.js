@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [showReferralToast, setShowReferralToast] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [levelProgress, setLevelProgress] = useState(null);
@@ -108,43 +109,32 @@ export default function Dashboard() {
   
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
-    setShowToast(true);
+    setShowReferralToast(true);
   };
 
-  const handleQuickPurchase = async (product) => {
-    const walletBalance = userProfile?.wallet?.balance || 0;
+  const handleAddToCart = (product) => {
+    // Get existing cart from localStorage
+    const existingCart = JSON.parse(localStorage.getItem('userCart') || '[]');
     
-    if (walletBalance < product.price) {
-      setShowToast(true);
-      return;
+    // Check if product already exists in cart
+    const existingItem = existingCart.find(item => item.id === product.id);
+    
+    if (existingItem) {
+      // Increase quantity
+      existingItem.quantity += 1;
+    } else {
+      // Add new item
+      existingCart.push({
+        ...product,
+        quantity: 1
+      });
     }
     
-    try {
-      const orderData = {
-        productName: product.name,
-        productPrice: product.price,
-        quantity: 1,
-        deliveryType: 'pickup',
-        pickupStation: 'Ikeja High Tower, Lagos'
-      };
-      
-      await apiService.purchaseWithWallet(orderData);
-      
-      // Update local state
-      setUserProfile(prev => ({
-        ...prev,
-        wallet: {
-          ...prev.wallet,
-          balance: prev.wallet.balance - product.price
-        }
-      }));
-      
-      // Refresh dashboard data
-      fetchDashboardData();
-      
-    } catch (error) {
-      console.error('Quick purchase failed:', error);
-    }
+    // Save to localStorage
+    localStorage.setItem('userCart', JSON.stringify(existingCart));
+    
+    // Show success toast
+    setShowToast(true);
   };
 
   // Show payment upload modal if user hasn't paid joining fee
@@ -333,22 +323,13 @@ export default function Dashboard() {
                       <p className="text-gray-600 text-xs sm:text-sm mb-3">{product.description}</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
-                      <p className="text-base sm:text-lg font-semibold text-gray-900">₦{formatCurrency(product.price)}</p>
-                      {(userProfile?.wallet?.balance || 0) >= product.price ? (
-                        <button 
-                          onClick={() => handleQuickPurchase(product)}
-                          className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
-                        >
-                          Buy Now
-                        </button>
-                      ) : (
-                        <button 
-                          disabled
-                          className="bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium cursor-not-allowed w-full sm:w-auto"
-                        >
-                          Insufficient Balance
-                        </button>
-                      )}
+                      <p className="text-base sm:text-lg font-semibold text-gray-900">${formatCurrency(product.price)}</p>
+                      <button 
+                        onClick={() => handleAddToCart(product)}
+                        className="bg-black text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
+                      >
+                        Add to Cart
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -518,12 +499,21 @@ export default function Dashboard() {
         }}
       />
       
-      <Toast 
-        message="Referral link copied to clipboard!"
-        type="success"
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+      {showToast && (
+        <Toast 
+          message="Product added to cart successfully!"
+          type="success"
+          onClose={() => setShowToast(false)}
+        />
+      )}
+      
+      {showReferralToast && (
+        <Toast 
+          message="Referral link copied to clipboard!"
+          type="success"
+          onClose={() => setShowReferralToast(false)}
+        />
+      )}
     </div>
   );
 }
