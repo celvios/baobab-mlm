@@ -244,6 +244,68 @@ router.put('/orders/:orderId', adminAuth, async (req, res) => {
   }
 });
 
+// Get all products for admin
+router.get('/products', adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT * FROM products
+      ORDER BY created_at DESC
+    `);
+    res.json({ products: result.rows });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Create new product
+router.post('/products', adminAuth, async (req, res) => {
+  const { name, description, price, category, stock_quantity, image_url } = req.body;
+  
+  try {
+    const result = await pool.query(
+      'INSERT INTO products (name, description, price, category, stock, image_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [name, description, price, category, stock_quantity || 0, image_url]
+    );
+    
+    res.json({ message: 'Product created successfully', product: result.rows[0] });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update product
+router.put('/products/:productId', adminAuth, async (req, res) => {
+  const { productId } = req.params;
+  const { name, description, price, category, stock_quantity, image_url } = req.body;
+  
+  try {
+    await pool.query(
+      'UPDATE products SET name = $1, description = $2, price = $3, category = $4, stock = $5, image_url = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7',
+      [name, description, price, category, stock_quantity, image_url, productId]
+    );
+    
+    res.json({ message: 'Product updated successfully' });
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete product
+router.delete('/products/:productId', adminAuth, async (req, res) => {
+  const { productId } = req.params;
+  
+  try {
+    await pool.query('DELETE FROM products WHERE id = $1', [productId]);
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Recent activity
 router.get('/recent-activity', adminAuth, async (req, res) => {
   try {

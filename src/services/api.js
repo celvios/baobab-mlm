@@ -309,6 +309,30 @@ class ApiService {
     });
   }
 
+  async getProducts() {
+    return this.request('/admin/products');
+  }
+
+  async createProduct(productData) {
+    return this.request('/admin/products', {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async updateProduct(productId, productData) {
+    return this.request(`/admin/products/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async deleteProduct(productId) {
+    return this.request(`/admin/products/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
   logout() {
     this.setToken(null);
     localStorage.removeItem('user');

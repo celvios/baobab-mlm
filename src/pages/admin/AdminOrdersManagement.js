@@ -94,9 +94,6 @@ const AdminOrdersManagement = () => {
                 <option value="all">All Orders</option>
                 <option value="picked_up">Picked Up</option>
                 <option value="not_picked_up">Not Picked Up</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
               </select>
             </div>
           </div>

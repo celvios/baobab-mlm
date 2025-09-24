@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiEye, FiSearch } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiEye, FiSearch, FiX } from 'react-icons/fi';
+import apiService from '../../services/api';
 
 const AdminProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -13,23 +15,20 @@ const AdminProductManagement = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/admin/products', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-      });
-      const data = await response.json();
-      setProducts(data.products);
+      setLoading(true);
+      const data = await apiService.getProducts();
+      setProducts(data.products || []);
     } catch (error) {
       console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteProduct = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        await fetch(`/api/admin/products/${productId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
-        });
+        await apiService.deleteProduct(productId);
         fetchProducts();
       } catch (error) {
         console.error('Error deleting product:', error);
@@ -55,17 +54,11 @@ const AdminProductManagement = () => {
     const handleSubmit = async (e) => {
       e.preventDefault();
       try {
-        const method = editingProduct ? 'PUT' : 'POST';
-        const url = editingProduct ? `/api/admin/products/${editingProduct.id}` : '/api/admin/products';
-        
-        await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-          },
-          body: JSON.stringify(formData)
-        });
+        if (editingProduct) {
+          await apiService.updateProduct(editingProduct.id, formData);
+        } else {
+          await apiService.createProduct(formData);
+        }
         
         setShowCreateModal(false);
         setEditingProduct(null);
@@ -78,9 +71,20 @@ const AdminProductManagement = () => {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 w-full max-w-md">
-          <h2 className="text-lg font-semibold mb-4">
-            {editingProduct ? 'Edit Product' : 'Create New Product'}
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">
+              {editingProduct ? 'Edit Product' : 'Add New Product'}
+            </h2>
+            <button 
+              onClick={() => {
+                setShowCreateModal(false);
+                setEditingProduct(null);
+              }}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <FiX className="w-5 h-5" />
+            </button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="text"
@@ -195,7 +199,23 @@ const AdminProductManagement = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((product) => (
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+                      <span className="ml-2 text-gray-500">Loading products...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                    {products.length === 0 ? 'No products found. Add your first product!' : 'No products match your search criteria.'}
+                  </td>
+                </tr>
+              ) : (
+                filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -251,7 +271,8 @@ const AdminProductManagement = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              ))
+              )}
             </tbody>
           </table>
         </div>
