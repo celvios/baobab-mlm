@@ -10,10 +10,12 @@ const AdminEmailer = () => {
   const [loading, setLoading] = useState(false);
 
   const ComposeEmail = () => {
-    const [subject, setSubject] = useState('');
-    const [message, setMessage] = useState('');
-    const [category, setCategory] = useState('all');
-    const [selectedUsers, setSelectedUsers] = useState([]);
+    const [formData, setFormData] = useState({
+      subject: '',
+      message: '',
+      category: 'all',
+      selectedUsers: []
+    });
 
     useEffect(() => {
       fetchAllUsers();
@@ -28,21 +30,25 @@ const AdminEmailer = () => {
       }
     };
 
+    const handleInputChange = (field, value) => {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    };
+
     const handleSendEmail = async (e) => {
       e.preventDefault();
       setLoading(true);
       try {
-        await apiService.sendEmail({
-          subject: subject,
-          message: message,
-          category: category,
-          selectedUsers: selectedUsers
-        });
+        await apiService.sendEmail(formData);
         alert('Email sent successfully!');
-        setSubject('');
-        setMessage('');
-        setCategory('all');
-        setSelectedUsers([]);
+        setFormData({
+          subject: '',
+          message: '',
+          category: 'all',
+          selectedUsers: []
+        });
         setActiveTab('history');
       } catch (error) {
         console.error('Error sending email:', error);
@@ -55,13 +61,13 @@ const AdminEmailer = () => {
     return (
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h2 className="text-lg font-semibold mb-4">Compose Email</h2>
-        <form onSubmit={handleSendEmail} className="space-y-4">
+        <form onSubmit={handleSendEmail} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Recipients</label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              value={formData.category}
+              onChange={(e) => handleInputChange('category', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             >
               <option value="all">All Users ({allUsers.length})</option>
               <option value="feeder">Feeder Level</option>
@@ -73,43 +79,39 @@ const AdminEmailer = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+            <label htmlFor="email-subject" className="block text-sm font-medium text-gray-700 mb-2">
+              Subject
+            </label>
             <input
+              id="email-subject"
               type="text"
-              value={subject}
-              onChange={(e) => {
-                e.preventDefault();
-                setSubject(e.target.value);
-              }}
-              onInput={(e) => setSubject(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              value={formData.subject}
+              onChange={(e) => handleInputChange('subject', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
               placeholder="Enter email subject"
-              autoComplete="off"
               required
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+            <label htmlFor="email-message" className="block text-sm font-medium text-gray-700 mb-2">
+              Message
+            </label>
             <textarea
-              value={message}
-              onChange={(e) => {
-                e.preventDefault();
-                setMessage(e.target.value);
-              }}
-              onInput={(e) => setMessage(e.target.value)}
-              rows="8"
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              id="email-message"
+              value={formData.message}
+              onChange={(e) => handleInputChange('message', e.target.value)}
+              rows={8}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-vertical"
               placeholder="Enter your message here..."
-              autoComplete="off"
               required
             />
           </div>
           
           <button
             type="submit"
-            disabled={loading}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700 disabled:opacity-50"
+            disabled={loading || !formData.subject.trim() || !formData.message.trim()}
+            className="w-full bg-green-600 text-white px-6 py-3 rounded-md font-medium flex items-center justify-center space-x-2 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <FiSend className="w-4 h-4" />
             <span>{loading ? 'Sending...' : 'Send Email'}</span>
