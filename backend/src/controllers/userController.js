@@ -44,6 +44,15 @@ const getProfile = async (req, res) => {
       console.log('wallets table may not exist');
     }
     
+    // Auto-register if balance >= 18000
+    if (walletData.balance >= 18000 && !user.joining_fee_paid) {
+      await pool.query(
+        'UPDATE users SET joining_fee_paid = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+        [userId]
+      );
+      user.joining_fee_paid = true;
+    }
+    
     // Calculate MLM earnings from team
     let teamSize = 0;
     try {
@@ -56,8 +65,17 @@ const getProfile = async (req, res) => {
       console.log('Error getting team size');
     }
     
+    // Auto-advance to Feeder stage if registered + 2 referrals
+    if ((user.joining_fee_paid || walletData.balance >= 18000) && teamSize >= 2 && user.mlm_level === 'no_stage') {
+      await pool.query(
+        'UPDATE users SET mlm_level = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        ['feeder', userId]
+      );
+      user.mlm_level = 'feeder';
+    }
+    
     let mlmEarnings = 0;
-    if (user.joining_fee_paid) {
+    if (user.joining_fee_paid || walletData.balance >= 18000) {
       if (teamSize >= 2) mlmEarnings = teamSize * 1.5;
       if (teamSize >= 6) mlmEarnings = teamSize * 4.8;
       if (teamSize >= 14) mlmEarnings = teamSize * 30;
