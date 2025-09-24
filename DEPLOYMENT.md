@@ -1,96 +1,136 @@
-# Baobab MLM Platform - Deployment Guide
+# Baobab Homepage Deployment Guide
 
-## Updated Features
-- Manual payment system with admin confirmation
-- Wallet-based product purchases
-- Payment proof upload functionality
-- Separate wallet balance and MLM earnings
+This guide will help you deploy the Baobab homepage to both Vercel and Render.
 
-## Backend Deployment (Render)
+## 🚀 Quick Deploy
 
-### 1. Database Migration
-First, update your PostgreSQL database with the new schema:
-
-```sql
--- Add new columns to users table
-ALTER TABLE users ADD COLUMN joining_fee_paid BOOLEAN DEFAULT FALSE;
-ALTER TABLE users ADD COLUMN joining_fee_amount DECIMAL(10,2) DEFAULT 0;
-ALTER TABLE users ADD COLUMN payment_proof_url VARCHAR(500);
-ALTER TABLE users ADD COLUMN payment_confirmed_by INTEGER REFERENCES admin_users(id);
-ALTER TABLE users ADD COLUMN payment_confirmed_at TIMESTAMP;
-
--- Create new tables
-CREATE TABLE payment_confirmations (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    amount DECIMAL(10,2) NOT NULL,
-    proof_url VARCHAR(500),
-    confirmed_by INTEGER REFERENCES admin_users(id),
-    confirmed_at TIMESTAMP,
-    status VARCHAR(50) DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Update settings
-INSERT INTO settings (key, value) VALUES ('joining_fee', '18000') 
-ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+Run the deployment preparation script:
+```bash
+npm run deploy
 ```
 
-### 2. Environment Variables (Render)
-Add these to your Render dashboard:
+## 📋 Manual Deployment Steps
 
-```
-DATABASE_URL=your_postgresql_connection_string
-JWT_SECRET=your_jwt_secret
-NODE_ENV=production
-PORT=5000
-CORS_ORIGIN=https://baobab-mlm.vercel.app
-SENDGRID_API_KEY=your_sendgrid_key
-SENDGRID_FROM_EMAIL=noreply@yourdomain.com
-```
+### Prerequisites
+- Node.js installed
+- Git repository set up
+- Account on Vercel and/or Render
 
-### 3. File Upload Configuration
-Render will handle file uploads in the `/tmp` directory. The payment proof uploads will work automatically.
+### 1. Prepare the Build
 
-## Frontend Deployment (Vercel)
+```bash
+# Install dependencies
+npm install
 
-### Environment Variables (Vercel)
-```
-REACT_APP_API_URL=https://your-backend-url.onrender.com
-REACT_APP_FRONTEND_URL=https://your-frontend-url.vercel.app
+# Build the project
+npm run build
 ```
 
-## Deployment Steps
+## 🔵 Vercel Deployment
 
-### Backend (Render)
-1. Push backend code to GitHub
-2. Connect Render to your repository
-3. Set environment variables
-4. Deploy service
-5. Run database migration via Render shell or database client
+### Option A: Vercel CLI (Recommended)
+```bash
+# Install Vercel CLI globally
+npm install -g vercel
 
-### Frontend (Vercel)
-1. Push frontend code to GitHub  
-2. Connect Vercel to your repository
-3. Set environment variables
-4. Deploy
+# Deploy to Vercel
+vercel --prod
+```
 
-## Post-Deployment Checklist
+### Option B: Vercel Dashboard
+1. Go to [vercel.com](https://vercel.com)
+2. Click "New Project"
+3. Import your GitHub repository
+4. Vercel will automatically detect it's a React app
+5. Click "Deploy"
 
-1. **Test user registration** - Verify new users start with ₦0 balance
-2. **Test payment upload** - Users can upload payment proof
-3. **Test admin confirmation** - Admin can confirm payments and credit wallets
-4. **Test product purchases** - Products can only be bought with sufficient wallet balance
-5. **Test MLM earnings** - Separate display of wallet balance vs MLM earnings
+### Vercel Configuration
+The project includes a `vercel.json` file with:
+- Static build configuration
+- Proper routing for SPA
+- Caching headers for assets
+- Production environment variables
 
-## New Admin Features
-- Access `/admin/pending-payments` to manage payment confirmations
-- View uploaded payment proofs
-- Confirm payments and credit user wallets
-- Track payment confirmation history
+## 🟢 Render Deployment
 
-## URLs
-- Frontend: https://baobab-mlm.vercel.app
-- Backend: https://baobab-backend.onrender.com
-- Admin Panel: https://baobab-mlm.vercel.app/admin
-- Pending Payments: https://baobab-mlm.vercel.app/admin/pending-payments
+### Steps:
+1. Push your code to GitHub
+2. Go to [render.com](https://render.com)
+3. Click "New Static Site"
+4. Connect your GitHub repository
+5. Render will use the `render.yaml` configuration automatically
+
+### Render Configuration
+The `render.yaml` file includes:
+- Static site configuration
+- Build command: `npm install && npm run build`
+- Publish directory: `./build`
+- Production environment
+
+## 🌐 Homepage Features
+
+The deployed homepage includes:
+- ✅ Responsive design
+- ✅ Modern React components
+- ✅ Tailwind CSS styling
+- ✅ Optimized images
+- ✅ SEO-friendly structure
+- ✅ Fast loading performance
+
+## 📁 Project Structure
+
+```
+baobab-mlm/
+├── src/
+│   ├── pages/
+│   │   └── Homepage.js          # Main homepage component
+│   ├── App.js                   # Updated routing
+│   └── index.css               # Tailwind styles
+├── public/
+│   └── images/                 # Homepage images
+├── vercel.json                 # Vercel configuration
+├── render.yaml                 # Render configuration
+└── deploy.js                   # Deployment script
+```
+
+## 🔧 Environment Variables
+
+No environment variables are required for the homepage deployment.
+
+## 🐛 Troubleshooting
+
+### Build Fails
+- Ensure all dependencies are installed: `npm install`
+- Check for TypeScript errors: `npm run build`
+
+### Images Not Loading
+- Verify images are in `public/images/` directory
+- Check image paths in components start with `/images/`
+
+### Routing Issues
+- Vercel: The `vercel.json` handles SPA routing
+- Render: Static sites automatically handle SPA routing
+
+## 📞 Support
+
+If you encounter issues:
+1. Check the build logs
+2. Verify all images are present
+3. Ensure the repository is up to date
+4. Contact support if needed
+
+## 🎉 Success!
+
+Once deployed, your Baobab homepage will be live and accessible at:
+- Vercel: `https://your-project.vercel.app`
+- Render: `https://your-project.onrender.com`
+
+The homepage includes all sections from the design:
+- Hero section with product showcase
+- About Baobab information
+- Benefits and features
+- Product highlights
+- Customer testimonials
+- Community vision
+- Blog section
+- Footer with links

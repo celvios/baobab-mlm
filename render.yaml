@@ -1,12 +1,10 @@
 services:
   - type: web
-    name: baobab-backend
-    env: node
+    name: baobab-frontend
+    env: static
     plan: free
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000

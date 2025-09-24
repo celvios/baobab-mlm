@@ -77,9 +77,14 @@ const AdminEmailer = () => {
             <input
               type="text"
               value={subject}
-              onChange={(e) => setSubject(e.target.value)}
+              onChange={(e) => {
+                e.preventDefault();
+                setSubject(e.target.value);
+              }}
+              onInput={(e) => setSubject(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Enter email subject"
+              autoComplete="off"
               required
             />
           </div>
@@ -88,10 +93,15 @@ const AdminEmailer = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
             <textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                e.preventDefault();
+                setMessage(e.target.value);
+              }}
+              onInput={(e) => setMessage(e.target.value)}
               rows="8"
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               placeholder="Enter your message here..."
+              autoComplete="off"
               required
             />
           </div>
