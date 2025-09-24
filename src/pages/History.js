@@ -55,7 +55,7 @@ export default function History() {
           stage: profile?.mlmLevel === 'feeder' ? 'Feeder' : profile?.mlmLevel?.charAt(0).toUpperCase() + profile?.mlmLevel?.slice(1) || 'No Level',
           transaction: 'Product Order',
           type: 'Outgoing',
-          amount: `$${order.amount.toLocaleString()}`,
+          amount: `₦${order.amount.toLocaleString()}`,
           amountValue: order.amount,
           status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending',
           originalId: order.id
@@ -66,22 +66,31 @@ export default function History() {
           stage: profile?.mlmLevel === 'feeder' ? 'Feeder' : profile?.mlmLevel?.charAt(0).toUpperCase() + profile?.mlmLevel?.slice(1) || 'No Level',
           transaction: 'Withdrawal',
           type: 'Outgoing',
-          amount: `$${withdrawal.amount.toLocaleString()}`,
+          amount: `₦${withdrawal.amount.toLocaleString()}`,
           amountValue: withdrawal.amount,
           status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending',
           originalId: withdrawal.id
         })),
-        ...transactions.transactions?.map((tx, index) => ({
-          id: userOrders.length + withdrawals.length + index + 1,
-          account: profile?.email || 'user@example.com',
-          stage: profile?.mlmLevel === 'feeder' ? 'Feeder' : profile?.mlmLevel?.charAt(0).toUpperCase() + profile?.mlmLevel?.slice(1) || 'No Level',
-          transaction: tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction',
-          type: tx.amount > 0 ? 'Incoming' : 'Outgoing',
-          amount: `$${Math.abs(tx.amount).toLocaleString()}`,
-          amountValue: Math.abs(tx.amount),
-          status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending',
-          originalId: tx.id
-        })) || []
+        ...transactions.transactions?.map((tx, index) => {
+          const transactionName = tx.type === 'credit' ? (tx.adminName ? 'Admin Credit' : 'Credit') :
+                                 tx.type === 'deposit_approved' ? 'Deposit Approved' :
+                                 tx.type === 'commission' ? 'Commission' :
+                                 tx.type === 'referral_bonus' ? 'Referral Bonus' :
+                                 tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction';
+          
+          return {
+            id: userOrders.length + withdrawals.length + index + 1,
+            account: profile?.email || 'user@example.com',
+            stage: profile?.mlmLevel === 'feeder' ? 'Feeder' : profile?.mlmLevel?.charAt(0).toUpperCase() + profile?.mlmLevel?.slice(1) || 'No Level',
+            transaction: transactionName,
+            type: tx.isCredit ? 'Incoming' : 'Outgoing',
+            amount: `₦${tx.amount.toLocaleString()}`,
+            amountValue: tx.amount,
+            status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending',
+            originalId: tx.id,
+            adminName: tx.adminName
+          };
+        }) || []
       ];
       
       setHistoryData(historyData);
@@ -98,7 +107,7 @@ export default function History() {
           stage: 'No Level',
           transaction: 'Product Order',
           type: 'Outgoing',
-          amount: `$${order.amount.toLocaleString()}`,
+          amount: `₦${order.amount.toLocaleString()}`,
           amountValue: order.amount,
           status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending',
           originalId: order.id
@@ -109,7 +118,7 @@ export default function History() {
           stage: 'No Level',
           transaction: 'Withdrawal',
           type: 'Outgoing',
-          amount: `$${withdrawal.amount.toLocaleString()}`,
+          amount: `₦${withdrawal.amount.toLocaleString()}`,
           amountValue: withdrawal.amount,
           status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending',
           originalId: withdrawal.id

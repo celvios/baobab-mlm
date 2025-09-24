@@ -242,6 +242,75 @@ app.get('/api/setup-admin', async (req, res) => {
   }
 });
 
+// Initialize new features database tables
+app.get('/api/init-new-features', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Create admin_activity_logs table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS admin_activity_logs (
+          id SERIAL PRIMARY KEY,
+          admin_id INTEGER,
+          action VARCHAR(100) NOT NULL,
+          details TEXT,
+          user_id INTEGER,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create email_history table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS email_history (
+          id SERIAL PRIMARY KEY,
+          admin_id INTEGER,
+          subject VARCHAR(255) NOT NULL,
+          message TEXT NOT NULL,
+          recipient_category VARCHAR(50) DEFAULT 'all',
+          recipient_count INTEGER DEFAULT 0,
+          sent_count INTEGER DEFAULT 0,
+          failed_count INTEGER DEFAULT 0,
+          status VARCHAR(20) DEFAULT 'pending',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Add missing columns to transactions table
+    await client.query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS admin_id INTEGER`);
+    await client.query(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS reference VARCHAR(100)`);
+    
+    // Add missing columns to wallets table
+    await client.query(`ALTER TABLE wallets ADD COLUMN IF NOT EXISTS total_earned DECIMAL(10,2) DEFAULT 0`);
+    await client.query(`ALTER TABLE wallets ADD COLUMN IF NOT EXISTS total_withdrawn DECIMAL(10,2) DEFAULT 0`);
+    await client.query(`ALTER TABLE wallets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+    
+    // Add missing columns to withdrawal_requests table
+    await client.query(`ALTER TABLE withdrawal_requests ADD COLUMN IF NOT EXISTS admin_notes TEXT`);
+    await client.query(`ALTER TABLE withdrawal_requests ADD COLUMN IF NOT EXISTS admin_id INTEGER`);
+    await client.query(`ALTER TABLE withdrawal_requests ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP`);
+    
+    client.release();
+    res.json({ 
+      success: true,
+      message: 'New features database tables initialized successfully!',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('New features init error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Fix database tables
 app.get('/api/fix-database', async (req, res) => {
   const { Pool } = require('pg');
