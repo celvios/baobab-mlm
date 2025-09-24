@@ -47,7 +47,7 @@ export default function Login() {
       await login(formData.email, formData.password);
       
       addNotification('Login successful! Welcome back.', 'success');
-      navigate('/dashboard');
+      navigate('/user/dashboard');
     } catch (error) {
       if (error.message.includes('verify your email')) {
         addNotification('Please verify your email first. Redirecting to verification page...', 'warning');
