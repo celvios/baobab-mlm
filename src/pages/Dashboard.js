@@ -258,7 +258,7 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <p className="text-white/70 text-sm mb-1">Wallet Balance</p>
-                      <p className="text-3xl font-bold mb-1">{getCurrencyInfo().symbol}{convertToLocalCurrency((userProfile?.wallet?.balance || 0) / getCurrencyInfo().rate)}</p>
+                      <p className="text-3xl font-bold mb-1">{getCurrencyInfo().symbol}{(userProfile?.wallet?.balance || 0).toLocaleString()}</p>
                       <p className="text-white/70 text-sm">${((userProfile?.wallet?.balance || 0) / getCurrencyInfo().rate).toFixed(2)} USD</p>
                     </div>
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -307,7 +307,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-900 mb-3">MLM Earnings</h2>
               <div className="bg-gray-100 p-6 rounded-2xl shadow-card h-48 flex flex-col justify-between">
                 <div>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">{getCurrencyInfo().symbol}{convertToLocalCurrency((userProfile?.wallet?.mlmEarnings || 0) / getCurrencyInfo().rate)}</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">{getCurrencyInfo().symbol}{(userProfile?.wallet?.mlmEarnings || 0).toLocaleString()}</p>
                   <p className="text-gray-500 text-sm">${((userProfile?.wallet?.mlmEarnings || 0) / getCurrencyInfo().rate).toFixed(2)} USD</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
