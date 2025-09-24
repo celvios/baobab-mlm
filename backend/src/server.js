@@ -491,9 +491,9 @@ app.get('/api/create-sample-products', async (req, res) => {
     const client = await pool.connect();
     
     const sampleProducts = [
-      { name: 'Premium Health Supplement', description: 'High-quality health supplement for daily wellness', price: 25000, category: 'Health', stock: 100 },
-      { name: 'Organic Tea Blend', description: 'Natural organic tea blend for relaxation', price: 15000, category: 'Beverages', stock: 50 },
-      { name: 'Fitness Tracker', description: 'Smart fitness tracker with heart rate monitor', price: 45000, category: 'Electronics', stock: 25 }
+      { name: 'Premium Health Supplement', description: 'High-quality health supplement for daily wellness', price: 49.99, category: 'Health', stock: 100 },
+      { name: 'Organic Tea Blend', description: 'Natural organic tea blend for relaxation', price: 29.99, category: 'Beverages', stock: 50 },
+      { name: 'Fitness Tracker', description: 'Smart fitness tracker with heart rate monitor', price: 89.99, category: 'Electronics', stock: 25 }
     ];
     
     for (const product of sampleProducts) {

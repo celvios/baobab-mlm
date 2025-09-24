@@ -235,7 +235,7 @@ router.post('/users/:userId/credit-with-notification', async (req, res) => {
     // Create market update for user
     await client.query(
       'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-      [userId, 'Account Credited', `Your account has been credited with ₦${amount.toLocaleString()}. Your new balance is now available for use.`, 'credit']
+      [userId, 'Account Credited', `Your account has been credited with $${amount.toLocaleString()}. Your new balance is now available for use.`, 'credit']
     );
     
     await client.query('COMMIT');

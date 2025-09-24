@@ -138,7 +138,7 @@ const AdminOrdersManagement = () => {
                     {order.product_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₦{(order.total_amount || 0).toLocaleString()}
+                    ${(order.total_amount || 0).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.order_status || 'pending')}`}>
@@ -164,7 +164,7 @@ const AdminOrdersManagement = () => {
                         <button
                           onClick={() => markAsPickedUp(order.id)}
                           className="text-green-600 hover:text-green-900"
-                          title="Mark as Picked Up"
+                          title="Change status to pickup"
                         >
                           <FiCheck className="w-4 h-4" />
                         </button>
