@@ -14,6 +14,29 @@ export default function Products() {
   const [showToast, setShowToast] = useState(false);
   const { addToCart } = useCart();
 
+  const getCurrencyInfo = () => {
+    const locale = navigator.language || 'en-US';
+    const country = locale.split('-')[1] || 'US';
+    
+    const currencyMap = {
+      'NG': { symbol: '₦', rate: 1500, code: 'NGN' },
+      'US': { symbol: '$', rate: 1, code: 'USD' },
+      'GB': { symbol: '£', rate: 0.8, code: 'GBP' },
+      'CA': { symbol: 'C$', rate: 1.35, code: 'CAD' },
+      'AU': { symbol: 'A$', rate: 1.5, code: 'AUD' },
+      'ZA': { symbol: 'R', rate: 18, code: 'ZAR' },
+      'KE': { symbol: 'KSh', rate: 150, code: 'KES' },
+      'GH': { symbol: '₵', rate: 12, code: 'GHS' }
+    };
+    
+    return currencyMap[country] || currencyMap['NG'];
+  };
+
+  const convertToLocalCurrency = (usdAmount) => {
+    const currency = getCurrencyInfo();
+    return (usdAmount * currency.rate).toLocaleString();
+  };
+
   const handleAddToCart = (product, qty = 1) => {
     addToCart(product, qty);
     setShowToast(true);
@@ -124,7 +147,10 @@ export default function Products() {
                   <div className="mb-6">
                     <p className="text-gray-600 text-sm mb-3">Price</p>
                     <div className="flex items-center space-x-4 mb-6">
-                      <span className="text-3xl font-bold text-green-600">${products[0]?.price?.toLocaleString() || '3,000'}</span>
+                      <div>
+                        <span className="text-3xl font-bold text-green-600">{getCurrencyInfo().symbol}{convertToLocalCurrency(products[0]?.basePrice || products[0]?.price || 20)}</span>
+                        <p className="text-sm text-gray-500 mt-1">${(products[0]?.basePrice || products[0]?.price || 20).toLocaleString()} USD</p>
+                      </div>
                     </div>
                     <button 
                       onClick={() => handleAddToCart(products[0], quantity)}
@@ -183,7 +209,8 @@ export default function Products() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900 text-sm mb-1">${product.price.toLocaleString()}</p>
+                      <p className="font-bold text-gray-900 text-sm mb-1">{getCurrencyInfo().symbol}{convertToLocalCurrency(product.basePrice || product.price)}</p>
+                      <p className="text-xs text-gray-400">${(product.basePrice || product.price).toLocaleString()} USD</p>
                       <p 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -230,7 +257,10 @@ export default function Products() {
                   <h3 className="font-bold text-gray-900 mb-2">{product.name}</h3>
                   <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold">${product.price.toLocaleString()}</span>
+                    <div>
+                      <span className="text-xl font-bold">{getCurrencyInfo().symbol}{convertToLocalCurrency(product.basePrice || product.price)}</span>
+                      <p className="text-xs text-gray-500">${(product.basePrice || product.price).toLocaleString()} USD</p>
+                    </div>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -264,7 +294,8 @@ export default function Products() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-gray-900 text-sm mb-1">${product.price.toLocaleString()}</p>
+                  <p className="font-bold text-gray-900 text-sm mb-1">{getCurrencyInfo().symbol}{convertToLocalCurrency(product.basePrice || product.price)}</p>
+                  <p className="text-xs text-gray-400">${(product.basePrice || product.price).toLocaleString()} USD</p>
                   <p 
                     onClick={() => handleAddToCart(product, 1)}
                     className="text-xs text-black cursor-pointer hover:text-gray-700 whitespace-nowrap"
