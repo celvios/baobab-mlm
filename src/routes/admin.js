@@ -10,7 +10,8 @@ const { getWithdrawals, updateWithdrawalStatus, bulkApproveWithdrawals, getWithd
 const { getWithdrawalRequests, processWithdrawal } = require('../controllers/adminWithdrawalController');
 const { creditUser, approveDeposit, getRecentActivity } = require('../controllers/adminWalletController');
 const { getStages, createStage, updateStage, getStageStats } = require('../controllers/adminStagesController');
-const { getEmailList, sendEmail, getEmailHistory, removeUserFromList } = require('../controllers/adminEmailController');
+const { getEmailList, sendEmail, getEmailHistory, removeUserFromList, testEmailConnection } = require('../controllers/adminEmailController');
+const { sendBulkEmail, getEmailStats } = require('../controllers/bulkEmailController');
 const { getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, toggleAnnouncementStatus, getAnnouncementStats } = require('../controllers/adminAnnouncementController');
 const { getBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost, publishBlogPost, getBlogStats } = require('../controllers/adminBlogController');
 const { updateAdminProfile, updateBusinessDetails, updateAccountDetails, getPickupStations, createPickupStation, updatePickupStation, deletePickupStation, changePassword } = require('../controllers/adminSettingsController');
@@ -103,10 +104,16 @@ router.put('/stages/:id', adminAuth, updateStage);
 // Email Management (protected)
 router.get('/emails', adminAuth, getEmailList);
 router.get('/emails/history', adminAuth, getEmailHistory);
+router.get('/emails/stats', adminAuth, getEmailStats);
 router.post('/emails/send', adminAuth, [
   body('subject').trim().isLength({ min: 1 }),
   body('message').trim().isLength({ min: 1 })
 ], sendEmail);
+router.post('/emails/bulk-send', adminAuth, [
+  body('subject').trim().isLength({ min: 1 }),
+  body('message').trim().isLength({ min: 1 })
+], sendBulkEmail);
+router.post('/emails/test', adminAuth, testEmailConnection);
 router.delete('/emails/users/:id', adminAuth, removeUserFromList);
 
 // Announcements (protected)
