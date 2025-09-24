@@ -175,6 +175,38 @@ router.post('/users', adminAuth, async (req, res) => {
   }
 });
 
+// Credit user (test version without auth)
+router.post('/users/:userId/credit-test', async (req, res) => {
+  const { userId } = req.params;
+  const { amount } = req.body;
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Update wallet
+    await client.query(
+      'UPDATE wallets SET balance = balance + $1, total_earned = total_earned + $1 WHERE user_id = $2',
+      [amount, userId]
+    );
+    
+    // Create transaction
+    await client.query(
+      'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+      [userId, 'credit', amount, 'Admin credit', 'completed']
+    );
+    
+    await client.query('COMMIT');
+    res.json({ message: 'User credited successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error crediting user:', error);
+    res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
+  }
+});
+
 // Credit user
 router.post('/users/:userId/credit', adminAuth, async (req, res) => {
   const { userId } = req.params;

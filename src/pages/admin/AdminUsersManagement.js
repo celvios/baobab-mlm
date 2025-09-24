@@ -295,6 +295,85 @@ const AdminUsersManagement = () => {
         </div>
       )}
 
+      {/* User Details Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-green-600 px-6 py-4 rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-white">User Details</h3>
+                <button onClick={() => setSelectedUser(null)} className="text-white hover:text-green-200">
+                  <FiX className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <p className="text-sm text-gray-900">{selectedUser.full_name}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <p className="text-sm text-gray-900">{selectedUser.email}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <p className="text-sm text-gray-900">{selectedUser.phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      selectedUser.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedUser.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">MLM Stage</label>
+                    <p className="text-sm text-gray-900">Stage {selectedUser.mlm_level || 'no_stage'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Referred By</label>
+                    <p className="text-sm text-gray-900">{selectedUser.referred_by || 'Direct signup'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Referral Code</label>
+                    <p className="text-sm text-gray-900">{selectedUser.referral_code || 'Not generated'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Joined Date</label>
+                    <p className="text-sm text-gray-900">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Wallet Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-green-700 mb-1">Current Balance</label>
+                    <p className="text-lg font-bold text-green-900">₦{(selectedUser.balance || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-blue-700 mb-1">Total Earned</label>
+                    <p className="text-lg font-bold text-blue-900">₦{(selectedUser.total_earned || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-purple-700 mb-1">Registration Fee</label>
+                    <p className="text-sm font-semibold text-purple-900">
+                      {selectedUser.registration_fee_paid ? 'Paid' : 'Not Paid'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Credit User Modal */}
       {showCreditModal && creditUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

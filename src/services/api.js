@@ -292,7 +292,7 @@ class ApiService {
   }
 
   async creditUser(userId, amount) {
-    return this.request(`/admin/users/${userId}/credit`, {
+    return this.request(`/admin/users/${userId}/credit-test`, {
       method: 'POST',
       body: JSON.stringify({ amount }),
     });
