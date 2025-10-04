@@ -354,10 +354,15 @@ app.get('/api/test', (req, res) => {
 
 // Quick OTP test endpoint
 app.get('/api/quick-otp-test/:email', async (req, res) => {
+  const timeout = setTimeout(() => {
+    res.status(408).json({ error: 'Request timeout - email service taking too long' });
+  }, 15000);
+  
   try {
     const nodemailer = require('nodemailer');
     
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      clearTimeout(timeout);
       return res.status(500).json({
         error: 'Email credentials not configured',
         EMAIL_USER: process.env.EMAIL_USER ? 'Set' : 'Missing',
@@ -370,7 +375,10 @@ app.get('/api/quick-otp-test/:email', async (req, res) => {
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-      }
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000
     });
     
     const testOTP = Math.floor(100000 + Math.random() * 900000).toString();
@@ -382,8 +390,10 @@ app.get('/api/quick-otp-test/:email', async (req, res) => {
       html: `<h2>Test OTP: ${testOTP}</h2><p>Sent from Render at ${new Date().toISOString()}</p>`
     });
     
+    clearTimeout(timeout);
     res.json({ success: true, message: `OTP ${testOTP} sent to ${req.params.email}` });
   } catch (error) {
+    clearTimeout(timeout);
     res.status(500).json({ error: error.message, code: error.code });
   }
 });

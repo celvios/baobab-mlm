@@ -84,3 +84,8 @@ GET https://your-backend-url.onrender.com/api/test-email/your-email@gmail.com
    https://baobab-mlm.onrender.com/api/quick-otp-test/your-email@gmail.com
    ```
 6. **"createTransporter is not a function"**: Fixed - redeploy backend after code update
+7. **Infinite loading on test endpoints**: Check Render logs for startup errors. Test basic endpoints first:
+   ```
+   https://baobab-mlm.onrender.com/api/health
+   https://baobab-mlm.onrender.com/api/test
+   ```
