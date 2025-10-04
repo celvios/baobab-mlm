@@ -9,6 +9,7 @@ const withdrawalRoutes = require('./routes/withdrawal');
 const marketUpdatesRoutes = require('./routes/marketUpdates');
 const mlmRoutes = require('./routes/mlm');
 const ordersRoutes = require('./routes/orders');
+const depositRoutes = require('./routes/deposit');
 
 
 const app = express();
@@ -54,6 +55,7 @@ app.use('/api/withdrawal', withdrawalRoutes);
 app.use('/api/market-updates', marketUpdatesRoutes);
 app.use('/api/mlm', mlmRoutes);
 app.use('/api/orders', ordersRoutes);
+app.use('/api/deposit', depositRoutes);
 app.use('/api/bank', require('./routes/bank'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/wallet', require('./routes/wallet'));
@@ -644,6 +646,43 @@ app.get('/api/create-sample-products', async (req, res) => {
     res.json({ message: 'Sample products created successfully!' });
   } catch (error) {
     console.error('Sample products creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create deposit_requests table
+app.get('/api/setup-deposit-table', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Create deposit_requests table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS deposit_requests (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        amount DECIMAL(10,2) NOT NULL,
+        payment_proof VARCHAR(255),
+        status VARCHAR(20) DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Add indexes for better performance
+    await client.query('CREATE INDEX IF NOT EXISTS idx_deposit_requests_user_id ON deposit_requests(user_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_deposit_requests_status ON deposit_requests(status)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_deposit_requests_created_at ON deposit_requests(created_at)');
+    
+    client.release();
+    res.json({ message: 'Deposit requests table created successfully!' });
+  } catch (error) {
+    console.error('Deposit table setup error:', error);
     res.status(500).json({ error: error.message });
   }
 });

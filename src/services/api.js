@@ -367,6 +367,24 @@ class ApiService {
   }
 
   // Deposit methods
+  async submitDepositRequest(formData) {
+    const url = `${API_BASE_URL}/api/deposit/request`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Deposit request failed');
+    }
+    
+    return response.json();
+  }
+
   async getDepositRequests() {
     return this.request('/admin/deposit-requests');
   }

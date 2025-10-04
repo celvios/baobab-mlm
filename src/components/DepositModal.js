@@ -42,7 +42,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess }) {
       formData.append('paymentProof', file);
       formData.append('amount', amount);
 
-      await apiService.uploadPaymentProof(formData);
+      await apiService.submitDepositRequest(formData);
       setToastMessage('Deposit request submitted successfully! Awaiting admin approval.');
       setShowToast(true);
       onSuccess?.();
