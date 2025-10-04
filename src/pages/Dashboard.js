@@ -55,6 +55,29 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
+  const refreshWalletData = async () => {
+    try {
+      const [profile, wallet] = await Promise.all([
+        apiService.getProfile(),
+        apiService.getWallet()
+      ]);
+      
+      const updatedProfile = {
+        ...profile,
+        wallet: {
+          balance: wallet?.balance || profile?.wallet?.balance || 0,
+          mlmEarnings: profile?.wallet?.mlmEarnings || 0,
+          totalEarned: wallet?.totalEarned || profile?.wallet?.totalEarned || 0,
+          totalWithdrawn: wallet?.totalWithdrawn || profile?.wallet?.totalWithdrawn || 0
+        }
+      };
+      
+      setUserProfile(updatedProfile);
+    } catch (error) {
+      console.error('Error refreshing wallet:', error);
+    }
+  };
+
   useEffect(() => {
     if (userProfile?.wallet) {
       // Use the wallet values directly without conversion since they should already be in the correct currency
@@ -67,8 +90,9 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [profile, team, progress, earningsData, transactionHistory, updates] = await Promise.all([
+      const [profile, wallet, team, progress, earningsData, transactionHistory, updates] = await Promise.all([
         apiService.getProfile().catch(() => null),
+        apiService.getWallet().catch(() => null),
         apiService.getTeam().catch(() => ({ team: [] })),
         apiService.getLevelProgress().catch(() => null),
         apiService.getEarnings().catch(() => ({ earnings: [] })),
@@ -92,10 +116,10 @@ export default function Dashboard() {
       const updatedProfile = {
         ...actualProfile,
         wallet: {
-          balance: actualProfile?.wallet?.balance || 0,
+          balance: wallet?.balance || actualProfile?.wallet?.balance || 0,
           mlmEarnings: actualProfile?.wallet?.mlmEarnings || 0,
-          totalEarned: actualProfile?.wallet?.totalEarned || 0,
-          totalWithdrawn: actualProfile?.wallet?.totalWithdrawn || 0
+          totalEarned: wallet?.totalEarned || actualProfile?.wallet?.totalEarned || 0,
+          totalWithdrawn: wallet?.totalWithdrawn || actualProfile?.wallet?.totalWithdrawn || 0
         }
       };
       
@@ -278,22 +302,29 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right">
                         <p className="text-white/70 text-xs">Wallet Actions</p>
-                        <p className="text-xs">Deposit or Withdraw</p>
-                        {isFriday ? (
+                        <div className="flex flex-col gap-1">
                           <button 
-                            onClick={() => setShowWithdrawalModal(true)}
-                            className="mt-2 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-red-700 transition-colors"
+                            onClick={refreshWalletData}
+                            className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-blue-700 transition-colors"
                           >
-                            Withdraw
+                            Refresh
                           </button>
-                        ) : (
-                          <button 
-                            onClick={() => setShowDepositModal(true)}
-                            className="mt-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-green-700 transition-colors"
-                          >
-                            Deposit
-                          </button>
-                        )}
+                          {isFriday ? (
+                            <button 
+                              onClick={() => setShowWithdrawalModal(true)}
+                              className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-red-700 transition-colors"
+                            >
+                              Withdraw
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => setShowDepositModal(true)}
+                              className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-green-700 transition-colors"
+                            >
+                              Deposit
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
