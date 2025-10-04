@@ -3,6 +3,7 @@ const pool = require('../config/database');
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('Getting profile for user ID:', userId);
 
     // Get basic user info first
     const userResult = await pool.query(
@@ -15,6 +16,7 @@ const getProfile = async (req, res) => {
     }
 
     const user = userResult.rows[0];
+    console.log('Found user:', { id: user.id, email: user.email, fullName: user.full_name });
     
     // Try to get profile data (may not exist)
     let profileData = {};
@@ -109,8 +111,26 @@ const getProfile = async (req, res) => {
       teamSize: teamSize
     });
   } catch (error) {
-    console.error('Profile error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Profile error details:', error);
+    // Return basic user info even if other queries fail
+    try {
+      const basicUser = await pool.query('SELECT id, email, full_name, referral_code, mlm_level FROM users WHERE id = $1', [req.user.id]);
+      if (basicUser.rows.length > 0) {
+        const user = basicUser.rows[0];
+        return res.json({
+          id: user.id,
+          email: user.email,
+          fullName: user.full_name,
+          referralCode: user.referral_code,
+          mlmLevel: user.mlm_level || 'no_stage',
+          wallet: { balance: 0, totalEarned: 0, totalWithdrawn: 0, mlmEarnings: 0 },
+          teamSize: 0
+        });
+      }
+    } catch (fallbackError) {
+      console.error('Fallback query failed:', fallbackError);
+    }
+    res.status(500).json({ message: 'Server error: ' + error.message });
   }
 };
 
