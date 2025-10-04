@@ -49,14 +49,8 @@ export default function Login() {
       addNotification('Login successful! Welcome back.', 'success');
       navigate('/user/dashboard');
     } catch (error) {
-      if (error.message.includes('verify your email')) {
-        addNotification('Please verify your email first. Redirecting to verification page...', 'warning');
-        setTimeout(() => {
-          navigate('/security-verification');
-        }, 2000);
-      } else {
-        addNotification(error.message || 'Login failed. Please check your credentials.', 'error');
-      }
+      // TEMPORARY: OTP system disabled - no verification redirect needed
+      addNotification(error.message || 'Login failed. Please check your credentials.', 'error');
     } finally {
       setLoading(false);
     }

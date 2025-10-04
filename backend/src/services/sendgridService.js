@@ -3,7 +3,7 @@ const sgMail = require('@sendgrid/mail');
 class SendGridService {
   constructor() {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    this.fromEmail = process.env.FROM_EMAIL || 'noreply@baobab.com';
+    this.fromEmail = process.env.SENDGRID_FROM_EMAIL || process.env.FROM_EMAIL || 'noreply@baobab.com';
   }
 
   async sendEmail(to, subject, html, text = '') {

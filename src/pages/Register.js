@@ -65,13 +65,11 @@ export default function Register() {
       const result = await apiService.register(formData);
       console.log('Registration successful:', result);
       
-      // Store email for OTP verification
-      localStorage.setItem('pendingVerificationEmail', formData.email);
-      
-      addNotification('Registration successful! Please check your email for the verification code.', 'success');
-      // Redirect to verification page
+      // TEMPORARY: OTP system disabled - redirect directly to login
+      addNotification('Registration successful! You can now login immediately.', 'success');
+      // Redirect to login page
       setTimeout(() => {
-        window.location.href = '/security-verification';
+        window.location.href = '/login';
       }, 2000);
     } catch (error) {
       console.error('Registration error:', error);
