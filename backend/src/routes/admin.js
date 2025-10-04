@@ -411,6 +411,82 @@ router.get('/recent-activity', adminAuth, async (req, res) => {
   }
 });
 
+// Deposit management routes
+router.get('/deposit-requests', adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT dr.*, u.full_name as user_name, u.email as user_email
+      FROM deposit_requests dr
+      LEFT JOIN users u ON dr.user_id = u.id
+      ORDER BY dr.created_at DESC
+    `);
+    res.json({ deposits: result.rows });
+  } catch (error) {
+    console.error('Error fetching deposit requests:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/approve-deposit', adminAuth, async (req, res) => {
+  const { depositId, amount } = req.body;
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Get deposit request
+    const depositResult = await client.query('SELECT * FROM deposit_requests WHERE id = $1', [depositId]);
+    const deposit = depositResult.rows[0];
+    
+    if (!deposit) {
+      return res.status(404).json({ message: 'Deposit request not found' });
+    }
+    
+    // Update wallet
+    await client.query(
+      'UPDATE wallets SET balance = balance + $1, total_earned = total_earned + $1 WHERE user_id = $2',
+      [amount, deposit.user_id]
+    );
+    
+    // Create transaction
+    await client.query(
+      'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+      [deposit.user_id, 'deposit', amount, 'Deposit approved by admin', 'completed']
+    );
+    
+    // Update deposit status
+    await client.query(
+      'UPDATE deposit_requests SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      ['approved', depositId]
+    );
+    
+    await client.query('COMMIT');
+    res.json({ message: 'Deposit approved and user credited successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error approving deposit:', error);
+    res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
+  }
+});
+
+router.post('/reject-deposit', adminAuth, async (req, res) => {
+  const { depositId } = req.body;
+  
+  try {
+    await pool.query(
+      'UPDATE deposit_requests SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      ['rejected', depositId]
+    );
+    
+    res.json({ message: 'Deposit rejected successfully' });
+  } catch (error) {
+    console.error('Error rejecting deposit:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
