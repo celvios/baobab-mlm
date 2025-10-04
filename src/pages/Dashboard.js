@@ -103,15 +103,20 @@ export default function Dashboard() {
       // Use stored user data if API fails
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       const fallbackProfile = {
-        fullName: storedUser.fullName || 'User',
+        fullName: storedUser.fullName || storedUser.full_name || 'User',
         email: storedUser.email || 'user@example.com',
-        referralCode: storedUser.referralCode || 'LOADING',
-        mlmLevel: 'no_stage',
-        joiningFeePaid: false,
+        referralCode: storedUser.referralCode || storedUser.referral_code || 'LOADING',
+        mlmLevel: storedUser.mlmLevel || storedUser.mlm_level || 'no_stage',
+        joiningFeePaid: storedUser.joiningFeePaid || storedUser.joining_fee_paid || false,
         wallet: { balance: 0, mlmEarnings: 0 }
       };
       
-      const actualProfile = profile || fallbackProfile;
+      const actualProfile = profile || {
+        ...fallbackProfile,
+        fullName: storedUser.fullName || storedUser.full_name || 'User',
+        email: storedUser.email || 'user@example.com',
+        referralCode: storedUser.referralCode || storedUser.referral_code || 'LOADING'
+      };
       
       const updatedProfile = {
         ...actualProfile,
@@ -136,10 +141,10 @@ export default function Dashboard() {
       const qualifiesForFeeder = false; // Default to no qualification if API fails
       
       setUserProfile({
-        fullName: storedUser.fullName || 'User',
+        fullName: storedUser.fullName || storedUser.full_name || 'User',
         email: storedUser.email || 'user@example.com',
-        referralCode: storedUser.referralCode || 'LOADING',
-        mlmLevel: qualifiesForFeeder ? 'feeder' : 'no_stage',
+        referralCode: storedUser.referralCode || storedUser.referral_code || 'LOADING',
+        mlmLevel: storedUser.mlmLevel || storedUser.mlm_level || (qualifiesForFeeder ? 'feeder' : 'no_stage'),
         wallet: { balance: 0 }
       });
     } finally {
