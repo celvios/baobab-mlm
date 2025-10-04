@@ -28,7 +28,8 @@ services:
     name: baobab-frontend
     env: static
     plan: free
-    buildCommand: npm install && npm run build
+    rootDir: .
+    buildCommand: npm install && npm run vercel-build
     staticPublishPath: ./build
     envVars:
       - key: NODE_ENV
