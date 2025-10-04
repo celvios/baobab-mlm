@@ -78,3 +78,9 @@ GET https://your-backend-url.onrender.com/api/test-email/your-email@gmail.com
 1. **Orders showing local data**: Check REACT_APP_API_URL is set correctly
 2. **OTP not sending**: Verify EMAIL_USER and EMAIL_PASS are set
 3. **CORS errors**: Ensure CORS_ORIGIN matches your frontend URL
+4. **FRONTEND_URL showing "NOT SET"**: Add FRONTEND_URL=https://baobab-mlm.vercel.app to Render environment variables
+5. **Connection timeout on email test**: Try quick test endpoint first:
+   ```
+   https://baobab-mlm.onrender.com/api/quick-otp-test/your-email@gmail.com
+   ```
+6. **"createTransporter is not a function"**: Fixed - redeploy backend after code update
