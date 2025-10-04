@@ -90,6 +90,10 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      // Always use stored user data first
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      console.log('Stored user data:', storedUser);
+      
       const [profile, wallet, team, progress, earningsData, transactionHistory, updates] = await Promise.all([
         apiService.getProfile().catch(() => null),
         apiService.getWallet().catch(() => null),
@@ -100,22 +104,14 @@ export default function Dashboard() {
         apiService.getMarketUpdates(1, 10).catch(() => ({ updates: [] }))
       ]);
       
-      // Use stored user data if API fails
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const fallbackProfile = {
-        fullName: storedUser.fullName || storedUser.full_name || 'User',
-        email: storedUser.email || 'user@example.com',
-        referralCode: storedUser.referralCode || storedUser.referral_code || 'LOADING',
-        mlmLevel: storedUser.mlmLevel || storedUser.mlm_level || 'no_stage',
-        joiningFeePaid: storedUser.joiningFeePaid || storedUser.joining_fee_paid || false,
-        wallet: { balance: 0, mlmEarnings: 0 }
-      };
-      
-      const actualProfile = profile || {
-        ...fallbackProfile,
-        fullName: storedUser.fullName || storedUser.full_name || 'User',
-        email: storedUser.email || 'user@example.com',
-        referralCode: storedUser.referralCode || storedUser.referral_code || 'LOADING'
+      // Force use stored user data for display
+      const actualProfile = {
+        fullName: storedUser.fullName || profile?.fullName || 'User',
+        email: storedUser.email || profile?.email || 'user@example.com',
+        referralCode: storedUser.referralCode || profile?.referralCode || 'LOADING',
+        mlmLevel: profile?.mlmLevel || storedUser.mlmLevel || 'no_stage',
+        joiningFeePaid: profile?.joiningFeePaid || storedUser.joiningFeePaid || false,
+        ...profile
       };
       
       const updatedProfile = {
@@ -141,10 +137,10 @@ export default function Dashboard() {
       const qualifiesForFeeder = false; // Default to no qualification if API fails
       
       setUserProfile({
-        fullName: storedUser.fullName || storedUser.full_name || 'User',
+        fullName: storedUser.fullName || 'User',
         email: storedUser.email || 'user@example.com',
-        referralCode: storedUser.referralCode || storedUser.referral_code || 'LOADING',
-        mlmLevel: storedUser.mlmLevel || storedUser.mlm_level || (qualifiesForFeeder ? 'feeder' : 'no_stage'),
+        referralCode: storedUser.referralCode || 'LOADING',
+        mlmLevel: storedUser.mlmLevel || (qualifiesForFeeder ? 'feeder' : 'no_stage'),
         wallet: { balance: 0 }
       });
     } finally {
