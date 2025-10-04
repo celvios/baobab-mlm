@@ -489,35 +489,66 @@ app.get('/api/check-email-config', (req, res) => {
   res.json({
     message: 'Email Configuration Check',
     config: emailConfig,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    note: 'SMTP may be blocked on free hosting - email will work in production with proper SMTP setup'
   });
 });
 
-// Test email endpoint with your actual email
-app.get('/api/test-email/:email', async (req, res) => {
+// Verify email credentials without sending
+app.get('/api/verify-email-setup', async (req, res) => {
   try {
-    console.log('Testing email for:', req.params.email);
-    console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'NOT SET');
-    console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set' : 'NOT SET');
-    
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      return res.status(500).json({
-        error: 'Email configuration missing on Render',
-        details: {
-          EMAIL_USER: process.env.EMAIL_USER ? 'Set' : 'NOT SET',
-          EMAIL_PASS: process.env.EMAIL_PASS ? 'Set' : 'NOT SET'
-        },
-        instructions: 'Please set EMAIL_USER and EMAIL_PASS in Render dashboard'
+      return res.status(400).json({
+        success: false,
+        error: 'Email credentials missing',
+        EMAIL_USER: process.env.EMAIL_USER ? 'Set' : 'Missing',
+        EMAIL_PASS: process.env.EMAIL_PASS ? 'Set' : 'Missing'
       });
     }
     
-    const { sendOTPEmail } = require('./utils/emailService');
+    res.json({
+      success: true,
+      message: 'Email credentials configured correctly',
+      config: {
+        EMAIL_USER: process.env.EMAIL_USER,
+        FRONTEND_URL: process.env.FRONTEND_URL || 'NOT SET'
+      },
+      note: 'Actual sending may fail due to SMTP port restrictions on free hosting'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Test email endpoint with SendGrid
+app.get('/api/test-email/:email', async (req, res) => {
+  try {
+    console.log('Testing SendGrid email for:', req.params.email);
+    
+    if (!process.env.SENDGRID_API_KEY) {
+      return res.status(500).json({
+        error: 'SendGrid API key missing',
+        instructions: 'Please set SENDGRID_API_KEY in Render dashboard'
+      });
+    }
+    
+    const { sendOTPEmail } = require('./utils/sendgridService');
     const testOTP = '123456';
     await sendOTPEmail(req.params.email, testOTP, 'Test User');
-    res.json({ message: `Test OTP ${testOTP} sent to ${req.params.email}` });
+    res.json({ 
+      success: true,
+      message: `Test OTP ${testOTP} sent to ${req.params.email} via SendGrid` 
+    });
   } catch (error) {
-    console.error('Email test error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('SendGrid test error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message,
+      code: error.code 
+    });
   }
 });
 

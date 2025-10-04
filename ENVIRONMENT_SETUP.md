@@ -12,8 +12,13 @@ PORT=5000
 CORS_ORIGIN=https://baobab-mlm.vercel.app
 
 # Email Configuration (REQUIRED for OTP)
+# Option 1: Gmail (may not work on free hosting)
 EMAIL_USER=your_gmail@gmail.com
 EMAIL_PASS=your_gmail_app_password
+
+# Option 2: SendGrid (recommended for production)
+SENDGRID_API_KEY=SG.your_sendgrid_api_key
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 
 # Frontend URL
 FRONTEND_URL=https://baobab-mlm.vercel.app
@@ -28,12 +33,33 @@ REACT_APP_API_URL=https://your-backend-url.onrender.com
 REACT_APP_FRONTEND_URL=https://your-frontend-url.vercel.app
 ```
 
-## Gmail App Password Setup
+## SendGrid Setup (Recommended)
+
+1. **Create SendGrid Account:**
+   - Go to https://sendgrid.com/
+   - Sign up for free (100 emails/day)
+   - Verify your email
+
+2. **Get API Key:**
+   - Go to Settings > API Keys
+   - Click "Create API Key"
+   - Choose "Restricted Access"
+   - Under "Mail Send", select "Full Access"
+   - Copy the API key (starts with `SG.`)
+
+3. **Set Environment Variables in Render:**
+   ```
+   SENDGRID_API_KEY=SG.your_api_key_here
+   SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+   ```
+
+## Gmail App Password Setup (Alternative)
 
 1. Go to Google Account settings
 2. Enable 2-Factor Authentication
 3. Generate App Password for "Mail"
 4. Use this app password (not your regular password) for EMAIL_PASS
+5. Note: May not work on free hosting due to SMTP restrictions
 
 ## Testing Email Service
 
@@ -89,3 +115,9 @@ GET https://your-backend-url.onrender.com/api/test-email/your-email@gmail.com
    https://baobab-mlm.onrender.com/api/health
    https://baobab-mlm.onrender.com/api/test
    ```
+8. **SMTP Connection timeout (ETIMEDOUT)**: Free hosting blocks SMTP ports. Email will work when:
+   - Using paid Render plan, or
+   - Using email service like SendGrid/Mailgun, or
+   - Testing locally with proper network access
+   
+   Verify config without sending: `https://baobab-mlm.onrender.com/api/verify-email-setup`
