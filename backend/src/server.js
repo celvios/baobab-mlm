@@ -352,6 +352,42 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Test route working' });
 });
 
+// Quick OTP test endpoint
+app.get('/api/quick-otp-test/:email', async (req, res) => {
+  try {
+    const nodemailer = require('nodemailer');
+    
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      return res.status(500).json({
+        error: 'Email credentials not configured',
+        EMAIL_USER: process.env.EMAIL_USER ? 'Set' : 'Missing',
+        EMAIL_PASS: process.env.EMAIL_PASS ? 'Set' : 'Missing'
+      });
+    }
+    
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+    
+    const testOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: req.params.email,
+      subject: 'Baobab MLM - Test OTP',
+      html: `<h2>Test OTP: ${testOTP}</h2><p>Sent from Render at ${new Date().toISOString()}</p>`
+    });
+    
+    res.json({ success: true, message: `OTP ${testOTP} sent to ${req.params.email}` });
+  } catch (error) {
+    res.status(500).json({ error: error.message, code: error.code });
+  }
+});
+
 // Test user profile without auth
 app.get('/api/test-profile', async (req, res) => {
   const { Pool } = require('pg');
@@ -431,9 +467,40 @@ app.get('/api/create-user-records', async (req, res) => {
   }
 });
 
+// Check email configuration
+app.get('/api/check-email-config', (req, res) => {
+  const emailConfig = {
+    EMAIL_USER: process.env.EMAIL_USER ? 'Set' : 'NOT SET',
+    EMAIL_PASS: process.env.EMAIL_PASS ? 'Set' : 'NOT SET',
+    FRONTEND_URL: process.env.FRONTEND_URL || 'NOT SET',
+    NODE_ENV: process.env.NODE_ENV || 'development'
+  };
+  
+  res.json({
+    message: 'Email Configuration Check',
+    config: emailConfig,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Test email endpoint with your actual email
 app.get('/api/test-email/:email', async (req, res) => {
   try {
+    console.log('Testing email for:', req.params.email);
+    console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Set' : 'NOT SET');
+    console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Set' : 'NOT SET');
+    
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      return res.status(500).json({
+        error: 'Email configuration missing on Render',
+        details: {
+          EMAIL_USER: process.env.EMAIL_USER ? 'Set' : 'NOT SET',
+          EMAIL_PASS: process.env.EMAIL_PASS ? 'Set' : 'NOT SET'
+        },
+        instructions: 'Please set EMAIL_USER and EMAIL_PASS in Render dashboard'
+      });
+    }
+    
     const { sendOTPEmail } = require('./utils/emailService');
     const testOTP = '123456';
     await sendOTPEmail(req.params.email, testOTP, 'Test User');
