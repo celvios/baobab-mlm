@@ -109,6 +109,40 @@ Both fixes include fallback mechanisms:
 - If the referral code isn't loaded, it shows "Loading..." instead of "undefined"
 - Error states are properly handled with user-friendly messages
 
+## Email Service Testing
+
+### Local Testing Setup
+
+Before deploying, test email service locally:
+
+1. **Configure environment variables in `.env`:**
+```bash
+EMAIL_USER=your_gmail@gmail.com
+EMAIL_PASS=your_gmail_app_password
+FRONTEND_URL=http://localhost:3000
+```
+
+2. **Run comprehensive test:**
+```bash
+node test-email-local.js your-email@gmail.com
+```
+
+3. **Quick Windows test:**
+```bash
+test-email.bat your-email@gmail.com
+```
+
+4. **API endpoint test:**
+```bash
+# Start server first: cd backend && npm start
+GET http://localhost:5000/api/test-email/your-email@gmail.com
+```
+
+### Email Types Tested
+- **OTP Email**: Registration verification codes
+- **Verification Email**: Email address verification links
+- **Welcome Email**: Post-registration welcome with referral code
+
 ## Files Modified
 
 ### Backend Files Created/Modified:
@@ -116,12 +150,19 @@ Both fixes include fallback mechanisms:
 - `backend/src/routes/orders.js` (new)
 - `backend/src/server.js` (modified)
 - `backend/orders_migration.sql` (new)
+- `backend/src/utils/emailService.js` (existing)
+- `backend/test-email.js` (existing)
 
 ### Frontend Files Modified:
 - `src/pages/Dashboard.js`
 - `src/pages/Orders.js`
 - `src/services/api.js`
 - `src/components/PaymentReviewModal.js`
+
+### Testing Files Created:
+- `test-email-local.js` (new)
+- `test-email.bat` (new)
+- `ENVIRONMENT_SETUP.md` (updated)
 
 ### Utility Files:
 - `run-migration.js` (new)

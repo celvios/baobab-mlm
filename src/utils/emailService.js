@@ -4,6 +4,14 @@ const crypto = require('crypto');
 // Create transporter with better error handling
 let transporter;
 try {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('❌ Missing email credentials:', {
+      EMAIL_USER: !!process.env.EMAIL_USER,
+      EMAIL_PASS: !!process.env.EMAIL_PASS
+    });
+    throw new Error('Email credentials not configured');
+  }
+
   transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -11,9 +19,10 @@ try {
       pass: process.env.EMAIL_PASS,
     },
   });
-  console.log('Email transporter configured with:', process.env.EMAIL_USER);
+  console.log('✅ Email transporter configured with:', process.env.EMAIL_USER);
 } catch (error) {
-  console.error('Email transporter setup failed:', error);
+  console.error('❌ Email transporter setup failed:', error);
+  transporter = null;
 }
 
 const generateVerificationToken = () => {
@@ -83,9 +92,23 @@ const sendWelcomeEmail = async (email, fullName, referralCode) => {
 };
 
 const sendOTPEmail = async (email, otpCode, fullName) => {
+  console.log('=== EMAIL DEBUG INFO ===');
+  console.log('EMAIL_USER:', process.env.EMAIL_USER);
+  console.log('EMAIL_PASS exists:', !!process.env.EMAIL_PASS);
+  console.log('Transporter exists:', !!transporter);
+  
   if (!transporter) {
     console.error('Email transporter not configured');
     throw new Error('Email service not available');
+  }
+
+  // Test transporter connection first
+  try {
+    await transporter.verify();
+    console.log('✅ Transporter verified successfully');
+  } catch (verifyError) {
+    console.error('❌ Transporter verification failed:', verifyError);
+    throw new Error(`Email service verification failed: ${verifyError.message}`);
   }
 
   const mailOptions = {
@@ -107,11 +130,18 @@ const sendOTPEmail = async (email, otpCode, fullName) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`OTP email sent successfully to ${email}`);
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`✅ OTP email sent successfully to ${email}`);
+    console.log('Message ID:', result.messageId);
+    return result;
   } catch (error) {
-    console.error('Failed to send OTP email:', error);
-    throw error;
+    console.error('❌ Failed to send OTP email:', error);
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      response: error.response
+    });
+    throw new Error(`Email sending failed: ${error.message}`);
   }
 };
 

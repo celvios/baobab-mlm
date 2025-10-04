@@ -37,7 +37,38 @@ REACT_APP_FRONTEND_URL=https://your-frontend-url.vercel.app
 
 ## Testing Email Service
 
-After deployment, test email service:
+### Local Testing (Before Deployment)
+
+1. **Set up environment variables in `.env` file:**
+```bash
+EMAIL_USER=your_gmail@gmail.com
+EMAIL_PASS=your_gmail_app_password
+FRONTEND_URL=http://localhost:3000
+```
+
+2. **Run comprehensive email test:**
+```bash
+node test-email-local.js your-email@gmail.com
+```
+
+3. **Test individual email types:**
+```bash
+# Test OTP email only
+node backend/test-email.js
+
+# Test via API endpoint (start server first)
+GET http://localhost:5000/api/test-email/your-email@gmail.com
+```
+
+4. **Start backend server for API testing:**
+```bash
+cd backend
+npm start
+```
+
+### Production Testing (After Deployment)
+
+Test email service on deployed backend:
 ```
 GET https://your-backend-url.onrender.com/api/test-email/your-email@gmail.com
 ```
