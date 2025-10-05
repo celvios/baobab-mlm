@@ -204,7 +204,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
     setLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
     setLoading(false);
-    setStep(2);
+    setStep(3); // Skip OTP step
   };
 
   const handleCodeChange = (index, value) => {
@@ -288,7 +288,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
                     <p className="text-sm text-primary-700 font-medium">
                       {formData.source === 'wallet' ? 'Wallet Balance' : 'MLM Earnings'}
                     </p>
-                    <p className="text-2xl font-bold text-primary-900">${getCurrentBalance().toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-primary-900">₦{getCurrentBalance().toLocaleString()}</p>
                   </div>
                   <div className="p-3 bg-primary-100 rounded-xl">
                     <CurrencyDollarIcon className="h-6 w-6 text-primary-600" />
@@ -304,8 +304,8 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
                     value={formData.source}
                     onChange={(e) => setFormData({...formData, source: e.target.value})}
                   >
-                    <option value="wallet">Wallet Earnings (${walletBalance.toFixed(2)})</option>
-                    <option value="mlm">MLM Earnings (${mlmEarnings.toFixed(2)})</option>
+                    <option value="wallet">Wallet Earnings (₦{walletBalance.toLocaleString()})</option>
+                    <option value="mlm">MLM Earnings (₦{mlmEarnings.toLocaleString()})</option>
                   </select>
                 </div>
 
@@ -456,7 +456,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Amount:</span>
-                      <span className="font-semibold">${formData.amount}</span>
+                      <span className="font-semibold">₦{parseFloat(formData.amount).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Bank:</span>
