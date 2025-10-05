@@ -319,10 +319,10 @@ export default function Dashboard() {
                             </button>
                           ) : (
                             <button 
-                              onClick={() => setShowDepositModal(true)}
-                              className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-green-700 transition-colors"
+                              onClick={() => setShowWithdrawalModal(true)}
+                              className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-red-700 transition-colors"
                             >
-                              Deposit
+                              Withdraw
                             </button>
                           )}
                         </div>
