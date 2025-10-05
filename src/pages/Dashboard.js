@@ -80,6 +80,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (userProfile?.wallet) {
+      // The wallet balance is already in local currency (Naira)
       setConvertedBalances({
         balance: userProfile.wallet.balance || 0,
         mlmEarnings: userProfile.wallet.mlmEarnings || 0
