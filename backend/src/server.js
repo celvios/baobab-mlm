@@ -140,7 +140,7 @@ app.get('/api/admin-stats', async (req, res) => {
     const [usersResult, ordersResult, revenueResult, withdrawalsResult] = await Promise.all([
       client.query('SELECT COUNT(*) as count FROM users WHERE role != $1', ['admin']),
       client.query('SELECT COUNT(*) as count FROM orders'),
-      client.query('SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE order_status = $1', ['completed']),
+      client.query('SELECT COALESCE(SUM(COALESCE(balance, 0)), 0) + COALESCE(SUM(COALESCE(total_earned, 0)), 0) as total FROM wallets'),
       client.query('SELECT COUNT(*) as count FROM withdrawal_requests WHERE status = $1', ['pending'])
     ]);
 
