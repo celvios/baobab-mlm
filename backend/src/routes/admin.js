@@ -11,11 +11,10 @@ router.get('/stats', adminAuth, async (req, res) => {
       pool.query('SELECT COUNT(*) as count FROM users WHERE role != $1', ['admin']),
       pool.query('SELECT COUNT(*) as count FROM orders'),
       pool.query(`
-        SELECT COALESCE(
-          (SELECT SUM(COALESCE(balance, 0)) FROM wallets) +
-          (SELECT SUM(COALESCE(total_earned, 0)) FROM wallets),
-          0
-        ) as total
+        SELECT 
+          COALESCE(SUM(COALESCE(balance, 0)), 0) + 
+          COALESCE(SUM(COALESCE(total_earned, 0)), 0) as total
+        FROM wallets
       `),
       pool.query('SELECT COUNT(*) as count FROM withdrawal_requests WHERE status = $1', ['pending'])
     ]);
