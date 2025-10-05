@@ -32,6 +32,27 @@ router.get('/stats', adminAuth, async (req, res) => {
   }
 });
 
+// Debug revenue endpoint
+router.get('/debug-revenue', async (req, res) => {
+  try {
+    const [walletsCount, walletsData, usersCount] = await Promise.all([
+      pool.query('SELECT COUNT(*) as count FROM wallets'),
+      pool.query('SELECT SUM(COALESCE(balance, 0)) as total_balance, SUM(COALESCE(total_earned, 0)) as total_earned FROM wallets'),
+      pool.query('SELECT COUNT(*) as count FROM users WHERE role != $1', ['admin'])
+    ]);
+    
+    res.json({
+      walletsCount: walletsCount.rows[0].count,
+      usersCount: usersCount.rows[0].count,
+      totalBalance: walletsData.rows[0].total_balance,
+      totalEarned: walletsData.rows[0].total_earned,
+      calculatedRevenue: (parseFloat(walletsData.rows[0].total_balance) || 0) + (parseFloat(walletsData.rows[0].total_earned) || 0)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test endpoint without auth
 router.get('/test-stats', async (req, res) => {
   try {
