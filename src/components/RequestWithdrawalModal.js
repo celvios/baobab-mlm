@@ -3,6 +3,7 @@ import { XMarkIcon, CurrencyDollarIcon, CheckCircleIcon } from '@heroicons/react
 import ProcessLoader from './ProcessLoader';
 import { useNotification } from './NotificationSystem';
 import apiService from '../services/api';
+import { useCurrency } from '../hooks/useCurrency';
 
 const nigerianBanks = [
   // Commercial Banks
@@ -154,6 +155,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
   const [walletBalance, setWalletBalance] = useState(0);
   const [mlmEarnings, setMlmEarnings] = useState(0);
   const { addNotification } = useNotification();
+  const { formatPrice } = useCurrency();
 
   React.useEffect(() => {
     if (isOpen) {
@@ -288,7 +290,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
                     <p className="text-sm text-primary-700 font-medium">
                       {formData.source === 'wallet' ? 'Wallet Balance' : 'MLM Earnings'}
                     </p>
-                    <p className="text-2xl font-bold text-primary-900">₦{getCurrentBalance().toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-primary-900">{formatPrice(getCurrentBalance())}</p>
                   </div>
                   <div className="p-3 bg-primary-100 rounded-xl">
                     <CurrencyDollarIcon className="h-6 w-6 text-primary-600" />
@@ -304,8 +306,8 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
                     value={formData.source}
                     onChange={(e) => setFormData({...formData, source: e.target.value})}
                   >
-                    <option value="wallet">Wallet Earnings (₦{walletBalance.toLocaleString()})</option>
-                    <option value="mlm">MLM Earnings (₦{mlmEarnings.toLocaleString()})</option>
+                    <option value="wallet">Wallet Earnings ({formatPrice(walletBalance)})</option>
+                    <option value="mlm">MLM Earnings ({formatPrice(mlmEarnings)})</option>
                   </select>
                 </div>
 
@@ -456,7 +458,7 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Amount:</span>
-                      <span className="font-semibold">₦{parseFloat(formData.amount).toLocaleString()}</span>
+                      <span className="font-semibold">{formatPrice(parseFloat(formData.amount))}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Bank:</span>
