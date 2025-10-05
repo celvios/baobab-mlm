@@ -80,7 +80,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (userProfile?.wallet) {
-      // Use the wallet values directly without conversion since they should already be in the correct currency
       setConvertedBalances({
         balance: userProfile.wallet.balance || 0,
         mlmEarnings: userProfile.wallet.mlmEarnings || 0
