@@ -10,7 +10,7 @@ const CartDropdown = ({ isOpen, onClose, userProfile }) => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   
-  const walletBalance = userProfile?.wallet?.balance || 0;
+  const walletBalance = Number(userProfile?.wallet?.balance) || 0;
   const canCheckout = walletBalance >= cartTotal;
 
   const handleCheckout = async () => {
@@ -105,7 +105,8 @@ const CartDropdown = ({ isOpen, onClose, userProfile }) => {
             <span className="font-bold text-lg">₦{cartTotal.toLocaleString()}</span>
           </div>
           <div className="mb-3 text-sm text-gray-600">
-            Wallet Balance: ₦{walletBalance.toLocaleString()}
+            <div>Wallet Balance: ₦{walletBalance.toLocaleString()}</div>
+            <div className="text-xs text-gray-500 mt-1">Cart Total: ₦{cartTotal.toLocaleString()}</div>
           </div>
           <button 
             onClick={handleCheckout}
