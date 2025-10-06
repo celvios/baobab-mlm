@@ -273,10 +273,11 @@ const AdminDeposits = () => {
                 </div>
               </div>
 
-              {selectedDeposit.payment_proof && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500 block mb-2">Payment Proof</label>
+              <div>
+                <label className="text-sm font-medium text-gray-500 block mb-2">Payment Proof</label>
+                {selectedDeposit.payment_proof ? (
                   <div className="relative">
+                    <p className="text-xs text-gray-400 mb-2">Path: {selectedDeposit.payment_proof}</p>
                     <img 
                       src={selectedDeposit.payment_proof.startsWith('http') 
                         ? selectedDeposit.payment_proof 
@@ -285,6 +286,7 @@ const AdminDeposits = () => {
                       alt="Payment Proof" 
                       className="w-full rounded-lg border border-gray-200"
                       onError={(e) => {
+                        console.error('Image load error:', e.target.src);
                         e.target.onerror = null;
                         e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage not available%3C/text%3E%3C/svg%3E';
                       }}
@@ -301,8 +303,10 @@ const AdminDeposits = () => {
                       Open in new tab
                     </a>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No payment proof uploaded</p>
+                )}
+              </div>
             </div>
 
             {selectedDeposit.status === 'pending' && (
