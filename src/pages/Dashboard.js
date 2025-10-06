@@ -196,8 +196,7 @@ export default function Dashboard() {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const needsPayment = !userProfile?.joiningFeePaid;
   
-  // Check if today is Friday (5 = Friday in JavaScript)
-  const isFriday = new Date().getDay() === 5 || new Date().getDay() === 1; // Friday or Monday
+
 
   const getColorForIndex = (index) => {
     const colors = ['bg-yellow-400', 'bg-blue-400', 'bg-green-400', 'bg-yellow-600', 'bg-cyan-400', 'bg-purple-400'];
@@ -310,21 +309,12 @@ export default function Dashboard() {
                           >
                             Refresh
                           </button>
-                          {isFriday ? (
-                            <button 
-                              onClick={() => setShowWithdrawalModal(true)}
-                              className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-red-700 transition-colors"
-                            >
-                              Withdraw
-                            </button>
-                          ) : (
-                            <button 
-                              onClick={() => setShowWithdrawalModal(true)}
-                              className="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-red-700 transition-colors"
-                            >
-                              Withdraw
-                            </button>
-                          )}
+                          <button 
+                            onClick={() => setShowDepositModal(true)}
+                            className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-green-700 transition-colors"
+                          >
+                            Deposit
+                          </button>
                         </div>
                       </div>
                     </div>
