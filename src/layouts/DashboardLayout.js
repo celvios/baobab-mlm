@@ -40,6 +40,16 @@ export default function DashboardLayout() {
     fetchUserProfile();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cartOpen && !event.target.closest('.cart-dropdown') && !event.target.closest('.cart-button')) {
+        setCartOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [cartOpen]);
+
   const fetchUserProfile = async () => {
     try {
       const [profile, wallet] = await Promise.all([
@@ -193,7 +203,7 @@ export default function DashboardLayout() {
             <div className="relative hidden sm:block">
               <button 
                 onClick={() => setCartOpen(!cartOpen)}
-                className="p-2 lg:p-3 text-gray-500 hover:text-primary-600 transition-all duration-200 rounded-lg lg:rounded-xl hover:bg-primary-50 relative"
+                className="cart-button p-2 lg:p-3 text-gray-500 hover:text-primary-600 transition-all duration-200 rounded-lg lg:rounded-xl hover:bg-primary-50 relative"
               >
                 <ShoppingCartIcon className="h-5 w-5 lg:h-6 lg:w-6" />
                 {cartCount > 0 && (
@@ -202,7 +212,9 @@ export default function DashboardLayout() {
                   </span>
                 )}
               </button>
-              <CartDropdown isOpen={cartOpen} onClose={() => setCartOpen(false)} userProfile={userProfile} />
+              <div className="cart-dropdown">
+                <CartDropdown isOpen={cartOpen} onClose={() => setCartOpen(false)} userProfile={userProfile} />
+              </div>
             </div>
             <div className="relative">
               <div className="flex items-center space-x-3 p-2">
