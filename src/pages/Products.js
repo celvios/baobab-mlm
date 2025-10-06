@@ -165,7 +165,7 @@ export default function Products() {
                     <p className="text-gray-600 text-sm mb-3">Price</p>
                     <div className="flex items-center space-x-4 mb-6">
                       <div>
-                        <span className="text-3xl font-bold text-green-600">{products[0]?.localPrice || safeFormatPrice(products[0]?.price || 20)}</span>
+                        <span className="text-3xl font-bold text-green-600">₦{(products[0]?.price || 30000).toLocaleString()}</span>
                         <p className="text-sm text-gray-500 mt-1">${Number(products[0]?.basePrice || 20).toFixed(2)} USD</p>
                       </div>
                     </div>
@@ -226,7 +226,7 @@ export default function Products() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900 text-sm mb-1">{product.localPrice || safeFormatPrice(product.price || 20)}</p>
+                      <p className="font-bold text-gray-900 text-sm mb-1">₦{(product.price || 30000).toLocaleString()}</p>
                       <p className="text-xs text-gray-400">${Number(product.basePrice || 20).toFixed(2)} USD</p>
                       <p 
                         onClick={(e) => {
@@ -275,7 +275,7 @@ export default function Products() {
                   <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-xl font-bold">{product.localPrice || safeFormatPrice(product.price || 20)}</span>
+                      <span className="text-xl font-bold">₦{(product.price || 30000).toLocaleString()}</span>
                       <p className="text-xs text-gray-500">${Number(product.basePrice || 20).toFixed(2)} USD</p>
                     </div>
                     <button 
