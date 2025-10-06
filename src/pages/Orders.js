@@ -70,9 +70,8 @@ export default function Orders() {
       amountValue: (order.amount || order.totalAmount) || 0,
       transaction: 'Purchased',
       deliveryType: order.deliveryType === 'pickup' ? 'Pick-Up Station' : 'Home Delivery',
-      deliveryStatus: order.status === 'pending' ? 'Pending' : 
-                     order.status === 'processing' ? 'Processing' : 
-                     order.status === 'delivered' ? 'Delivered' : 'Pending',
+      deliveryStatus: order.status === 'approved' || order.status === 'delivered' ? 'Delivered' : 
+                     order.status === 'processing' ? 'Processing' : 'Pending',
       paymentStatus: order.paymentStatus === 'pending' ? 'Pending' : 
                     order.paymentStatus === 'successful' ? 'Successful' : 'Pending',
       pickupStation: order.pickupStation || 'Ikeja High Tower, Lagos',

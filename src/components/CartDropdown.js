@@ -47,8 +47,11 @@ const CartDropdown = ({ isOpen, onClose, userProfile }) => {
 
   if (!isOpen) return null;
 
+  if (!isOpen) return null;
+
   return (
     <>
+      <div className="fixed inset-0 z-40" onClick={onClose}></div>
       <div className="absolute right-0 top-12 w-96 bg-white rounded-lg shadow-xl border z-50">
       <div className="p-4 border-b">
         <h3 className="text-lg font-semibold">Shopping Cart</h3>
