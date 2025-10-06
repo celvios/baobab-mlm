@@ -42,8 +42,17 @@ export default function DashboardLayout() {
 
   const fetchUserProfile = async () => {
     try {
-      const profile = await apiService.getProfile();
-      setUserProfile(profile);
+      const [profile, wallet] = await Promise.all([
+        apiService.getProfile(),
+        apiService.getWallet()
+      ]);
+      setUserProfile({
+        ...profile,
+        wallet: {
+          balance: wallet?.balance || profile?.wallet?.balance || 0,
+          mlmEarnings: profile?.wallet?.mlmEarnings || 0
+        }
+      });
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
