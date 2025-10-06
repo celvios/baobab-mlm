@@ -276,11 +276,31 @@ const AdminDeposits = () => {
               {selectedDeposit.payment_proof && (
                 <div>
                   <label className="text-sm font-medium text-gray-500 block mb-2">Payment Proof</label>
-                  <img 
-                    src={selectedDeposit.payment_proof} 
-                    alt="Payment Proof" 
-                    className="w-full rounded-lg border border-gray-200"
-                  />
+                  <div className="relative">
+                    <img 
+                      src={selectedDeposit.payment_proof.startsWith('http') 
+                        ? selectedDeposit.payment_proof 
+                        : `${process.env.REACT_APP_API_URL || 'https://baobab-backend.onrender.com'}${selectedDeposit.payment_proof}`
+                      } 
+                      alt="Payment Proof" 
+                      className="w-full rounded-lg border border-gray-200"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage not available%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                    <a 
+                      href={selectedDeposit.payment_proof.startsWith('http') 
+                        ? selectedDeposit.payment_proof 
+                        : `${process.env.REACT_APP_API_URL || 'https://baobab-backend.onrender.com'}${selectedDeposit.payment_proof}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Open in new tab
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
