@@ -11,6 +11,7 @@ const marketUpdatesRoutes = require('./routes/marketUpdates');
 const mlmRoutes = require('./routes/mlm');
 const ordersRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
+const productsRoutes = require('./routes/products');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/withdrawal', withdrawalRoutes);
 app.use('/api/market-updates', marketUpdatesRoutes);
 app.use('/api/mlm', mlmRoutes);
 app.use('/api/orders', ordersRoutes);
+app.use('/api/products', productsRoutes);
 app.use('/api/bank', require('./routes/bank'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/wallet', require('./routes/wallet'));
