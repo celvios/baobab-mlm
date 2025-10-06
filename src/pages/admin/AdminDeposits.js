@@ -6,6 +6,8 @@ const AdminDeposits = () => {
   const [deposits, setDeposits] = useState([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
   const [loading, setLoading] = useState(true);
+  const [selectedDeposit, setSelectedDeposit] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchDeposits();
@@ -183,28 +185,33 @@ const AdminDeposits = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {deposit.status === 'pending' ? (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleApprove(deposit.id, deposit.amount)}
-                          className="text-green-600 hover:text-green-900 flex items-center"
-                        >
-                          <FiCheck className="w-4 h-4 mr-1" />
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(deposit.id)}
-                          className="text-red-600 hover:text-red-900 flex items-center"
-                        >
-                          <FiX className="w-4 h-4 mr-1" />
-                          Reject
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">
-                        {deposit.status === 'approved' ? 'Approved' : 'Rejected'}
-                      </span>
-                    )}
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => { setSelectedDeposit(deposit); setShowModal(true); }}
+                        className="text-blue-600 hover:text-blue-900 flex items-center"
+                      >
+                        <FiEye className="w-4 h-4 mr-1" />
+                        View
+                      </button>
+                      {deposit.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleApprove(deposit.id, deposit.amount)}
+                            className="text-green-600 hover:text-green-900 flex items-center"
+                          >
+                            <FiCheck className="w-4 h-4 mr-1" />
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleReject(deposit.id)}
+                            className="text-red-600 hover:text-red-900 flex items-center"
+                          >
+                            <FiX className="w-4 h-4 mr-1" />
+                            Reject
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )) : (
@@ -218,6 +225,87 @@ const AdminDeposits = () => {
           </table>
         </div>
       </div>
+
+      {/* Deposit Details Modal */}
+      {showModal && selectedDeposit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-gray-900">Deposit Request Details</h3>
+                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <FiX className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">User Name</label>
+                  <p className="text-base font-medium text-gray-900">{selectedDeposit.user_name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Email</label>
+                  <p className="text-base text-gray-900">{selectedDeposit.user_email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Amount</label>
+                  <p className="text-base font-semibold text-gray-900">₦{selectedDeposit.amount?.toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Payment Method</label>
+                  <p className="text-base text-gray-900">{selectedDeposit.payment_method || 'Bank Transfer'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Date</label>
+                  <p className="text-base text-gray-900">{new Date(selectedDeposit.created_at).toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    selectedDeposit.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    selectedDeposit.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {selectedDeposit.status?.charAt(0).toUpperCase() + selectedDeposit.status?.slice(1)}
+                  </span>
+                </div>
+              </div>
+
+              {selectedDeposit.payment_proof && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500 block mb-2">Payment Proof</label>
+                  <img 
+                    src={selectedDeposit.payment_proof} 
+                    alt="Payment Proof" 
+                    className="w-full rounded-lg border border-gray-200"
+                  />
+                </div>
+              )}
+            </div>
+
+            {selectedDeposit.status === 'pending' && (
+              <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                <button
+                  onClick={() => { handleReject(selectedDeposit.id); setShowModal(false); }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
+                >
+                  <FiX className="w-4 h-4 mr-2" />
+                  Reject
+                </button>
+                <button
+                  onClick={() => { handleApprove(selectedDeposit.id, selectedDeposit.amount); setShowModal(false); }}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+                >
+                  <FiCheck className="w-4 h-4 mr-2" />
+                  Approve
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
