@@ -316,7 +316,7 @@ class ApiService {
     });
   }
 
-  async getProducts() {
+  async getAdminProducts() {
     return this.request('/admin/products');
   }
 
