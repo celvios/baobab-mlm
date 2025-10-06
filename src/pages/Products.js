@@ -21,13 +21,13 @@ export default function Products() {
 
   const safeFormatPrice = (price) => {
     if (currencyLoading || !formatPrice) {
-      return `$${price}`;
+      return `₦${(price * 1500).toLocaleString()}`;
     }
     try {
-      return formatPrice(price);
+      return formatPrice(price * 1500);
     } catch (error) {
       console.error('Price formatting error:', error);
-      return `$${price}`;
+      return `₦${(price * 1500).toLocaleString()}`;
     }
   };
 
