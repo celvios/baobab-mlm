@@ -381,7 +381,11 @@ export default function Dashboard() {
                   <div className="flex-1">
                     <p className="font-medium text-gray-900 text-sm">{member.email}</p>
                   </div>
-                  <p className="text-green-600 font-semibold text-sm">+₦{formatCurrency(member.earning_from_user * 1500 || 2250)}</p>
+                  {member.has_deposited ? (
+                    <p className="text-green-600 font-semibold text-sm">+₦{formatCurrency(member.earning_from_user * 1500 || 2250)}</p>
+                  ) : (
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+                  )}
                 </div>
               )) : (
                 <p className="text-gray-500 text-sm text-center py-4">No team members yet</p>

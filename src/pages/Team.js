@@ -155,7 +155,13 @@ export default function Team() {
                   </td>
                   <td className="py-4 px-6 text-sm">{member.mlm_level === 'no_stage' ? 'No Stage' : (member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'No Stage')}</td>
                   <td className="py-4 px-6 text-sm">{member.mlm_level === 'no_stage' ? 'No Stage' : (member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'No Stage')}</td>
-                  <td className="py-4 px-6 text-sm font-semibold text-green-600">+ ${member.earning_from_user || '1.5'}</td>
+                  <td className="py-4 px-6 text-sm">
+                    {member.has_deposited ? (
+                      <span className="font-semibold text-green-600">+ ${member.earning_from_user || '1.5'}</span>
+                    ) : (
+                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+                    )}
+                  </td>
                 </tr>
               )) : (
                 <tr>
