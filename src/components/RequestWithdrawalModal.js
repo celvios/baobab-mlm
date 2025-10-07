@@ -204,9 +204,15 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
     if (!validateForm()) return;
     
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
-    setStep(3); // Skip OTP step
+    try {
+      await apiService.requestWithdrawal(parseFloat(formData.amount));
+      addNotification('Withdrawal request submitted successfully', 'success');
+      setStep(3);
+    } catch (error) {
+      addNotification(error.message || 'Failed to submit withdrawal request', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCodeChange = (index, value) => {
@@ -225,33 +231,15 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
     e.preventDefault();
     setLoading(true);
     
-    // Save withdrawal to localStorage
-    const withdrawal = {
-      id: Date.now(),
-      amount: parseFloat(formData.amount),
-      source: formData.source,
-      bank: formData.bank,
-      accountNumber: formData.accountNumber,
-      accountName: formData.accountName,
-      status: 'pending',
-      date: new Date().toISOString(),
-      type: 'withdrawal'
-    };
-    
-    const existingWithdrawals = JSON.parse(localStorage.getItem('userWithdrawals') || '[]');
-    existingWithdrawals.push(withdrawal);
-    localStorage.setItem('userWithdrawals', JSON.stringify(existingWithdrawals));
-    
-    // Update local balances
-    if (formData.source === 'wallet') {
-      setWalletBalance(prev => prev - parseFloat(formData.amount));
-    } else {
-      setMlmEarnings(prev => prev - parseFloat(formData.amount));
+    try {
+      await apiService.requestWithdrawal(parseFloat(formData.amount));
+      addNotification('Withdrawal request submitted successfully', 'success');
+      setStep(3);
+    } catch (error) {
+      addNotification(error.message || 'Failed to submit withdrawal request', 'error');
+    } finally {
+      setLoading(false);
     }
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setLoading(false);
-    setStep(3);
   };
 
   const handleClose = () => {
