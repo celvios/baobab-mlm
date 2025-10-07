@@ -324,6 +324,11 @@ router.put('/orders/:orderId', adminAuth, async (req, res) => {
   const updateData = req.body;
   
   try {
+    // If marking as picked up, also set order_status to delivered
+    if (updateData.is_picked_up === true) {
+      updateData.order_status = 'delivered';
+    }
+    
     const setClause = Object.keys(updateData).map((key, index) => `${key} = $${index + 2}`).join(', ');
     const values = [orderId, ...Object.values(updateData)];
     
