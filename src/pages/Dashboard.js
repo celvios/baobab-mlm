@@ -260,12 +260,13 @@ export default function Dashboard() {
       {/* Header */}
       <div className="mb-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back, {userProfile?.fullName?.split(' ')[0] || 'User'}</h1>
-        <Link 
-          to="/admin/orders" 
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+        <button 
+          onClick={() => setShowWithdrawalModal(true)}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center"
         >
-          Admin Orders
-        </Link>
+          <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+          Withdraw
+        </button>
       </div>
 
       <MarketUpdates />
