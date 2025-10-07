@@ -130,10 +130,10 @@ class ApiService {
   }
 
   // Withdrawal methods
-  async requestWithdrawal(amount) {
+  async requestWithdrawal(data) {
     return this.request('/withdrawal/request', {
       method: 'POST',
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify(data),
     });
   }
 

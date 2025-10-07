@@ -205,7 +205,12 @@ export default function RequestWithdrawalModal({ isOpen, onClose }) {
     
     setLoading(true);
     try {
-      await apiService.requestWithdrawal(parseFloat(formData.amount));
+      await apiService.requestWithdrawal({
+        amount: parseFloat(formData.amount),
+        bank: formData.bank,
+        accountNumber: formData.accountNumber,
+        accountName: formData.accountName
+      });
       addNotification('Withdrawal request submitted successfully', 'success');
       setStep(3);
     } catch (error) {

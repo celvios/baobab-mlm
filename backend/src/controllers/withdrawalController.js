@@ -3,7 +3,7 @@ const pool = require('../config/database');
 const requestWithdrawal = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { amount } = req.body;
+    const { amount, bank, accountNumber, accountName } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid withdrawal amount' });
@@ -20,14 +20,15 @@ const requestWithdrawal = async (req, res) => {
       return res.status(400).json({ message: 'Insufficient balance' });
     }
 
-    // Check if user has complete bank details
-    const profileResult = await pool.query(
-      'SELECT bank_name, account_number, account_name FROM user_profiles WHERE user_id = $1',
-      [userId]
-    );
-
-    if (profileResult.rows.length === 0 || !profileResult.rows[0].bank_name || !profileResult.rows[0].account_number) {
-      return res.status(400).json({ message: 'Please complete your bank details first' });
+    // Update user bank details if provided
+    if (bank && accountNumber && accountName) {
+      await pool.query(
+        `INSERT INTO user_profiles (user_id, bank_name, account_number, account_name) 
+         VALUES ($1, $2, $3, $4) 
+         ON CONFLICT (user_id) DO UPDATE 
+         SET bank_name = $2, account_number = $3, account_name = $4`,
+        [userId, bank, accountNumber, accountName]
+      );
     }
 
     // Create withdrawal request
