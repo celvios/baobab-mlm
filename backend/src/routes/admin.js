@@ -641,6 +641,18 @@ router.get('/fix-users-table', async (req, res) => {
   }
 });
 
+// Make user admin by email
+router.get('/make-admin/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT \'user\'');
+    await pool.query('UPDATE users SET role = $1 WHERE email = $2', ['admin', email]);
+    res.json({ message: `User ${email} is now an admin` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
