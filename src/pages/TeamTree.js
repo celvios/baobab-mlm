@@ -175,9 +175,13 @@ export default function TeamTree() {
             {node.mlm_level === 'no_stage' ? 'No Stage' : ((node.mlm_level || 'no_stage').charAt(0).toUpperCase() + (node.mlm_level || 'no_stage').slice(1))}
           </p>
           {!isRoot && (
-            <p className="text-xs text-green-600 font-semibold">
-              +${node.earning_from_user || '1.5'}
-            </p>
+            node.has_deposited ? (
+              <p className="text-xs text-green-600 font-semibold">
+                +${node.earning_from_user || '1.5'}
+              </p>
+            ) : (
+              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+            )
           )}
         </div>
         
@@ -290,7 +294,7 @@ export default function TeamTree() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Team Earnings</p>
-              <p className="text-xl font-bold text-gray-900">${(teamMembers.length * 1.5).toFixed(1)}</p>
+              <p className="text-xl font-bold text-gray-900">${(teamMembers.filter(m => m.has_deposited).length * 1.5).toFixed(1)}</p>
             </div>
           </div>
         </div>
