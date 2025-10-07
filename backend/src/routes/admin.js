@@ -689,6 +689,21 @@ router.get('/make-admin/:email', async (req, res) => {
   }
 });
 
+// Test Cloudinary config
+router.get('/test-cloudinary', async (req, res) => {
+  try {
+    const cloudinary = require('../config/cloudinary');
+    res.json({
+      configured: !!process.env.CLOUDINARY_CLOUD_NAME,
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'NOT SET',
+      api_key: process.env.CLOUDINARY_API_KEY ? 'SET' : 'NOT SET',
+      api_secret: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'NOT SET'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
