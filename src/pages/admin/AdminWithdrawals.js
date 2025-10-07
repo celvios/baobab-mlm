@@ -29,7 +29,7 @@ const AdminWithdrawals = () => {
   const updateWithdrawalStatus = async (withdrawalId, status) => {
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'https://baobab-mlm.onrender.com';
-      await fetch(`${API_URL}/api/admin/withdrawals/${withdrawalId}`, {
+      const response = await fetch(`${API_URL}/api/admin/withdrawals/${withdrawalId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -37,9 +37,17 @@ const AdminWithdrawals = () => {
         },
         body: JSON.stringify({ status })
       });
-      fetchWithdrawals();
+      
+      if (response.ok) {
+        alert(`Withdrawal ${status} successfully!`);
+        fetchWithdrawals();
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.message}`);
+      }
     } catch (error) {
       console.error('Error updating withdrawal status:', error);
+      alert('Failed to update withdrawal status');
     }
   };
 
