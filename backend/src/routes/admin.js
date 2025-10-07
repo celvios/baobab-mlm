@@ -516,7 +516,24 @@ router.get('/withdrawals', adminAuth, async (req, res) => {
       LEFT JOIN user_profiles up ON u.id = up.user_id
       ORDER BY wr.created_at DESC
     `);
-    res.json({ requests: result.rows });
+    
+    const formattedRequests = result.rows.map(row => ({
+      id: row.id,
+      amount: parseFloat(row.amount),
+      status: row.status,
+      createdAt: row.created_at,
+      user: {
+        fullName: row.full_name,
+        email: row.email
+      },
+      bankDetails: {
+        bankName: row.bank_name,
+        accountNumber: row.account_number,
+        accountName: row.account_name
+      }
+    }));
+    
+    res.json({ requests: formattedRequests });
   } catch (error) {
     console.error('Error fetching withdrawals:', error);
     res.status(500).json({ message: 'Server error' });
