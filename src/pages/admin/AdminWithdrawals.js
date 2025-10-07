@@ -5,6 +5,8 @@ const AdminWithdrawals = () => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     fetchWithdrawals();
@@ -149,7 +151,13 @@ const AdminWithdrawals = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">
+                      <button 
+                        onClick={() => {
+                          setSelectedWithdrawal(withdrawal);
+                          setShowDetailsModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
                         <FiEye className="w-4 h-4" />
                       </button>
                       {withdrawal.status === 'pending' && (
@@ -184,6 +192,51 @@ const AdminWithdrawals = () => {
           </table>
         </div>
       </div>
+
+      {/* Details Modal */}
+      {showDetailsModal && selectedWithdrawal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowDetailsModal(false)} />
+            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Withdrawal Details</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600">User</p>
+                  <p className="font-medium">{selectedWithdrawal.user?.fullName}</p>
+                  <p className="text-sm text-gray-500">{selectedWithdrawal.user?.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Amount</p>
+                  <p className="font-medium text-lg">₦{selectedWithdrawal.amount?.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Bank Details</p>
+                  <p className="font-medium">{selectedWithdrawal.bankDetails?.bankName}</p>
+                  <p className="text-sm">{selectedWithdrawal.bankDetails?.accountNumber}</p>
+                  <p className="text-sm">{selectedWithdrawal.bankDetails?.accountName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Status</p>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedWithdrawal.status)}`}>
+                    {selectedWithdrawal.status}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Date</p>
+                  <p className="text-sm">{new Date(selectedWithdrawal.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="mt-6 w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

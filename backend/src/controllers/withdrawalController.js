@@ -1,30 +1,39 @@
 const pool = require('../config/database');
 
 const requestWithdrawal = async (req, res) => {
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+    
     const userId = req.user.id;
     const { amount, bank, accountNumber, accountName } = req.body;
-
-    console.log('Withdrawal request:', { userId, amount, bank, accountNumber, accountName });
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid withdrawal amount' });
     }
 
     // Check wallet balance
-    const walletResult = await pool.query('SELECT balance FROM wallets WHERE user_id = $1', [userId]);
+    const walletResult = await client.query('SELECT balance FROM wallets WHERE user_id = $1', [userId]);
     if (walletResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Wallet not found' });
     }
 
     const currentBalance = parseFloat(walletResult.rows[0].balance);
     if (amount > currentBalance) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ message: 'Insufficient balance' });
     }
 
+    // Deduct from wallet balance
+    await client.query(
+      'UPDATE wallets SET balance = balance - $1 WHERE user_id = $2',
+      [amount, userId]
+    );
+
     // Update user bank details if provided
     if (bank && accountNumber && accountName) {
-      await pool.query(
+      await client.query(
         `INSERT INTO user_profiles (user_id, bank_name, account_number, account_name) 
          VALUES ($1, $2, $3, $4) 
          ON CONFLICT (user_id) DO UPDATE 
@@ -34,17 +43,19 @@ const requestWithdrawal = async (req, res) => {
     }
 
     // Create withdrawal request
-    const result = await pool.query(
+    const result = await client.query(
       'INSERT INTO withdrawal_requests (user_id, amount) VALUES ($1, $2) RETURNING id, created_at',
       [userId, amount]
     );
 
     // Create transaction record
-    await pool.query(
+    await client.query(
       'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'withdrawal_request', amount, 'Withdrawal request submitted', 'pending']
+      [userId, 'withdrawal', -amount, 'Withdrawal request submitted', 'pending']
     );
 
+    await client.query('COMMIT');
+    
     res.status(201).json({
       message: 'Withdrawal request submitted successfully',
       requestId: result.rows[0].id,
@@ -52,8 +63,11 @@ const requestWithdrawal = async (req, res) => {
       createdAt: result.rows[0].created_at
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Withdrawal error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  } finally {
+    client.release();
   }
 };
 

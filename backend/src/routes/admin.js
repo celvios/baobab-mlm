@@ -543,16 +543,58 @@ router.get('/withdrawals', adminAuth, async (req, res) => {
 router.put('/withdrawals/:id', adminAuth, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  const client = await pool.connect();
   
   try {
-    await pool.query(
+    await client.query('BEGIN');
+    
+    // Get withdrawal details
+    const withdrawalResult = await client.query(
+      'SELECT * FROM withdrawal_requests WHERE id = $1',
+      [id]
+    );
+    
+    if (withdrawalResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Withdrawal not found' });
+    }
+    
+    const withdrawal = withdrawalResult.rows[0];
+    
+    // Update withdrawal status
+    await client.query(
       'UPDATE withdrawal_requests SET status = $1, processed_at = CURRENT_TIMESTAMP, processed_by = $2 WHERE id = $3',
       [status, req.user.id, id]
     );
+    
+    // Update transaction status
+    await client.query(
+      `UPDATE transactions SET status = $1, description = $2 WHERE user_id = $3 AND type = 'withdrawal' AND amount = $4 AND status = 'pending'`,
+      [status, status === 'approved' ? 'Withdrawal approved' : 'Withdrawal rejected', withdrawal.user_id, -withdrawal.amount]
+    );
+    
+    // If rejected, return money to wallet
+    if (status === 'rejected') {
+      await client.query(
+        'UPDATE wallets SET balance = balance + $1 WHERE user_id = $2',
+        [withdrawal.amount, withdrawal.user_id]
+      );
+      
+      // Create refund transaction
+      await client.query(
+        'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+        [withdrawal.user_id, 'refund', withdrawal.amount, 'Withdrawal rejected - refund', 'completed']
+      );
+    }
+    
+    await client.query('COMMIT');
     res.json({ message: 'Withdrawal status updated successfully' });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error updating withdrawal:', error);
     res.status(500).json({ message: 'Server error' });
+  } finally {
+    client.release();
   }
 });
 
