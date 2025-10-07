@@ -3,17 +3,8 @@ const multer = require('multer');
 const path = require('path');
 
 // Configure multer for payment proof uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/payment-proofs/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `payment-${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
-  }
-});
-
 const upload = multer({ 
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -28,7 +19,9 @@ const uploadPaymentProof = async (req, res) => {
   try {
     const userId = req.user.id;
     const { amount } = req.body;
-    const proofUrl = req.file ? `/uploads/payment-proofs/${req.file.filename}` : null;
+    
+    // Convert image to base64
+    const proofUrl = req.file ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}` : null;
 
     // Check if this is a joining fee or deposit
     const userResult = await pool.query('SELECT joining_fee_paid FROM users WHERE id = $1', [userId]);
