@@ -728,6 +728,16 @@ router.post('/test-upload', productUpload.single('image'), async (req, res) => {
   }
 });
 
+// Fix deposit table column size
+router.get('/fix-deposit-table', async (req, res) => {
+  try {
+    await pool.query('ALTER TABLE deposit_requests ALTER COLUMN payment_proof TYPE TEXT');
+    res.json({ message: 'Deposit table fixed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
