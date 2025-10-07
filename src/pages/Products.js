@@ -270,11 +270,11 @@ export default function Products() {
                 className="bg-white border border-gray-200 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
                 onClick={() => setCurrentView('detail')}
               >
-                <div className="bg-gradient-to-br from-pink-100 to-orange-100 p-6 flex items-center justify-center h-48">
+                <div className="h-48 overflow-hidden">
                   <img 
                     src={product.image_url || product.image || '/images/IMG_4996 2.png'} 
                     alt={product.name} 
-                    className="max-w-full max-h-full object-contain"
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="p-6">
