@@ -126,11 +126,11 @@ export default function Products() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column: Product Image */}
-              <div className="bg-gradient-to-br from-pink-100 to-orange-100 rounded-2xl p-8 flex items-center justify-center border-l-4 border-gray-300">
+              <div className="rounded-2xl overflow-hidden border-l-4 border-gray-300">
                 <img 
-                  src="/images/IMG_4996 2.png" 
-                  alt="Lentoc Tea" 
-                  className="max-w-full h-auto"
+                  src={products[0]?.image_url || products[0]?.image || '/images/IMG_4996 2.png'} 
+                  alt={products[0]?.name || 'Product'} 
+                  className="w-full h-full object-cover"
                 />
               </div>
 
@@ -224,8 +224,8 @@ export default function Products() {
                 {myProducts.map((product, index) => (
                   <div key={index} className="bg-gray-100 rounded-lg p-4 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <img src={product.image} alt={product.name} className="w-10 h-10 object-contain" />
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src={product.image_url || product.image || '/images/IMG_4996 2.png'} alt={product.name} className="w-full h-full object-cover" />
                       </div>
                       <div>
                         <h4 className="font-medium text-gray-900 text-sm">{product.name}</h4>
