@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiMail, FiSend, FiTrash2, FiEye } from 'react-icons/fi';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import apiService from '../../services/api';
 
 const AdminEmailer = () => {
@@ -87,14 +89,22 @@ const AdminEmailer = () => {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-            <textarea
+            <ReactQuill
+              theme="snow"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-vertical"
+              onChange={setMessage}
               placeholder="Enter your message here..."
-              autoComplete="off"
-              required
+              style={{ height: '200px', marginBottom: '50px' }}
+              modules={{
+                toolbar: [
+                  [{ 'header': [1, 2, 3, false] }],
+                  ['bold', 'italic', 'underline', 'strike'],
+                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                  [{ 'color': [] }, { 'background': [] }],
+                  ['link'],
+                  ['clean']
+                ]
+              }}
             />
           </div>
           

@@ -791,13 +791,73 @@ router.get('/add-password-reset-columns', async (req, res) => {
   }
 });
 
-// Test Mailgun email
+// Test email
 router.get('/test-email/:email', async (req, res) => {
   try {
     const { email } = req.params;
     const { sendOTPEmail } = require('../utils/emailService');
     await sendOTPEmail(email, '123456', 'Test User');
     res.json({ message: `Test email sent to ${email}` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Send bulk email
+router.post('/emails/send', adminAuth, async (req, res) => {
+  try {
+    const { subject, message, category } = req.body;
+    const sgMail = require('@sendgrid/mail');
+    
+    // Get users based on category
+    let query = 'SELECT email, full_name FROM users WHERE role != $1';
+    const result = await pool.query(query, ['admin']);
+    const users = result.rows;
+    
+    if (users.length === 0) {
+      return res.status(400).json({ message: 'No users found' });
+    }
+    
+    // Send email to all users
+    const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@baobab.com';
+    const emailPromises = users.map(user => {
+      const msg = {
+        to: user.email,
+        from: FROM_EMAIL,
+        subject: subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4a5d23;">Hello ${user.full_name},</h2>
+            <div style="margin: 20px 0;">
+              ${message.replace(/\n/g, '<br>')}
+            </div>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 12px;">This email was sent from Baobab MLM Admin</p>
+          </div>
+        `
+      };
+      return sgMail.send(msg).catch(err => {
+        console.error(`Failed to send to ${user.email}:`, err);
+        return null;
+      });
+    });
+    
+    await Promise.all(emailPromises);
+    
+    res.json({ 
+      message: 'Emails sent successfully',
+      sentCount: users.length
+    });
+  } catch (error) {
+    console.error('Error sending bulk email:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get email history
+router.get('/emails/history', adminAuth, async (req, res) => {
+  try {
+    res.json({ emails: [] });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
