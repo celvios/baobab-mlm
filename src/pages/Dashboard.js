@@ -148,7 +148,7 @@ export default function Dashboard() {
     }
   };
 
-  const referralLink = userProfile?.referralCode ? `${process.env.REACT_APP_FRONTEND_URL || 'https://baobab-mlm.vercel.app'}/register?ref=${userProfile.referralCode}` : 'Loading...';
+  const referralLink = userProfile?.referralCode ? `${process.env.REACT_APP_FRONTEND_URL || window.location.origin}/register?ref=${userProfile.referralCode}` : 'Loading...';
   
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
