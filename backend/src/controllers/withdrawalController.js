@@ -5,6 +5,8 @@ const requestWithdrawal = async (req, res) => {
     const userId = req.user.id;
     const { amount, bank, accountNumber, accountName } = req.body;
 
+    console.log('Withdrawal request:', { userId, amount, bank, accountNumber, accountName });
+
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid withdrawal amount' });
     }
@@ -50,8 +52,8 @@ const requestWithdrawal = async (req, res) => {
       createdAt: result.rows[0].created_at
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Withdrawal error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
