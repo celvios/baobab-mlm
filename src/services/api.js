@@ -321,17 +321,39 @@ class ApiService {
   }
 
   async createProduct(productData) {
-    return this.request('/admin/products', {
+    const url = `${API_BASE_URL}/api/admin/products`;
+    const response = await fetch(url, {
       method: 'POST',
-      body: JSON.stringify(productData),
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      },
+      body: productData // FormData, don't stringify
     });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create product');
+    }
+    
+    return response.json();
   }
 
   async updateProduct(productId, productData) {
-    return this.request(`/admin/products/${productId}`, {
+    const url = `${API_BASE_URL}/api/admin/products/${productId}`;
+    const response = await fetch(url, {
       method: 'PUT',
-      body: JSON.stringify(productData),
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      },
+      body: productData // FormData, don't stringify
     });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update product');
+    }
+    
+    return response.json();
   }
 
   async deleteProduct(productId) {

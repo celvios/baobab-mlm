@@ -68,18 +68,23 @@ const AdminProductManagement = () => {
     const handleSubmit = async (e) => {
       e.preventDefault();
       try {
-        let productData = { ...formData };
+        const formDataToSend = new FormData();
+        formDataToSend.append('name', formData.name);
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('price', formData.price);
+        formDataToSend.append('category', formData.category);
+        formDataToSend.append('stock_quantity', formData.stock_quantity);
         
-        // Handle image upload (for now, we'll use a placeholder)
         if (imageFile) {
-          // In a real app, you'd upload to a service like AWS S3
-          productData.image_url = URL.createObjectURL(imageFile);
+          formDataToSend.append('image', imageFile);
+        } else if (formData.image_url) {
+          formDataToSend.append('image_url', formData.image_url);
         }
         
         if (editingProduct) {
-          await apiService.updateProduct(editingProduct.id, productData);
+          await apiService.updateProduct(editingProduct.id, formDataToSend);
         } else {
-          await apiService.createProduct(productData);
+          await apiService.createProduct(formDataToSend);
         }
         
         setShowCreateModal(false);
@@ -88,6 +93,7 @@ const AdminProductManagement = () => {
         fetchProducts();
       } catch (error) {
         console.error('Error saving product:', error);
+        alert('Error: ' + error.message);
       }
     };
 
