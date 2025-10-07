@@ -563,8 +563,8 @@ router.put('/withdrawals/:id', adminAuth, async (req, res) => {
     
     // Update withdrawal status
     await client.query(
-      'UPDATE withdrawal_requests SET status = $1, processed_at = CURRENT_TIMESTAMP, processed_by = $2 WHERE id = $3',
-      [status, req.user.id, id]
+      'UPDATE withdrawal_requests SET status = $1, processed_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [status, id]
     );
     
     // Update transaction status
