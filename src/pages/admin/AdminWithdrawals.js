@@ -12,10 +12,12 @@ const AdminWithdrawals = () => {
 
   const fetchWithdrawals = async () => {
     try {
-      const response = await fetch('/api/admin/withdrawals', {
+      const API_URL = process.env.REACT_APP_API_URL || 'https://baobab-mlm.onrender.com';
+      const response = await fetch(`${API_URL}/api/admin/withdrawals`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
+      console.log('Withdrawals data:', data);
       setWithdrawals(data.requests || []);
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
@@ -24,7 +26,8 @@ const AdminWithdrawals = () => {
 
   const updateWithdrawalStatus = async (withdrawalId, status) => {
     try {
-      await fetch(`/api/admin/withdrawals/${withdrawalId}`, {
+      const API_URL = process.env.REACT_APP_API_URL || 'https://baobab-mlm.onrender.com';
+      await fetch(`${API_URL}/api/admin/withdrawals/${withdrawalId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
