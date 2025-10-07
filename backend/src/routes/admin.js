@@ -572,6 +572,16 @@ router.get('/fix-user-profiles', async (req, res) => {
   }
 });
 
+// Fix users table columns
+router.get('/fix-users-table', async (req, res) => {
+  try {
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS joining_fee_paid BOOLEAN DEFAULT FALSE');
+    res.json({ message: 'users table fixed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
