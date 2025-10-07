@@ -495,7 +495,7 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
     await client.query('BEGIN');
     
     // Get deposit request
-    const depositResult = await client.query('SELECT * FROM deposit_requests WHERE id = $1', [depositId]);
+    const depositResult = await client.query('SELECT dr.*, u.email, u.full_name FROM deposit_requests dr JOIN users u ON dr.user_id = u.id WHERE dr.id = $1', [depositId]);
     const deposit = depositResult.rows[0];
     
     if (!deposit) {
@@ -521,6 +521,15 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
     );
     
     await client.query('COMMIT');
+    
+    // Send email notification
+    try {
+      const { sendDepositApprovedEmail } = require('../utils/emailService');
+      await sendDepositApprovedEmail(deposit.email, deposit.full_name, parseFloat(amount));
+    } catch (emailError) {
+      console.log('Failed to send deposit approval email:', emailError.message);
+    }
+    
     res.json({ message: 'Deposit approved and user credited successfully' });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -535,10 +544,24 @@ router.post('/reject-deposit', adminAuth, async (req, res) => {
   const { depositId } = req.body;
   
   try {
+    // Get deposit details
+    const depositResult = await pool.query('SELECT dr.*, u.email, u.full_name FROM deposit_requests dr JOIN users u ON dr.user_id = u.id WHERE dr.id = $1', [depositId]);
+    const deposit = depositResult.rows[0];
+    
     await pool.query(
       'UPDATE deposit_requests SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       ['rejected', depositId]
     );
+    
+    // Send email notification
+    if (deposit) {
+      try {
+        const { sendDepositRejectedEmail } = require('../utils/emailService');
+        await sendDepositRejectedEmail(deposit.email, deposit.full_name, parseFloat(deposit.amount));
+      } catch (emailError) {
+        console.log('Failed to send deposit rejection email:', emailError.message);
+      }
+    }
     
     res.json({ message: 'Deposit rejected successfully' });
   } catch (error) {
@@ -590,9 +613,9 @@ router.put('/withdrawals/:id', adminAuth, async (req, res) => {
   try {
     await client.query('BEGIN');
     
-    // Get withdrawal details
+    // Get withdrawal details with user info
     const withdrawalResult = await client.query(
-      'SELECT * FROM withdrawal_requests WHERE id = $1',
+      'SELECT wr.*, u.email, u.full_name FROM withdrawal_requests wr JOIN users u ON wr.user_id = u.id WHERE wr.id = $1',
       [id]
     );
     
@@ -630,6 +653,19 @@ router.put('/withdrawals/:id', adminAuth, async (req, res) => {
     }
     
     await client.query('COMMIT');
+    
+    // Send email notification
+    try {
+      const { sendWithdrawalApprovedEmail, sendWithdrawalRejectedEmail } = require('../utils/emailService');
+      if (status === 'approved') {
+        await sendWithdrawalApprovedEmail(withdrawal.email, withdrawal.full_name, parseFloat(withdrawal.amount));
+      } else if (status === 'rejected') {
+        await sendWithdrawalRejectedEmail(withdrawal.email, withdrawal.full_name, parseFloat(withdrawal.amount));
+      }
+    } catch (emailError) {
+      console.log('Failed to send withdrawal email:', emailError.message);
+    }
+    
     res.json({ message: 'Withdrawal status updated successfully' });
   } catch (error) {
     await client.query('ROLLBACK');
@@ -739,6 +775,17 @@ router.get('/fix-deposit-table', async (req, res) => {
   try {
     await pool.query('ALTER TABLE deposit_requests ALTER COLUMN payment_proof TYPE TEXT');
     res.json({ message: 'Deposit table fixed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add password reset columns
+router.get('/add-password-reset-columns', async (req, res) => {
+  try {
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255)');
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMP');
+    res.json({ message: 'Password reset columns added successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

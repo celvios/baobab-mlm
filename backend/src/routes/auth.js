@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { register, login, verifyEmail, resendVerification, verifyOTP } = require('../controllers/authController');
+const { register, login, verifyEmail, resendVerification, verifyOTP, forgotPassword, resetPassword } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -31,5 +31,16 @@ router.post('/verify-otp', [
   body('email').isEmail().normalizeEmail(),
   body('otp').isLength({ min: 6, max: 6 })
 ], verifyOTP);
+
+// Forgot password
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail()
+], forgotPassword);
+
+// Reset password
+router.post('/reset-password', [
+  body('token').exists(),
+  body('newPassword').isLength({ min: 6 })
+], resetPassword);
 
 module.exports = router;

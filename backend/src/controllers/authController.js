@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const pool = require('../config/database');
 const generateReferralCode = require('../utils/generateReferralCode');
-const { generateVerificationToken, sendVerificationEmail, sendWelcomeEmail, sendOTPEmail } = require('../utils/emailService');
+const { generateVerificationToken, sendWelcomeEmail, sendOTPEmail, sendPasswordResetEmail, sendReferralRegisteredEmail } = require('../utils/emailService');
 const paystackService = require('../services/paystackService');
 const mlmService = require('../services/mlmService');
 
@@ -77,7 +77,7 @@ const register = async (req, res) => {
 
     // Process referral if referred by someone
     if (referredBy) {
-      const referrerResult = await pool.query('SELECT id, full_name FROM users WHERE referral_code = $1', [referredBy]);
+      const referrerResult = await pool.query('SELECT id, full_name, email FROM users WHERE referral_code = $1', [referredBy]);
       if (referrerResult.rows.length > 0) {
         await mlmService.processReferral(referrerResult.rows[0].id, user.id);
         
@@ -94,6 +94,13 @@ const register = async (req, res) => {
           );
         } catch (notificationError) {
           console.log('Failed to create referral notification:', notificationError.message);
+        }
+        
+        // Send referral email
+        try {
+          await sendReferralRegisteredEmail(referrerResult.rows[0].email, referrerResult.rows[0].full_name, fullName);
+        } catch (emailError) {
+          console.log('Failed to send referral email:', emailError.message);
         }
       }
     }
@@ -363,4 +370,60 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyEmail, resendVerification, verifyOTP };
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    const resetToken = generateVerificationToken();
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await pool.query(
+      'UPDATE users SET password_reset_token = $1, password_reset_expires = $2 WHERE id = $3',
+      [resetToken, resetExpires, user.id]
+    );
+
+    await sendPasswordResetEmail(email, resetToken, user.full_name);
+
+    res.json({ message: 'Password reset link sent to your email' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const result = await pool.query(
+      'SELECT * FROM users WHERE password_reset_token = $1 AND password_reset_expires > NOW()',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    const user = result.rows[0];
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await pool.query(
+      'UPDATE users SET password = $1, password_reset_token = NULL, password_reset_expires = NULL WHERE id = $2',
+      [hashedPassword, user.id]
+    );
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+};
+
+module.exports = { register, login, verifyEmail, resendVerification, verifyOTP, forgotPassword, resetPassword };

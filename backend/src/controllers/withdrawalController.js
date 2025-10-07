@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { sendWithdrawalPendingEmail } = require('../utils/emailService');
 
 const requestWithdrawal = async (req, res) => {
   const client = await pool.connect();
@@ -55,6 +56,16 @@ const requestWithdrawal = async (req, res) => {
     );
 
     await client.query('COMMIT');
+    
+    // Send email notification
+    try {
+      const userResult = await client.query('SELECT email, full_name FROM users WHERE id = $1', [userId]);
+      if (userResult.rows.length > 0) {
+        await sendWithdrawalPendingEmail(userResult.rows[0].email, userResult.rows[0].full_name, parseFloat(amount));
+      }
+    } catch (emailError) {
+      console.log('Failed to send withdrawal email:', emailError.message);
+    }
     
     res.status(201).json({
       message: 'Withdrawal request submitted successfully',
