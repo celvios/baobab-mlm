@@ -188,7 +188,7 @@ class MLMService {
 
   async getTeamMembers(userId) {
     const result = await pool.query(`
-      SELECT u.id, u.full_name, u.email, u.mlm_level, u.created_at,
+      SELECT u.id, u.full_name, u.email, u.mlm_level, u.is_active, u.created_at,
              re.amount as earning_from_user
       FROM users u
       LEFT JOIN referral_earnings re ON u.id = re.referred_user_id AND re.user_id = $1

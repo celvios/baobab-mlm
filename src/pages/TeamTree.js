@@ -20,9 +20,18 @@ export default function TeamTree() {
   const fetchData = async () => {
     try {
       const [profile, team] = await Promise.all([
-        apiService.getProfile().catch(() => null),
-        apiService.getTeam().catch(() => ({ team: [] }))
+        apiService.getProfile().catch((err) => {
+          console.error('Profile fetch error:', err);
+          return null;
+        }),
+        apiService.getTeam().catch((err) => {
+          console.error('Team fetch error:', err);
+          return { team: [] };
+        })
       ]);
+      
+      console.log('Profile data:', profile);
+      console.log('Team data:', team);
       
       // Check if user qualifies for feeder stage from database
       const qualifiesForFeeder = (profile?.registrationFeePaid && profile?.productPurchasePaid) || false;
@@ -252,7 +261,7 @@ export default function TeamTree() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Active Members</p>
-              <p className="text-xl font-bold text-gray-900">{teamMembers.filter(m => m.is_active).length}</p>
+              <p className="text-xl font-bold text-gray-900">{teamMembers.filter(m => m.is_active !== false).length}</p>
             </div>
           </div>
         </div>
