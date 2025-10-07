@@ -75,12 +75,10 @@ const register = async (req, res) => {
       // Don't fail registration if email fails
     }
 
-    // Process referral if referred by someone
+    // Create referral notification (bonus will be paid when they deposit ₦18k+)
     if (referredBy) {
       const referrerResult = await pool.query('SELECT id, full_name, email FROM users WHERE referral_code = $1', [referredBy]);
       if (referrerResult.rows.length > 0) {
-        await mlmService.processReferral(referrerResult.rows[0].id, user.id);
-        
         // Create referral notification
         try {
           await pool.query(
@@ -88,8 +86,8 @@ const register = async (req, res) => {
             [
               referrerResult.rows[0].id,
               'New Team Member!',
-              `${fullName} joined your team using your referral code`,
-              'success'
+              `${fullName} joined your team. You'll earn a bonus when they deposit ₦18,000+`,
+              'info'
             ]
           );
         } catch (notificationError) {

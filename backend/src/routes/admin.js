@@ -494,8 +494,8 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
   try {
     await client.query('BEGIN');
     
-    // Get deposit request
-    const depositResult = await client.query('SELECT dr.*, u.email, u.full_name FROM deposit_requests dr JOIN users u ON dr.user_id = u.id WHERE dr.id = $1', [depositId]);
+    // Get deposit request and user info
+    const depositResult = await client.query('SELECT dr.*, u.email, u.full_name, u.referred_by FROM deposit_requests dr JOIN users u ON dr.user_id = u.id WHERE dr.id = $1', [depositId]);
     const deposit = depositResult.rows[0];
     
     if (!deposit) {
@@ -519,6 +519,30 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
       'UPDATE deposit_requests SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       ['approved', depositId]
     );
+    
+    // Check if deposit is ₦18,000 or more and user was referred
+    if (parseFloat(amount) >= 18000 && deposit.referred_by) {
+      // Get referrer ID
+      const referrerResult = await client.query('SELECT id FROM users WHERE referral_code = $1', [deposit.referred_by]);
+      
+      if (referrerResult.rows.length > 0) {
+        const referrerId = referrerResult.rows[0].id;
+        
+        // Check if referral bonus already paid
+        const bonusCheck = await client.query(
+          'SELECT id FROM referral_earnings WHERE user_id = $1 AND referred_user_id = $2',
+          [referrerId, deposit.user_id]
+        );
+        
+        if (bonusCheck.rows.length === 0) {
+          // Process referral bonus
+          const mlmService = require('../services/mlmService');
+          await mlmService.processReferral(referrerId, deposit.user_id);
+          
+          console.log(`Referral bonus activated for user ${deposit.user_id} (deposited ₦${amount})`);
+        }
+      }
+    }
     
     await client.query('COMMIT');
     
