@@ -391,12 +391,13 @@ export default function TeamTree() {
         </p>
       </div>
 
-      <Toast 
-        message="Referral link copied to clipboard!"
-        type="success"
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+      {showToast && (
+        <Toast 
+          message="Referral link copied to clipboard!"
+          type="success"
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 }
