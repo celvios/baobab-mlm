@@ -4,11 +4,13 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useNotification } from '../components/NotificationSystem';
 import { useAuth } from '../hooks/useAuth';
 import ProcessLoader from '../components/ProcessLoader';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -160,9 +162,13 @@ export default function Login() {
             </div>
 
             <div className="text-sm">
-              <Link to="/reset-password" className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
+              >
                 Forgot password?
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -182,6 +188,11 @@ export default function Login() {
           </button>
         </form>
       </div>
+
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </div>
   );
 }
