@@ -791,6 +791,18 @@ router.get('/add-password-reset-columns', async (req, res) => {
   }
 });
 
+// Test Mailgun email
+router.get('/test-email/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    const { sendOTPEmail } = require('../utils/emailService');
+    await sendOTPEmail(email, '123456', 'Test User');
+    res.json({ message: `Test email sent to ${email}` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
