@@ -557,6 +557,21 @@ router.get('/test-withdrawals', async (req, res) => {
   }
 });
 
+// Fix user_profiles table
+router.get('/fix-user-profiles', async (req, res) => {
+  try {
+    // Drop existing constraint if exists
+    await pool.query('ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS user_profiles_user_id_key');
+    
+    // Add unique constraint
+    await pool.query('ALTER TABLE user_profiles ADD CONSTRAINT user_profiles_user_id_key UNIQUE (user_id)');
+    
+    res.json({ message: 'user_profiles table fixed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
