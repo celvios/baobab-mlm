@@ -28,14 +28,17 @@ export const CartProvider = ({ children }) => {
       
       setCartItems(prev => {
         const existingItem = prev.find(item => item.id === product.id);
-        if (existingItem) {
-          return prev.map(item =>
-            item.id === product.id
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          );
-        }
-        return [...prev, { ...product, quantity }];
+        const newCart = existingItem
+          ? prev.map(item =>
+              item.id === product.id
+                ? { ...item, quantity: item.quantity + quantity }
+                : item
+            )
+          : [...prev, { ...product, quantity }];
+        
+        // Immediately save to localStorage
+        localStorage.setItem('cartItems', JSON.stringify(newCart));
+        return newCart;
       });
       return { success: true };
     } catch (error) {

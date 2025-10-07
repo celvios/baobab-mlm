@@ -47,11 +47,14 @@ export default function Products() {
         setToastMessage(result.error || 'Failed to add product to cart');
         setToastType('error');
       } else {
-        setToastMessage(`${product.name} added to cart successfully!`);
+        setToastMessage(`${product.name} added to cart!`);
         setToastType('success');
       }
       
       setShowToast(true);
+      
+      // Auto-hide toast after 2 seconds
+      setTimeout(() => setShowToast(false), 2000);
     } catch (error) {
       console.error('Error adding to cart:', error);
       setToastMessage('An error occurred while adding to cart');
