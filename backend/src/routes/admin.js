@@ -324,13 +324,27 @@ router.put('/orders/:orderId', adminAuth, async (req, res) => {
   const updateData = req.body;
   
   try {
-    // If marking as picked up, also set order_status to delivered
-    if (updateData.is_picked_up === true) {
-      updateData.order_status = 'delivered';
+    // Whitelist allowed fields to prevent SQL injection
+    const allowedFields = ['order_status', 'payment_status', 'is_picked_up', 'payment_reference'];
+    const filteredData = {};
+    
+    Object.keys(updateData).forEach(key => {
+      if (allowedFields.includes(key)) {
+        filteredData[key] = updateData[key];
+      }
+    });
+    
+    if (Object.keys(filteredData).length === 0) {
+      return res.status(400).json({ message: 'No valid fields to update' });
     }
     
-    const setClause = Object.keys(updateData).map((key, index) => `${key} = $${index + 2}`).join(', ');
-    const values = [orderId, ...Object.values(updateData)];
+    // If marking as picked up, also set order_status to delivered
+    if (filteredData.is_picked_up === true) {
+      filteredData.order_status = 'delivered';
+    }
+    
+    const setClause = Object.keys(filteredData).map((key, index) => `${key} = $${index + 2}`).join(', ');
+    const values = [orderId, ...Object.values(filteredData)];
     
     await pool.query(
       `UPDATE orders SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,

@@ -9,12 +9,17 @@ const adminAuth = async (req, res, next) => {
       return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET not configured');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Check if user is admin
     const result = await pool.query(
       'SELECT id, email, role FROM users WHERE id = $1 AND role = $2',
-      [decoded.userId, 'admin']
+      [decoded.id, 'admin']
     );
 
     if (result.rows.length === 0) {
@@ -24,6 +29,7 @@ const adminAuth = async (req, res, next) => {
     req.user = result.rows[0];
     next();
   } catch (error) {
+    console.error('Admin auth error:', error.message);
     res.status(401).json({ message: 'Invalid token.' });
   }
 };
