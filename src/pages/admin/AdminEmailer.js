@@ -87,25 +87,27 @@ const AdminEmailer = () => {
             />
           </div>
           
-          <div>
+          <div className="mb-16">
             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-            <ReactQuill
-              theme="snow"
-              value={message}
-              onChange={setMessage}
-              placeholder="Enter your message here..."
-              style={{ height: '200px', marginBottom: '50px' }}
-              modules={{
-                toolbar: [
-                  [{ 'header': [1, 2, 3, false] }],
-                  ['bold', 'italic', 'underline', 'strike'],
-                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                  [{ 'color': [] }, { 'background': [] }],
-                  ['link'],
-                  ['clean']
-                ]
-              }}
-            />
+            <div className="bg-white">
+              <ReactQuill
+                theme="snow"
+                value={message}
+                onChange={setMessage}
+                placeholder="Enter your message here..."
+                className="h-64"
+                modules={{
+                  toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['link'],
+                    ['clean']
+                  ]
+                }}
+              />
+            </div>
           </div>
           
           <button
