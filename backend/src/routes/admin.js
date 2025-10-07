@@ -539,6 +539,24 @@ router.put('/withdrawals/:id', adminAuth, async (req, res) => {
   }
 });
 
+// Test endpoint to check withdrawals (no auth)
+router.get('/test-withdrawals', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT wr.*, u.full_name, u.email 
+      FROM withdrawal_requests wr
+      LEFT JOIN users u ON wr.user_id = u.id
+      ORDER BY wr.created_at DESC
+    `);
+    res.json({ 
+      total: result.rows.length,
+      withdrawals: result.rows 
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
