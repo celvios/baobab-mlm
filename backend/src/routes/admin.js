@@ -562,6 +562,7 @@ router.get('/withdrawals', adminAuth, async (req, res) => {
       id: row.id,
       amount: parseFloat(row.amount),
       status: row.status,
+      source: 'wallet',
       createdAt: row.created_at,
       user: {
         fullName: row.full_name,
