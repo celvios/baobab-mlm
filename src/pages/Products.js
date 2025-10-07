@@ -178,7 +178,7 @@ export default function Products() {
                     </div>
                     <button 
                       onClick={() => handleAddToCart(products[0], quantity)}
-                      className="bg-black text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                      className="bg-black text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 hover:scale-105 active:scale-95 transition-all duration-200"
                     >
                       Add to Cart
                     </button>
@@ -290,7 +290,7 @@ export default function Products() {
                         e.stopPropagation();
                         handleAddToCart(product, 1);
                       }}
-                      className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                      className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 hover:scale-105 active:scale-95 transition-all duration-200"
                     >
                       Add to Cart
                     </button>

@@ -841,6 +841,25 @@ router.get('/test-email/:email', async (req, res) => {
   }
 });
 
+// Optimize database with indexes
+router.get('/optimize-database', async (req, res) => {
+  try {
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_users_referred_by ON users(referred_by)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON wallets(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(order_status)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_market_updates_user_id ON market_updates(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_market_updates_is_read ON market_updates(is_read)');
+    res.json({ message: 'Database optimized with indexes successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Send bulk email
 router.post('/emails/send', adminAuth, async (req, res) => {
   try {
