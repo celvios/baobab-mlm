@@ -9,6 +9,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('error');
 
   if (!isOpen) return null;
 
@@ -44,6 +45,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess }) {
 
       await apiService.submitDepositRequest(formData);
       setToastMessage('Deposit request submitted successfully! Awaiting admin approval.');
+      setToastType('success');
       setShowToast(true);
       onSuccess?.();
       setTimeout(() => {
@@ -52,7 +54,9 @@ export default function DepositModal({ isOpen, onClose, onSuccess }) {
         onClose();
       }, 2000);
     } catch (error) {
-      setToastMessage('Failed to submit deposit request');
+      console.error('Deposit error:', error);
+      setToastMessage(error.message || 'Failed to submit deposit request');
+      setToastType('error');
       setShowToast(true);
     } finally {
       setLoading(false);
@@ -149,12 +153,14 @@ export default function DepositModal({ isOpen, onClose, onSuccess }) {
         </div>
       </div>
 
-      <Toast
-        message={toastMessage}
-        type={toastMessage.includes('success') ? 'success' : 'error'}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+      {showToast && toastMessage && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          isVisible={showToast}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </>
   );
 }
