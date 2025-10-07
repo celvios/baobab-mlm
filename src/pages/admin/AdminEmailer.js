@@ -4,6 +4,17 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import apiService from '../../services/api';
 
+// Custom styles for ReactQuill
+const editorStyle = {
+  '.ql-container': {
+    minHeight: '200px',
+    fontSize: '14px'
+  },
+  '.ql-editor': {
+    minHeight: '200px'
+  }
+};
+
 const AdminEmailer = () => {
   const [activeTab, setActiveTab] = useState('compose');
   const [emailHistory, setEmailHistory] = useState([]);
@@ -87,15 +98,14 @@ const AdminEmailer = () => {
             />
           </div>
           
-          <div className="mb-16">
+          <div style={{ marginBottom: '80px' }}>
             <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-            <div className="bg-white">
+            <div style={{ backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}>
               <ReactQuill
                 theme="snow"
                 value={message}
                 onChange={setMessage}
                 placeholder="Enter your message here..."
-                className="h-64"
                 modules={{
                   toolbar: [
                     [{ 'header': [1, 2, 3, false] }],
