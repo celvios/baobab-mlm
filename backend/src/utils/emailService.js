@@ -1,37 +1,31 @@
-const formData = require('form-data');
-const Mailgun = require('mailgun.js');
+const sgMail = require('@sendgrid/mail');
 const crypto = require('crypto');
 
-const mailgun = new Mailgun(formData);
-const mg = mailgun.client({
-  username: 'api',
-  key: process.env.MAILGUN_API_KEY || '',
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
 
-const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || '';
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Baobab MLM <noreply@baobab.com>';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@baobab.com';
 
-console.log('Mailgun configured:', {
-  domain: MAILGUN_DOMAIN ? 'SET' : 'NOT SET',
-  apiKey: process.env.MAILGUN_API_KEY ? 'SET' : 'NOT SET'
+console.log('SendGrid configured:', {
+  apiKey: process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET',
+  fromEmail: FROM_EMAIL
 });
 
 const generateVerificationToken = () => crypto.randomBytes(32).toString('hex');
 
 const sendEmail = async (to, subject, html) => {
   try {
-    const messageData = {
+    const msg = {
+      to: to,
       from: FROM_EMAIL,
-      to: [to],
       subject: subject,
       html: html
     };
     
-    const result = await mg.messages.create(MAILGUN_DOMAIN, messageData);
-    console.log(`Email sent successfully to ${to}:`, result.id);
+    const result = await sgMail.send(msg);
+    console.log(`Email sent successfully to ${to}`);
     return result;
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error('Failed to send email:', error.response?.body || error);
     throw error;
   }
 };
