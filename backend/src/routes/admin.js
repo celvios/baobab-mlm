@@ -353,11 +353,31 @@ router.get('/products', adminAuth, async (req, res) => {
   }
 });
 
-// Create new product
-router.post('/products', adminAuth, async (req, res) => {
-  const { name, description, price, category, stock_quantity, image_url } = req.body;
+// Create new product with Cloudinary upload
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
+const productUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+router.post('/products', adminAuth, productUpload.single('image'), async (req, res) => {
+  const { name, description, price, category, stock_quantity } = req.body;
   
   try {
+    let image_url = null;
+    
+    // Upload to Cloudinary if image provided
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: 'baobab-products' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        ).end(req.file.buffer);
+      });
+      image_url = result.secure_url;
+    }
+    
     const result = await pool.query(
       'INSERT INTO products (name, description, price, category, stock, image_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [name, description, price, category, stock_quantity || 0, image_url]
@@ -366,16 +386,32 @@ router.post('/products', adminAuth, async (req, res) => {
     res.json({ message: 'Product created successfully', product: result.rows[0] });
   } catch (error) {
     console.error('Error creating product:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // Update product
-router.put('/products/:productId', adminAuth, async (req, res) => {
+router.put('/products/:productId', adminAuth, productUpload.single('image'), async (req, res) => {
   const { productId } = req.params;
-  const { name, description, price, category, stock_quantity, image_url } = req.body;
+  const { name, description, price, category, stock_quantity } = req.body;
   
   try {
+    let image_url = req.body.image_url; // Keep existing if no new image
+    
+    // Upload new image to Cloudinary if provided
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: 'baobab-products' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        ).end(req.file.buffer);
+      });
+      image_url = result.secure_url;
+    }
+    
     await pool.query(
       'UPDATE products SET name = $1, description = $2, price = $3, category = $4, stock = $5, image_url = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7',
       [name, description, price, category, stock_quantity, image_url, productId]
