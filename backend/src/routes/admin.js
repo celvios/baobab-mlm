@@ -704,6 +704,30 @@ router.get('/test-cloudinary', async (req, res) => {
   }
 });
 
+// Test image upload
+router.post('/test-upload', productUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const cloudinary = require('../config/cloudinary');
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: 'baobab-products' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(req.file.buffer);
+    });
+    
+    res.json({ success: true, url: result.secure_url });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
