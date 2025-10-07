@@ -20,8 +20,8 @@ export default function Team() {
           apiService.getEarnings()
         ]);
         
-        setTeamMembers(teamData);
-        const totalEarnings = earningsData.reduce((sum, earning) => sum + parseFloat(earning.total_earned || 0), 0);
+        setTeamMembers(teamData.team || []);
+        const totalEarnings = (earningsData.earnings || []).reduce((sum, earning) => sum + parseFloat(earning.total_earned || 0), 0);
         setEarnings(totalEarnings);
         
         // Check feeder requirements from database: registration fee + product purchase
@@ -81,7 +81,7 @@ export default function Team() {
           <h3 className="text-gray-600 text-sm mb-2">Total Referrals</h3>
           <p className="text-3xl font-bold text-gray-900 mb-1">{teamMembers.length.toString().padStart(2, '0')}</p>
           <p className="text-gray-500 text-sm mb-6">{teamMembers.length} People invited</p>
-          <Link to="/team-tree" className="flex items-center text-white">
+          <Link to="/user/team-tree" className="flex items-center text-white">
             <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center mr-2">
               <span className="text-xs">→</span>
             </div>
@@ -124,7 +124,7 @@ export default function Team() {
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">My Team</h2>
-          <Link to="/team-tree" className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
+          <Link to="/user/team-tree" className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
             Team Tree
           </Link>
         </div>

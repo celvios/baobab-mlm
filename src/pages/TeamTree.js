@@ -237,7 +237,7 @@ export default function TeamTree() {
 
       {/* Breadcrumb */}
       <div className="flex items-center space-x-2 text-sm">
-        <Link to="/team" className="bg-green-600 text-white px-3 py-1 rounded-lg flex items-center hover:bg-green-700 transition-colors">
+        <Link to="/user/team" className="bg-green-600 text-white px-3 py-1 rounded-lg flex items-center hover:bg-green-700 transition-colors">
           ← Back to Team
         </Link>
         <span className="text-gray-500">→ Team Tree</span>
