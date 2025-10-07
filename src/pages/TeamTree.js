@@ -6,6 +6,7 @@ import apiService from '../services/api';
 import MarketUpdates from '../components/MarketUpdates';
 
 export default function TeamTree() {
+  console.log('TeamTree component mounted');
   const [showToast, setShowToast] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
@@ -213,6 +214,8 @@ export default function TeamTree() {
   };
 
   const treeData = buildTreeStructure(teamMembers);
+
+  console.log('TeamTree render - loading:', loading, 'teamMembers:', teamMembers.length);
 
   if (loading) {
     return (
