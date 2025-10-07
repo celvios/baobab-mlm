@@ -68,7 +68,7 @@ export default function Team() {
           <h3 className="text-gray-600 text-sm mb-2">Total Earnings</h3>
           <p className="text-3xl font-bold text-gray-900 mb-1">${earnings.toFixed(2)}</p>
           <p className="text-gray-500 text-sm mb-6">From {teamMembers.length} referrals</p>
-          <Link to="/history" className="flex items-center text-white">
+          <Link to="/user/history" className="flex items-center text-white">
             <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center mr-2">
               <span className="text-xs">→</span>
             </div>
@@ -98,7 +98,7 @@ export default function Team() {
             </div>
           </div>
           <p className="text-gray-900 font-semibold mb-6">{userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1)} Stage</p>
-          <Link to="/rankings-earnings" className="flex items-center text-white">
+          <Link to="/user/rankings-earnings" className="flex items-center text-white">
             <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center mr-2">
               <span className="text-xs">→</span>
             </div>
@@ -111,7 +111,7 @@ export default function Team() {
           <h3 className="text-gray-600 text-sm mb-2">Total Incentives</h3>
           <p className="text-3xl font-bold text-gray-900 mb-1">{incentivesCount.toString().padStart(2, '0')}</p>
           <p className="text-gray-500 text-sm mb-6">{incentivesCount} Incentives Available</p>
-          <Link to="/incentives" className="flex items-center text-white">
+          <Link to="/user/incentives" className="flex items-center text-white">
             <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center mr-2">
               <span className="text-xs">→</span>
             </div>

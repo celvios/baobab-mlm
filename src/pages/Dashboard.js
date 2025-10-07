@@ -334,7 +334,7 @@ export default function Dashboard() {
                   <p className="text-gray-500 text-sm">≈ ${Number((convertedBalances.mlmEarnings || 0) / 1500).toFixed(2)} USD</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
-                <Link to="/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
+                <Link to="/user/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
                   <span className="mr-2">→</span> See History
                 </Link>
               </div>
@@ -348,7 +348,7 @@ export default function Dashboard() {
                   <p className="text-3xl font-bold text-gray-900 mb-1">{teamMembers.length.toString().padStart(2, '0')}</p>
                   <p className="text-gray-500 text-sm">{teamMembers.length} People invited</p>
                 </div>
-                <Link to="/team" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
+                <Link to="/user/team" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
                   <span className="mr-2">→</span> My Team
                 </Link>
               </div>
@@ -417,7 +417,7 @@ export default function Dashboard() {
       <div className="bg-white p-6 rounded-2xl shadow-card">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">History</h2>
-          <Link to="/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center hover:text-gray-900 transition-colors">
+          <Link to="/user/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center hover:text-gray-900 transition-colors">
             <span className="mr-2">→</span> View All
           </Link>
         </div>
