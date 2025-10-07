@@ -506,6 +506,39 @@ router.post('/reject-deposit', adminAuth, async (req, res) => {
   }
 });
 
+// Withdrawal management routes
+router.get('/withdrawals', adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT wr.*, u.full_name, u.email, up.bank_name, up.account_number, up.account_name
+      FROM withdrawal_requests wr
+      LEFT JOIN users u ON wr.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
+      ORDER BY wr.created_at DESC
+    `);
+    res.json({ requests: result.rows });
+  } catch (error) {
+    console.error('Error fetching withdrawals:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.put('/withdrawals/:id', adminAuth, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  try {
+    await pool.query(
+      'UPDATE withdrawal_requests SET status = $1, processed_at = CURRENT_TIMESTAMP, processed_by = $2 WHERE id = $3',
+      [status, req.user.id, id]
+    );
+    res.json({ message: 'Withdrawal status updated successfully' });
+  } catch (error) {
+    console.error('Error updating withdrawal:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Blog management routes
 router.get('/blog', adminAuth, getBlogPosts);
 router.post('/blog', adminAuth, createBlogPost);
