@@ -302,21 +302,12 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-white/70 text-xs">Wallet Actions</p>
-                        <div className="flex flex-col gap-1">
-                          <button 
-                            onClick={refreshWalletData}
-                            className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-blue-700 transition-colors"
-                          >
-                            Refresh
-                          </button>
-                          <button 
-                            onClick={() => setShowDepositModal(true)}
-                            className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-green-700 transition-colors"
-                          >
-                            Deposit
-                          </button>
-                        </div>
+                        <button 
+                          onClick={() => setShowDepositModal(true)}
+                          className="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-green-700 transition-colors"
+                        >
+                          Deposit
+                        </button>
                       </div>
                     </div>
                   </div>
