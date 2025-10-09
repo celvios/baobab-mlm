@@ -933,10 +933,22 @@ router.post('/emails/send', adminAuth, async (req, res) => {
     
     // Save to email history
     try {
+      // Create table if it doesn't exist
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS email_history (
+          id SERIAL PRIMARY KEY,
+          subject VARCHAR(255) NOT NULL,
+          message TEXT NOT NULL,
+          recipient_count INTEGER DEFAULT 0,
+          sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
       await pool.query(
         'INSERT INTO email_history (subject, message, recipient_count, sent_at) VALUES ($1, $2, $3, NOW())',
         [subject, message, successCount]
       );
+      console.log('Email history saved successfully');
     } catch (dbError) {
       console.log('Failed to save email history:', dbError.message);
     }
