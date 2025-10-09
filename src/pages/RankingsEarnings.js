@@ -56,8 +56,20 @@ export default function RankingsEarnings() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <div className="space-y-6">
+        <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+        <div className="h-16 bg-gray-200 rounded-lg animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse"></div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-96 bg-gray-200 rounded-lg animate-pulse"></div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -104,7 +116,7 @@ export default function RankingsEarnings() {
 
       {/* Breadcrumb */}
       <div className="flex items-center space-x-2 text-sm">
-        <Link to="/team" className="bg-green-600 text-white px-3 py-1 rounded flex items-center">
+        <Link to="/user/team" className="bg-green-600 text-white px-3 py-1 rounded flex items-center">
           ← Back
         </Link>
         <span className="text-gray-500">My Team → Ranking & Earnings</span>

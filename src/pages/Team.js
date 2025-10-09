@@ -51,8 +51,21 @@ export default function Team() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <div className="space-y-6">
+        <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-40 bg-gray-200 rounded-lg animate-pulse"></div>
+          ))}
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="h-16 bg-gray-200 animate-pulse"></div>
+          <div className="p-6 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 bg-gray-200 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
