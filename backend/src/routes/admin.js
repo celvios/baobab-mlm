@@ -879,7 +879,9 @@ router.get('/optimize-database', async (req, res) => {
   }
 });
 
-// Send bulk email
+
+
+// Get email history
 router.post('/emails/send', adminAuth, async (req, res) => {
   try {
     const { subject, message, category } = req.body;
@@ -896,6 +898,7 @@ router.post('/emails/send', adminAuth, async (req, res) => {
     
     // Send email to all users
     const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@baobab.com';
+    let successCount = 0;
     const emailPromises = users.map(user => {
       // Replace shortcodes with user data
       const personalizedMessage = message
@@ -917,7 +920,10 @@ router.post('/emails/send', adminAuth, async (req, res) => {
           </div>
         `
       };
-      return sgMail.send(msg).catch(err => {
+      return sgMail.send(msg).then(() => {
+        successCount++;
+        return true;
+      }).catch(err => {
         console.error(`Failed to send to ${user.email}:`, err);
         return null;
       });
@@ -925,9 +931,19 @@ router.post('/emails/send', adminAuth, async (req, res) => {
     
     await Promise.all(emailPromises);
     
+    // Save to email history
+    try {
+      await pool.query(
+        'INSERT INTO email_history (subject, message, recipient_count, sent_at) VALUES ($1, $2, $3, NOW())',
+        [subject, message, successCount]
+      );
+    } catch (dbError) {
+      console.log('Failed to save email history:', dbError.message);
+    }
+    
     res.json({ 
       message: 'Emails sent successfully',
-      sentCount: users.length
+      sentCount: successCount
     });
   } catch (error) {
     console.error('Error sending bulk email:', error);
@@ -938,9 +954,27 @@ router.post('/emails/send', adminAuth, async (req, res) => {
 // Get email history
 router.get('/emails/history', adminAuth, async (req, res) => {
   try {
-    res.json({ emails: [] });
+    // Create table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS email_history (
+        id SERIAL PRIMARY KEY,
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        recipient_count INTEGER DEFAULT 0,
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    const result = await pool.query(`
+      SELECT id, subject, message, recipient_count, sent_at as created_at
+      FROM email_history
+      ORDER BY sent_at DESC
+      LIMIT 50
+    `);
+    res.json({ emails: result.rows });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.log('Email history error:', error.message);
+    res.json({ emails: [] });
   }
 });
 
