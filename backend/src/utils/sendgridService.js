@@ -71,7 +71,7 @@ const sendWelcomeEmail = async (email, fullName, referralCode) => {
           <p>Share this code with friends and family to earn referral bonuses!</p>
         </div>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" style="background-color: #4a5d23; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/user/dashboard" style="background-color: #4a5d23; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
             Go to Dashboard
           </a>
         </div>
