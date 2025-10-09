@@ -951,4 +951,23 @@ const bulkEmailController = require('../controllers/bulkEmailController');
 router.post('/bulk-email', adminAuth, bulkEmailController.sendBulkEmail);
 router.get('/email-stats', adminAuth, bulkEmailController.getEmailStats);
 
+// DANGER: Clear all database data
+router.get('/clear-all-data', async (req, res) => {
+  try {
+    await pool.query('TRUNCATE TABLE market_updates CASCADE');
+    await pool.query('TRUNCATE TABLE referral_earnings CASCADE');
+    await pool.query('TRUNCATE TABLE level_progressions CASCADE');
+    await pool.query('TRUNCATE TABLE transactions CASCADE');
+    await pool.query('TRUNCATE TABLE withdrawal_requests CASCADE');
+    await pool.query('TRUNCATE TABLE deposit_requests CASCADE');
+    await pool.query('TRUNCATE TABLE orders CASCADE');
+    await pool.query('TRUNCATE TABLE user_profiles CASCADE');
+    await pool.query('TRUNCATE TABLE wallets CASCADE');
+    await pool.query('TRUNCATE TABLE users CASCADE');
+    res.json({ message: 'All data cleared! Database is empty.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
