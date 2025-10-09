@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useNotification } from '../components/NotificationSystem';
 import ProcessLoader from '../components/ProcessLoader';
@@ -51,6 +51,7 @@ export default function Register() {
 
   const [loading, setLoading] = useState(false);
   const { addNotification } = useNotification();
+  const navigate = useNavigate();
 
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
@@ -92,10 +93,10 @@ export default function Register() {
       
       if (result.requiresVerification) {
         addNotification('Registration successful! Redirecting...', 'success');
-        window.location.href = `/security-verification?email=${encodeURIComponent(formData.email)}`;
+        navigate(`/security-verification?email=${encodeURIComponent(formData.email)}`);
       } else {
         addNotification('Registration successful! You can now login.', 'success');
-        window.location.href = '/login';
+        navigate('/login');
       }
     } catch (error) {
       console.error('Registration error:', error);
