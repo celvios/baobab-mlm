@@ -87,7 +87,8 @@ export default function Register() {
         ...formData,
         phone: formData.phonePrefix + formData.phone
       });
-      console.log('Registration successful:', result);
+      console.log('Registration response:', result);
+      console.log('requiresVerification:', result.requiresVerification);
       
       if (result.requiresVerification) {
         addNotification('Registration successful! Please check your email for verification code.', 'success');
@@ -102,6 +103,7 @@ export default function Register() {
       }
     } catch (error) {
       console.error('Registration error:', error);
+      console.error('Error details:', error.response || error);
       addNotification(error.message || 'Registration failed', 'error');
     } finally {
       setLoading(false);
