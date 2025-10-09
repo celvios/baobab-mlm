@@ -2,7 +2,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://baobab-mlm.onrend
 
 class ApiService {
   constructor() {
-    this.token = localStorage.getItem('token');
+    this.token = localStorage.getItem('token') || localStorage.getItem('adminToken');
     console.log('API Base URL:', API_BASE_URL);
   }
 
@@ -20,8 +20,9 @@ class ApiService {
       'Content-Type': 'application/json',
     };
     
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
+    const token = this.token || localStorage.getItem('token') || localStorage.getItem('adminToken');
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
     
     return headers;
@@ -284,7 +285,8 @@ class ApiService {
     });
     
     if (response.token) {
-      this.setToken(response.token);
+      this.token = response.token;
+      localStorage.setItem('adminToken', response.token);
     }
     
     return response;
