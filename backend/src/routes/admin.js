@@ -467,13 +467,31 @@ router.get('/recent-activity', adminAuth, async (req, res) => {
       WHERE role != 'admin'
       UNION ALL
       SELECT 
-        'Credited ' || u.full_name || ': ₦' || t.amount::text as description,
+        'Order placed by ' || u.full_name || ': ₦' || o.total_amount::text as description,
+        o.created_at
+      FROM orders o
+      JOIN users u ON o.user_id = u.id
+      UNION ALL
+      SELECT 
+        'Withdrawal request from ' || u.full_name || ': ₦' || wr.amount::text as description,
+        wr.created_at
+      FROM withdrawal_requests wr
+      JOIN users u ON wr.user_id = u.id
+      UNION ALL
+      SELECT 
+        'Deposit request from ' || u.full_name || ': ₦' || dr.amount::text as description,
+        dr.created_at
+      FROM deposit_requests dr
+      JOIN users u ON dr.user_id = u.id
+      UNION ALL
+      SELECT 
+        'Admin credited ' || u.full_name || ': ₦' || t.amount::text as description,
         t.created_at
       FROM transactions t
       JOIN users u ON t.user_id = u.id
       WHERE t.type = 'credit' AND t.description = 'Admin credit'
       ORDER BY created_at DESC
-      LIMIT 10
+      LIMIT 15
     `);
 
     res.json({

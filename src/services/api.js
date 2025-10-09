@@ -296,6 +296,10 @@ class ApiService {
     return this.request('/admin-stats');
   }
 
+  async getRecentActivity() {
+    return this.request('/admin/recent-activity');
+  }
+
   async getUsers() {
     return this.request('/admin/users-test');
   }

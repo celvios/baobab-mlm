@@ -19,22 +19,21 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const data = await apiService.getAdminStats();
-      setStats(data);
-      
-      // For now, keep sample recent activity until we have a real endpoint
-      setRecentActivity([
-        { description: 'Dashboard loaded with real data', created_at: new Date().toISOString() }
+      const [statsData, activityData] = await Promise.all([
+        apiService.getAdminStats(),
+        apiService.getRecentActivity()
       ]);
+      setStats(statsData);
+      setRecentActivity(activityData.activities || []);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
-      // Fallback to sample data if API fails
       setStats({
         totalUsers: 0,
         totalOrders: 0,
         totalRevenue: 0,
         pendingWithdrawals: 0
       });
+      setRecentActivity([]);
     } finally {
       setLoading(false);
     }
