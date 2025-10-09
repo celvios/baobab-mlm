@@ -10,14 +10,15 @@ const sendOTPEmail = async (email, otpCode, fullName) => {
     subject: 'Your Baobab Verification Code',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #4a5d23;">Welcome to Baobab, ${fullName}!</h2>
+        <h2 style="color: #4a5d23;">Welcome to Baobab, ${fullName || 'User'}!</h2>
         <p>Thank you for joining the Baobab community. Please use the verification code below to complete your registration.</p>
         <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
           <h1 style="font-size: 32px; color: #4a5d23; margin: 0; letter-spacing: 5px;">${otpCode}</h1>
           <p style="margin: 10px 0 0 0; color: #666;">Verification Code</p>
         </div>
         <p><strong>Important:</strong> This code will expire in 10 minutes.</p>
-        <p>If you didn't create this account, please ignore this email.</p>
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px;">You are receiving this email because you registered an account at Baobab. If you did not register, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
       </div>
     `
   };
@@ -64,7 +65,7 @@ const sendWelcomeEmail = async (email, fullName, referralCode) => {
     subject: 'Welcome to Baobab - Your Journey Begins!',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #4a5d23;">Welcome to Baobab, ${fullName}!</h2>
+        <h2 style="color: #4a5d23;">Welcome to Baobab, ${fullName || 'User'}!</h2>
         <p>Your email has been verified successfully. You're now part of the Baobab community!</p>
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin-top: 0;">Your Referral Code: <strong>${referralCode}</strong></h3>
@@ -75,6 +76,8 @@ const sendWelcomeEmail = async (email, fullName, referralCode) => {
             Go to Dashboard
           </a>
         </div>
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #666; font-size: 12px;">You are receiving this email because you have an account with Baobab. If you did not create this account, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
       </div>
     `
   };
