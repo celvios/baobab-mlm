@@ -884,9 +884,8 @@ router.post('/emails/send', adminAuth, async (req, res) => {
         subject: subject,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #4a5d23;">Hello ${user.full_name},</h2>
             <div style="margin: 20px 0;">
-              ${message.replace(/\n/g, '<br>')}
+              ${message}
             </div>
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
             <p style="color: #666; font-size: 12px;">This email was sent from Baobab MLM Admin</p>
