@@ -154,6 +154,7 @@ const getEmailStats = async (req, res) => {
         COUNT(CASE WHEN mlm_level = 'gold' THEN 1 END) as gold_users,
         COUNT(CASE WHEN mlm_level = 'diamond' THEN 1 END) as diamond_users
       FROM users
+      WHERE role != 'admin' OR role IS NULL
     `);
 
     res.json({
