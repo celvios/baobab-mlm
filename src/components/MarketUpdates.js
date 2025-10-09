@@ -79,7 +79,7 @@ const MarketUpdates = () => {
     loadUserUpdates();
     const interval = setInterval(loadUserUpdates, 30000);
     return () => clearInterval(interval);
-  }, []);}
+  }, []);
 
   return (
     <div className="bg-gray-900 text-white p-4 rounded-xl mb-6">
