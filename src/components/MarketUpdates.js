@@ -51,47 +51,35 @@ const MarketUpdates = () => {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const orders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-      const withdrawals = JSON.parse(localStorage.getItem('userWithdrawals') || '[]');
-      const pendingOrders = orders.filter(order => order.status === 'pending');
-      const approvedOrders = orders.filter(order => order.status === 'approved');
-      const approvedWithdrawals = withdrawals.filter(w => w.status === 'approved');
-      
-      const updateMessages = [];
-      
-      if (approvedWithdrawals.length > 0) {
-        approvedWithdrawals.slice(-1).forEach(withdrawal => {
-          updateMessages.push(`Withdrawal of $${withdrawal.amount} approved - Check your bank account`);
+    const loadUserUpdates = async () => {
+      try {
+        const response = await fetch('https://baobab-mlm.onrender.com/api/market-updates', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
         });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const userUpdates = data.updates || [];
+          
+          if (userUpdates.length > 0) {
+            const messages = userUpdates.slice(0, 3).map(u => u.message);
+            if (JSON.stringify(messages) !== JSON.stringify(prevUpdatesRef.current)) {
+              setUpdates(messages);
+              prevUpdatesRef.current = messages;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load updates:', error);
       }
-      
-      if (approvedOrders.length > 0) {
-        approvedOrders.slice(-2).forEach(order => {
-          updateMessages.push(`Order ${order.orderNumber.slice(-6)} approved - ₦${order.amount.toLocaleString()} ${order.product}`);
-        });
-      }
-      
-      if (pendingOrders.length > 0) {
-        const totalValue = pendingOrders.reduce((sum, order) => sum + order.amount, 0);
-        updateMessages.push(`${pendingOrders.length} pending orders worth ₦${totalValue.toLocaleString()}`);
-      }
-      
-      const newUpdates = updateMessages.length === 0 ? [
-        'Welcome to Baobab Community! Start your wellness journey today',
-        'New products available - Check out our latest superfood blends',
-        'Join our growing community of health enthusiasts'
-      ] : updateMessages;
-      
-      if (JSON.stringify(newUpdates) !== JSON.stringify(prevUpdatesRef.current)) {
-        playNotificationSound();
-        setUpdates(newUpdates);
-        prevUpdatesRef.current = newUpdates;
-      }
-    }, 30000);
+    };
     
+    loadUserUpdates();
+    const interval = setInterval(loadUserUpdates, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, []);}
 
   return (
     <div className="bg-gray-900 text-white p-4 rounded-xl mb-6">
