@@ -928,4 +928,9 @@ router.delete('/blog/:id', adminAuth, deleteBlogPost);
 router.put('/blog/:id/publish', adminAuth, publishBlogPost);
 router.get('/blog/stats', adminAuth, getBlogStats);
 
+// Bulk email routes
+const { sendBulkEmail, getEmailStats } = require('../../../src/controllers/bulkEmailController');
+router.post('/bulk-email', adminAuth, sendBulkEmail);
+router.get('/email-stats', adminAuth, getEmailStats);
+
 module.exports = router;
