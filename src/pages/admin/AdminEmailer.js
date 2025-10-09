@@ -15,31 +15,25 @@ const editorStyle = {
   }
 };
 
-const AdminEmailer = () => {
-  const [activeTab, setActiveTab] = useState('compose');
-  const [emailHistory, setEmailHistory] = useState([]);
-  const [mailingList, setMailingList] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
+const ComposeEmail = ({ allUsers, setAllUsers, setActiveTab }) => {
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [category, setCategory] = useState('all');
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const ComposeEmail = () => {
-    const [subject, setSubject] = useState('');
-    const [message, setMessage] = useState('');
-    const [category, setCategory] = useState('all');
-    const [selectedUsers, setSelectedUsers] = useState([]);
+  useEffect(() => {
+    fetchAllUsers();
+  }, []);
 
-    useEffect(() => {
-      fetchAllUsers();
-    }, []);
-
-    const fetchAllUsers = async () => {
-      try {
-        const response = await apiService.getAllUsers();
-        setAllUsers(response.users || []);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
+  const fetchAllUsers = async () => {
+    try {
+      const response = await apiService.getAllUsers();
+      setAllUsers(response.users || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
     const handleSendEmail = async (e) => {
       e.preventDefault();
@@ -65,73 +59,79 @@ const AdminEmailer = () => {
       }
     };
 
-    return (
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-lg font-semibold mb-4">Compose Email</h2>
-        <form onSubmit={handleSendEmail} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Recipients</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="all">All Users ({allUsers.length})</option>
-              <option value="feeder">Feeder Level</option>
-              <option value="bronze">Bronze Level</option>
-              <option value="silver">Silver Level</option>
-              <option value="gold">Gold Level</option>
-              <option value="diamond">Diamond Level</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              placeholder="Enter email subject"
-              autoComplete="off"
-              required
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-6">
+      <h2 className="text-lg font-semibold mb-4">Compose Email</h2>
+      <form onSubmit={handleSendEmail} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Recipients</label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          >
+            <option value="all">All Users ({allUsers.length})</option>
+            <option value="feeder">Feeder Level</option>
+            <option value="bronze">Bronze Level</option>
+            <option value="silver">Silver Level</option>
+            <option value="gold">Gold Level</option>
+            <option value="diamond">Diamond Level</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            placeholder="Enter email subject"
+            autoComplete="off"
+            required
+          />
+        </div>
+        
+        <div style={{ marginBottom: '80px' }}>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+          <div style={{ backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}>
+            <ReactQuill
+              theme="snow"
+              value={message}
+              onChange={setMessage}
+              placeholder="Enter your message here..."
+              modules={{
+                toolbar: [
+                  [{ 'header': [1, 2, 3, false] }],
+                  ['bold', 'italic', 'underline', 'strike'],
+                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                  [{ 'color': [] }, { 'background': [] }],
+                  ['link'],
+                  ['clean']
+                ]
+              }}
             />
           </div>
-          
-          <div style={{ marginBottom: '80px' }}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-            <div style={{ backgroundColor: 'white', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}>
-              <ReactQuill
-                theme="snow"
-                value={message}
-                onChange={setMessage}
-                placeholder="Enter your message here..."
-                modules={{
-                  toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    [{ 'color': [] }, { 'background': [] }],
-                    ['link'],
-                    ['clean']
-                  ]
-                }}
-              />
-            </div>
-          </div>
-          
-          <button
-            type="submit"
-            disabled={loading || !subject.trim() || !message.trim()}
-            className="w-full bg-green-600 text-white px-6 py-3 rounded-md font-medium flex items-center justify-center space-x-2 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <FiSend className="w-4 h-4" />
-            <span>{loading ? 'Sending...' : 'Send Email'}</span>
-          </button>
-        </form>
-      </div>
-    );
-  };
+        </div>
+        
+        <button
+          type="submit"
+          disabled={loading || !subject.trim() || !message.trim()}
+          className="w-full bg-green-600 text-white px-6 py-3 rounded-md font-medium flex items-center justify-center space-x-2 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <FiSend className="w-4 h-4" />
+          <span>{loading ? 'Sending...' : 'Send Email'}</span>
+        </button>
+      </form>
+    </div>
+  );
+};
+
+const AdminEmailer = () => {
+  const [activeTab, setActiveTab] = useState('compose');
+  const [emailHistory, setEmailHistory] = useState([]);
+  const [mailingList, setMailingList] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
 
   const EmailHistory = () => {
     useEffect(() => {
@@ -308,7 +308,7 @@ const AdminEmailer = () => {
         </nav>
       </div>
 
-      {activeTab === 'compose' && <ComposeEmail />}
+      {activeTab === 'compose' && <ComposeEmail allUsers={allUsers} setAllUsers={setAllUsers} setActiveTab={setActiveTab} />}
       {activeTab === 'history' && <EmailHistory />}
       {activeTab === 'mailing-list' && <MailingList />}
     </div>
