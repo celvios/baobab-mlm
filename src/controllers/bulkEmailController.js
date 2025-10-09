@@ -18,10 +18,10 @@ const sendBulkEmail = async (req, res) => {
     let recipientQuery, params;
     
     if (selectedUsers.length > 0) {
-      recipientQuery = 'SELECT id, email, full_name, mlm_level FROM users WHERE id = ANY($1) AND is_active = true';
+      recipientQuery = 'SELECT id, email, full_name, mlm_level FROM users WHERE id = ANY($1) AND (is_active = true OR is_active IS NULL)';
       params = [selectedUsers];
     } else {
-      recipientQuery = 'SELECT id, email, full_name, mlm_level FROM users WHERE is_active = true';
+      recipientQuery = 'SELECT id, email, full_name, mlm_level FROM users WHERE (is_active = true OR is_active IS NULL)';
       params = [];
       
       if (category !== 'all') {
@@ -147,7 +147,7 @@ const getEmailStats = async (req, res) => {
     const userStats = await pool.query(`
       SELECT 
         COUNT(*) as total_users,
-        COUNT(CASE WHEN is_active = true THEN 1 END) as active_users,
+        COUNT(CASE WHEN is_active = true OR is_active IS NULL THEN 1 END) as active_users,
         COUNT(CASE WHEN mlm_level = 'feeder' THEN 1 END) as feeder_users,
         COUNT(CASE WHEN mlm_level = 'bronze' THEN 1 END) as bronze_users,
         COUNT(CASE WHEN mlm_level = 'silver' THEN 1 END) as silver_users,
