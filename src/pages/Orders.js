@@ -171,10 +171,54 @@ export default function Orders() {
 
       {/* Loading State */}
       {loading && (
-        <div className="bg-white rounded-2xl shadow-card p-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            <span className="ml-3 text-gray-600">Loading orders...</span>
+        <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="h-7 bg-gray-200 rounded w-32 animate-pulse"></div>
+              <div className="flex space-x-3">
+                <div className="h-10 bg-gray-200 rounded w-24 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">#</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Date</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Order No.</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Product</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Qty</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Amount</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Transaction</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Delivery type</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Delivery Status</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i} className="border-b border-gray-100">
+                    <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded w-6 animate-pulse"></div></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div></td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gray-200 rounded-lg mr-3 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded w-8 animate-pulse"></div></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div></td>
+                    <td className="py-4 px-6"><div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse"></div></td>
+                    <td className="py-4 px-6"><div className="h-4 bg-gray-200 rounded w-4 animate-pulse"></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
