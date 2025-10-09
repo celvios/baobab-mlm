@@ -91,15 +91,11 @@ export default function Register() {
       console.log('requiresVerification:', result.requiresVerification);
       
       if (result.requiresVerification) {
-        addNotification('Registration successful! Please check your email for verification code.', 'success');
-        setTimeout(() => {
-          window.location.href = `/security-verification?email=${encodeURIComponent(formData.email)}`;
-        }, 1500);
+        addNotification('Registration successful! Redirecting...', 'success');
+        window.location.href = `/security-verification?email=${encodeURIComponent(formData.email)}`;
       } else {
         addNotification('Registration successful! You can now login.', 'success');
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
+        window.location.href = '/login';
       }
     } catch (error) {
       console.error('Registration error:', error);
