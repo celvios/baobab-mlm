@@ -43,14 +43,14 @@ const register = async (req, res) => {
       if (existing.rows.length === 0) isUnique = true;
     }
 
-    // TEMPORARY: OTP system disabled - auto-verify users
-    // const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    // const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Create user with auto-verification
+    // Create user (not verified yet)
     const result = await pool.query(
-      'INSERT INTO users (email, password, full_name, phone, referral_code, referred_by, is_email_verified) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, email, full_name, referral_code',
-      [email, hashedPassword, fullName, phone, referralCode, referredBy, true]
+      'INSERT INTO users (email, password, full_name, phone, referral_code, referred_by, is_email_verified, email_verification_token, email_verification_expires) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, email, full_name, referral_code',
+      [email, hashedPassword, fullName, phone, referralCode, referredBy, false, otpCode, otpExpires]
     );
 
     const user = result.rows[0];
@@ -61,15 +61,14 @@ const register = async (req, res) => {
     // Create wallet
     await pool.query('INSERT INTO wallets (user_id) VALUES ($1)', [user.id]);
 
-    // TEMPORARY: OTP system disabled - send welcome email directly
-    console.log(`\n=== AUTO-VERIFIED USER: ${email} ===`);
-    console.log('OTP system temporarily disabled');
-    console.log('User automatically verified');
+    // Send OTP email
+    console.log(`\n=== OTP SENT TO: ${email} ===`);
+    console.log(`OTP Code: ${otpCode}`);
     console.log('====================================\n');
     
     try {
-      await sendWelcomeEmail(email, fullName, referralCode);
-      console.log('Welcome email sent successfully');
+      await sendOTPEmail(email, otpCode, fullName);
+      console.log('OTP email sent successfully');
     } catch (emailError) {
       console.log('Email sending failed, but continuing registration:', emailError.message);
       // Don't fail registration if email fails
@@ -119,13 +118,14 @@ const register = async (req, res) => {
     }
 
     res.status(201).json({
-      message: 'User registered successfully. You can now login immediately.',
+      message: 'Registration successful! Please check your email for the verification code.',
+      requiresVerification: true,
       user: {
         id: user.id,
         email: user.email,
         fullName: user.full_name,
         referralCode: user.referral_code,
-        emailVerified: true
+        emailVerified: false
       }
     });
   } catch (error) {
@@ -157,14 +157,14 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // TEMPORARY: OTP system disabled - skip email verification check
-    // if (!user.is_email_verified) {
-    //   return res.status(400).json({ 
-    //     message: 'Please verify your email before logging in. Check your inbox for the verification code.',
-    //     requiresVerification: true,
-    //     email: user.email
-    //   });
-    // }
+    // Check if email is verified
+    if (!user.is_email_verified) {
+      return res.status(400).json({ 
+        message: 'Please verify your email before logging in. Check your inbox for the verification code.',
+        requiresVerification: true,
+        email: user.email
+      });
+    }
 
     // Generate JWT
     const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_key';

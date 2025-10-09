@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { sendDepositApprovedEmail, sendDepositRejectedEmail } = require('../utils/emailService');
 
 const creditUser = async (req, res) => {
   try {
@@ -100,6 +101,13 @@ const approveDeposit = async (req, res) => {
       VALUES ($1, $2, $3, $4)
     `, [adminId, 'approve_deposit', `Approved deposit for ${user.full_name} (${user.email}) - ₦${depositAmount.toLocaleString()}`, userId]);
 
+    // Send approval email
+    try {
+      await sendDepositApprovedEmail(user.email, user.full_name, depositAmount);
+    } catch (emailError) {
+      console.log('Failed to send deposit approval email:', emailError.message);
+    }
+
     res.json({
       message: 'Deposit approved successfully',
       amount: depositAmount,
@@ -141,4 +149,50 @@ const getRecentActivity = async (req, res) => {
   }
 };
 
-module.exports = { creditUser, approveDeposit, getRecentActivity };
+const rejectDeposit = async (req, res) => {
+  try {
+    const { depositId } = req.params;
+    const { reason = 'Deposit rejected' } = req.body;
+    const adminId = req.admin.id;
+
+    // Get deposit details
+    const depositResult = await pool.query('SELECT * FROM deposit_requests WHERE id = $1', [depositId]);
+    if (depositResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Deposit request not found' });
+    }
+
+    const deposit = depositResult.rows[0];
+    const userId = deposit.user_id;
+    const depositAmount = parseFloat(deposit.amount);
+
+    // Get user details
+    const userResult = await pool.query('SELECT full_name, email FROM users WHERE id = $1', [userId]);
+    const user = userResult.rows[0];
+
+    // Update deposit status
+    await pool.query('UPDATE deposit_requests SET status = $1, admin_notes = $2, processed_at = CURRENT_TIMESTAMP, admin_id = $3 WHERE id = $4', ['rejected', reason, adminId, depositId]);
+
+    // Log admin activity
+    await pool.query(`
+      INSERT INTO admin_activity_logs (admin_id, action, details, user_id)
+      VALUES ($1, $2, $3, $4)
+    `, [adminId, 'reject_deposit', `Rejected deposit for ${user.full_name} (${user.email}) - ₦${depositAmount.toLocaleString()}. Reason: ${reason}`, userId]);
+
+    // Send rejection email
+    try {
+      await sendDepositRejectedEmail(user.email, user.full_name, depositAmount);
+    } catch (emailError) {
+      console.log('Failed to send deposit rejection email:', emailError.message);
+    }
+
+    res.json({
+      message: 'Deposit rejected successfully',
+      depositId: depositId
+    });
+  } catch (error) {
+    console.error('Reject deposit error:', error);
+    res.status(500).json({ message: 'Server error: ' + error.message });
+  }
+};
+
+module.exports = { creditUser, approveDeposit, rejectDeposit, getRecentActivity };

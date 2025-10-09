@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { sendWithdrawalPendingEmail, sendWithdrawalApprovedEmail, sendWithdrawalRejectedEmail } = require('../utils/emailService');
 
 const getWithdrawalRequests = async (req, res) => {
   try {
@@ -122,6 +123,17 @@ const processWithdrawal = async (req, res) => {
       INSERT INTO admin_activity_logs (admin_id, action, details, user_id)
       VALUES ($1, $2, $3, $4)
     `, [adminId, `${status}_withdrawal`, `${status === 'approved' ? 'Approved' : 'Rejected'} withdrawal for ${withdrawal.full_name} (${withdrawal.email}) - ₦${amount.toLocaleString()}. Notes: ${adminNotes}`, userId]);
+
+    // Send email notification
+    try {
+      if (status === 'approved') {
+        await sendWithdrawalApprovedEmail(withdrawal.email, withdrawal.full_name, amount);
+      } else {
+        await sendWithdrawalRejectedEmail(withdrawal.email, withdrawal.full_name, amount);
+      }
+    } catch (emailError) {
+      console.log('Failed to send withdrawal email:', emailError.message);
+    }
 
     res.json({
       message: `Withdrawal ${status} successfully`,
