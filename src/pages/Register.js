@@ -93,7 +93,8 @@ export default function Register() {
       
       if (result.requiresVerification) {
         addNotification('Registration successful! Redirecting...', 'success');
-        navigate(`/security-verification?email=${encodeURIComponent(formData.email)}`);
+        localStorage.setItem('pendingVerificationEmail', formData.email);
+        navigate('/security-verification');
       } else {
         addNotification('Registration successful! You can now login.', 'success');
         navigate('/login');

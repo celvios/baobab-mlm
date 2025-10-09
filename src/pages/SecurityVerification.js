@@ -13,10 +13,14 @@ export default function SecurityVerification() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get email from localStorage
-    const pendingEmail = localStorage.getItem('pendingVerificationEmail');
+    // Get email from URL params or localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailFromUrl = urlParams.get('email');
+    const pendingEmail = emailFromUrl || localStorage.getItem('pendingVerificationEmail');
+    
     if (pendingEmail) {
       setEmail(pendingEmail);
+      localStorage.setItem('pendingVerificationEmail', pendingEmail);
     } else {
       // If no email found, redirect to register
       navigate('/register');
