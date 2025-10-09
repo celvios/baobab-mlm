@@ -27,6 +27,7 @@ const adminAuth = async (req, res, next) => {
     }
 
     req.user = result.rows[0];
+    req.admin = result.rows[0]; // Add for compatibility
     next();
   } catch (error) {
     console.error('Admin auth error:', error.message);
