@@ -929,8 +929,8 @@ router.put('/blog/:id/publish', adminAuth, publishBlogPost);
 router.get('/blog/stats', adminAuth, getBlogStats);
 
 // Bulk email routes
-const { sendBulkEmail, getEmailStats } = require('../../../src/controllers/bulkEmailController');
-router.post('/bulk-email', adminAuth, sendBulkEmail);
-router.get('/email-stats', adminAuth, getEmailStats);
+const bulkEmailController = require('../../../src/controllers/bulkEmailController');
+router.post('/bulk-email', adminAuth, bulkEmailController.sendBulkEmail);
+router.get('/email-stats', adminAuth, bulkEmailController.getEmailStats);
 
 module.exports = router;
