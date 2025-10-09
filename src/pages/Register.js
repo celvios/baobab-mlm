@@ -12,13 +12,31 @@ export default function Register() {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
     country: 'NG',
+    phonePrefix: '+234',
+    phone: '',
     password: '',
     confirmPassword: '',
     referralCode: '',
     agreeToTerms: false
   });
+
+  const getDialCode = (countryCode) => {
+    const dialCodes = {
+      'DZ': '+213', 'AO': '+244', 'BJ': '+229', 'BW': '+267', 'BF': '+226',
+      'BI': '+257', 'CM': '+237', 'CV': '+238', 'CF': '+236', 'TD': '+235',
+      'KM': '+269', 'CG': '+242', 'CD': '+243', 'DJ': '+253', 'EG': '+20',
+      'GQ': '+240', 'ER': '+291', 'ET': '+251', 'GA': '+241', 'GM': '+220',
+      'GH': '+233', 'GN': '+224', 'GW': '+245', 'CI': '+225', 'KE': '+254',
+      'LS': '+266', 'LR': '+231', 'LY': '+218', 'MG': '+261', 'MW': '+265',
+      'ML': '+223', 'MR': '+222', 'MU': '+230', 'MA': '+212', 'MZ': '+258',
+      'NA': '+264', 'NE': '+227', 'NG': '+234', 'RW': '+250', 'ST': '+239',
+      'SN': '+221', 'SC': '+248', 'SL': '+232', 'SO': '+252', 'ZA': '+27',
+      'SS': '+211', 'SD': '+249', 'SZ': '+268', 'TZ': '+255', 'TG': '+228',
+      'TN': '+216', 'UG': '+256', 'ZM': '+260', 'ZW': '+263'
+    };
+    return dialCodes[countryCode] || '+234';
+  };
 
   useEffect(() => {
     // Check for referral code in URL
@@ -27,6 +45,8 @@ export default function Register() {
     if (refCode) {
       setFormData(prev => ({ ...prev, referralCode: refCode }));
     }
+    // Set initial dial code
+    setFormData(prev => ({ ...prev, phonePrefix: getDialCode(prev.country) }));
   }, []);
 
   const [loading, setLoading] = useState(false);
@@ -63,7 +83,10 @@ export default function Register() {
         referredBy: formData.referralCode || null
       });
       
-      const result = await apiService.register(formData);
+      const result = await apiService.register({
+        ...formData,
+        phone: formData.phonePrefix + formData.phone
+      });
       console.log('Registration successful:', result);
       
       if (result.requiresVerification) {
@@ -166,22 +189,6 @@ export default function Register() {
             </div>
             
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                placeholder="Enter your phone number"
-              />
-            </div>
-            
-            <div>
               <label htmlFor="country" className="block text-sm font-medium text-gray-700">
                 Country
               </label>
@@ -191,7 +198,11 @@ export default function Register() {
                 required
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                 value={formData.country}
-                onChange={(e) => setFormData({...formData, country: e.target.value})}
+                onChange={(e) => {
+                  const countryCode = e.target.value;
+                  const dialCode = getDialCode(countryCode);
+                  setFormData({...formData, country: countryCode, phonePrefix: dialCode});
+                }}
               >
                 <option value="DZ">Algeria</option>
                 <option value="AO">Angola</option>
@@ -248,6 +259,27 @@ export default function Register() {
                 <option value="ZM">Zambia</option>
                 <option value="ZW">Zimbabwe</option>
               </select>
+            </div>
+            
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                Phone Number
+              </label>
+              <div className="mt-1 flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                  {formData.phonePrefix}
+                </span>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  className="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-r-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  placeholder="8012345678"
+                />
+              </div>
             </div>
             
             <div>
