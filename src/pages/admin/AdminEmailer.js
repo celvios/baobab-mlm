@@ -127,11 +127,59 @@ const ComposeEmail = ({ allUsers, setAllUsers, setActiveTab }) => {
   );
 };
 
+const EmailDetailModal = ({ email, onClose }) => {
+  if (!email) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Email Details</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="text-sm font-medium text-gray-500">Subject</label>
+            <p className="text-gray-900 mt-1">{email.subject}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-500">Recipients</label>
+            <p className="text-gray-900 mt-1">{email.sentCount || email.recipientCount} users ({email.category || 'all'})</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-500">Sent Date</label>
+            <p className="text-gray-900 mt-1">{new Date(email.createdAt || email.created_at || email.sentAt).toLocaleString()}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-500">Status</label>
+            <p className="mt-1">
+              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                email.status === 'sent' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {email.status}
+              </span>
+            </p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-500">Message</label>
+            <div className="mt-2 p-4 bg-gray-50 rounded border" dangerouslySetInnerHTML={{ __html: email.message }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminEmailer = () => {
   const [activeTab, setActiveTab] = useState('compose');
   const [emailHistory, setEmailHistory] = useState([]);
   const [mailingList, setMailingList] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [selectedEmail, setSelectedEmail] = useState(null);
 
   const EmailHistory = () => {
     useEffect(() => {
@@ -174,7 +222,7 @@ const AdminEmailer = () => {
                     {email.sentCount || email.recipientCount} users
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(email.createdAt).toLocaleDateString()}
+                    {new Date(email.createdAt || email.created_at || email.sentAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -185,7 +233,7 @@ const AdminEmailer = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">
+                      <button onClick={() => setSelectedEmail(email)} className="text-blue-600 hover:text-blue-900">
                         <FiEye className="w-4 h-4" />
                       </button>
                       <button className="text-red-600 hover:text-red-900">
@@ -311,6 +359,7 @@ const AdminEmailer = () => {
       {activeTab === 'compose' && <ComposeEmail allUsers={allUsers} setAllUsers={setAllUsers} setActiveTab={setActiveTab} />}
       {activeTab === 'history' && <EmailHistory />}
       {activeTab === 'mailing-list' && <MailingList />}
+      {selectedEmail && <EmailDetailModal email={selectedEmail} onClose={() => setSelectedEmail(null)} />}
     </div>
   );
 };
