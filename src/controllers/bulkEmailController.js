@@ -1,29 +1,16 @@
 const pool = require('../config/database');
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 const { createEmailTemplate, createAnnouncementTemplate, createPromotionTemplate } = require('../utils/emailTemplates');
 
-// Email transporter setup
-let transporter;
-try {
-  transporter = nodemailer.createTransporter({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    pool: true, // Enable connection pooling
-    maxConnections: 5, // Limit concurrent connections
-    maxMessages: 100, // Limit messages per connection
-  });
-} catch (error) {
-  console.error('Bulk email transporter setup failed:', error);
-}
+// SendGrid setup
+sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@baobab.com';
 
 const sendBulkEmail = async (req, res) => {
   try {
     const { subject, message, category = 'all', template = 'default', selectedUsers = [] } = req.body;
     
-    if (!transporter) {
+    if (!process.env.SENDGRID_API_KEY) {
       return res.status(500).json({ message: 'Email service not configured' });
     }
 
@@ -75,11 +62,8 @@ const sendBulkEmail = async (req, res) => {
     const emailPromises = recipientList.map(recipient => {
       const personalizedHtml = emailHtml.replace(/\{name\}/g, recipient.full_name || 'Valued Member');
       
-      return transporter.sendMail({
-        from: {
-          name: 'Baobab MLM',
-          address: process.env.EMAIL_USER
-        },
+      return sgMail.send({
+        from: FROM_EMAIL,
         to: recipient.email,
         subject: subject,
         html: personalizedHtml
