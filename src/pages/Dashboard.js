@@ -215,8 +215,51 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <div className="space-y-6">
+        <div className="mb-6 flex justify-between items-center">
+          <div className="h-9 bg-gray-200 rounded w-64 animate-pulse"></div>
+          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
+        </div>
+        <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-2">
+                <div className="h-6 bg-gray-200 rounded w-32 mb-3 animate-pulse"></div>
+                <div className="bg-gray-200 rounded-2xl h-48 animate-pulse"></div>
+              </div>
+              <div>
+                <div className="h-6 bg-gray-200 rounded w-32 mb-3 animate-pulse"></div>
+                <div className="bg-gray-200 rounded-2xl h-48 animate-pulse"></div>
+              </div>
+              <div>
+                <div className="h-6 bg-gray-200 rounded w-32 mb-3 animate-pulse"></div>
+                <div className="bg-gray-200 rounded-2xl h-48 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-1">
+            <div className="bg-white p-4 rounded-2xl shadow-card">
+              <div className="h-6 bg-gray-200 rounded w-24 mb-4 animate-pulse"></div>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center space-x-3">
+                    <div className="w-7 h-7 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="flex-1 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-card">
+          <div className="h-6 bg-gray-200 rounded w-32 mb-6 animate-pulse"></div>
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 bg-gray-200 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -284,6 +327,7 @@ export default function Dashboard() {
                     <div>
                       <p className="text-white/70 text-sm mb-1">Wallet Balance</p>
                       <p className="text-3xl font-bold mb-1">{currencyLoading ? '...' : formatPrice(convertedBalances.balance)}</p>
+                      <p className="text-white/60 text-xs">${(convertedBalances.balance / 1500).toFixed(2)} USD</p>
                     </div>
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <CurrencyDollarIcon className="h-5 w-5" />
@@ -321,6 +365,7 @@ export default function Dashboard() {
               <div className="bg-gray-100 p-6 rounded-2xl shadow-card h-48 flex flex-col justify-between">
                 <div>
                   <p className="text-3xl font-bold text-gray-900 mb-1">{currencyLoading ? '...' : formatPrice(convertedBalances.mlmEarnings)}</p>
+                  <p className="text-gray-500 text-xs">${(convertedBalances.mlmEarnings / 1500).toFixed(2)} USD</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
                 <Link to="/user/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
