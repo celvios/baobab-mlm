@@ -929,7 +929,7 @@ router.put('/blog/:id/publish', adminAuth, publishBlogPost);
 router.get('/blog/stats', adminAuth, getBlogStats);
 
 // Bulk email routes
-const bulkEmailController = require('../../../src/controllers/bulkEmailController');
+const bulkEmailController = require('../controllers/bulkEmailController');
 router.post('/bulk-email', adminAuth, bulkEmailController.sendBulkEmail);
 router.get('/email-stats', adminAuth, bulkEmailController.getEmailStats);
 
