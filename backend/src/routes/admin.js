@@ -897,6 +897,12 @@ router.post('/emails/send', adminAuth, async (req, res) => {
     // Send email to all users
     const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@baobab.com';
     const emailPromises = users.map(user => {
+      // Replace shortcodes with user data
+      const personalizedMessage = message
+        .replace(/{fullName}/g, user.full_name || 'User')
+        .replace(/{email}/g, user.email)
+        .replace(/{firstName}/g, (user.full_name || 'User').split(' ')[0]);
+      
       const msg = {
         to: user.email,
         from: FROM_EMAIL,
@@ -904,7 +910,7 @@ router.post('/emails/send', adminAuth, async (req, res) => {
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="margin: 20px 0;">
-              ${message}
+              ${personalizedMessage}
             </div>
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
             <p style="color: #666; font-size: 12px;">You are receiving this email because you are a member of Baobab. If you have any questions, contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
