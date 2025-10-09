@@ -232,7 +232,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: 'Product Order',
       type: 'Outgoing',
-      amount: `₦${formatCurrency(order.amount)}`,
+      amount: formatPrice(order.amount),
       status: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'
     })),
     ...withdrawals.map((withdrawal, index) => ({
@@ -241,7 +241,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: 'Withdrawal',
       type: 'Outgoing',
-      amount: `₦${formatCurrency(withdrawal.amount)}`,
+      amount: formatPrice(withdrawal.amount),
       status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending'
     })),
     ...transactions.map((tx, index) => ({
@@ -250,7 +250,7 @@ export default function Dashboard() {
       stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
       transaction: tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction',
       type: tx.amount > 0 ? 'Incoming' : 'Outgoing',
-      amount: `₦${formatCurrency(Math.abs(tx.amount))}`,
+      amount: formatPrice(Math.abs(tx.amount)),
       status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending'
     }))
   ].slice(0, 5); // Show only latest 5 entries
@@ -283,8 +283,7 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <p className="text-white/70 text-sm mb-1">Wallet Balance</p>
-                      <p className="text-3xl font-bold mb-1">₦{formatCurrency(convertedBalances.balance)}</p>
-                      <p className="text-white/70 text-sm">≈ ${Number((convertedBalances.balance || 0) / 1500).toFixed(2)} USD</p>
+                      <p className="text-3xl font-bold mb-1">{currencyLoading ? '...' : formatPrice(convertedBalances.balance)}</p>
                     </div>
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <CurrencyDollarIcon className="h-5 w-5" />
@@ -321,8 +320,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-900 mb-3">MLM Earnings</h2>
               <div className="bg-gray-100 p-6 rounded-2xl shadow-card h-48 flex flex-col justify-between">
                 <div>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">₦{formatCurrency(convertedBalances.mlmEarnings)}</p>
-                  <p className="text-gray-500 text-sm">≈ ${Number((convertedBalances.mlmEarnings || 0) / 1500).toFixed(2)} USD</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">{currencyLoading ? '...' : formatPrice(convertedBalances.mlmEarnings)}</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
                 <Link to="/user/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
@@ -373,7 +371,7 @@ export default function Dashboard() {
                     <p className="font-medium text-gray-900 text-sm">{member.email}</p>
                   </div>
                   {member.has_deposited ? (
-                    <p className="text-green-600 font-semibold text-sm">+₦{formatCurrency(member.earning_from_user * 1500 || 2250)}</p>
+                    <p className="text-green-600 font-semibold text-sm">+{formatPrice(member.earning_from_user * 1500 || 2250)}</p>
                   ) : (
                     <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
                   )}

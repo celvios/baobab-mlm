@@ -841,6 +841,7 @@ router.get('/add-password-reset-columns', async (req, res) => {
   try {
     await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255)');
     await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMP');
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(2) DEFAULT \'NG\'');
     res.json({ message: 'Password reset columns added successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });

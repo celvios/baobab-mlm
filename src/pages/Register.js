@@ -13,6 +13,7 @@ export default function Register() {
     lastName: '',
     email: '',
     phone: '',
+    country: 'NG',
     password: '',
     confirmPassword: '',
     referralCode: '',
@@ -178,6 +179,33 @@ export default function Register() {
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 placeholder="Enter your phone number"
               />
+            </div>
+            
+            <div>
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                Country
+              </label>
+              <select
+                id="country"
+                name="country"
+                required
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                value={formData.country}
+                onChange={(e) => setFormData({...formData, country: e.target.value})}
+              >
+                <option value="NG">Nigeria</option>
+                <option value="GH">Ghana</option>
+                <option value="KE">Kenya</option>
+                <option value="ZA">South Africa</option>
+                <option value="EG">Egypt</option>
+                <option value="TZ">Tanzania</option>
+                <option value="UG">Uganda</option>
+                <option value="ET">Ethiopia</option>
+                <option value="MA">Morocco</option>
+                <option value="CI">Ivory Coast</option>
+                <option value="SN">Senegal</option>
+                <option value="CM">Cameroon</option>
+              </select>
             </div>
             
             <div>

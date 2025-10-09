@@ -14,7 +14,7 @@ const register = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, fullName, phone, referredBy } = req.body;
+    const { email, password, fullName, phone, country, referredBy } = req.body;
 
     // Check if user exists
     const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -49,8 +49,8 @@ const register = async (req, res) => {
 
     // Create user (not verified yet)
     const result = await pool.query(
-      'INSERT INTO users (email, password, full_name, phone, referral_code, referred_by, is_email_verified, email_verification_token, email_verification_expires) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, email, full_name, referral_code',
-      [email, hashedPassword, fullName, phone, referralCode, referredBy, false, otpCode, otpExpires]
+      'INSERT INTO users (email, password, full_name, phone, country, referral_code, referred_by, is_email_verified, email_verification_token, email_verification_expires) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, email, full_name, referral_code, country',
+      [email, hashedPassword, fullName, phone, country || 'NG', referralCode, referredBy, false, otpCode, otpExpires]
     );
 
     const user = result.rows[0];

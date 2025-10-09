@@ -69,14 +69,15 @@ class CurrencyService {
 
   async getUserLocation() {
     try {
-      const response = await fetch('https://ipapi.co/json/');
-      const data = await response.json();
-      this.userLocation = data.country_code;
-      this.userCurrency = AFRICAN_CURRENCIES[data.country_code] || 'USD';
-      return { country: data.country_code, currency: this.userCurrency };
+      // Get country from user profile in localStorage
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const country = user.country || 'NG';
+      this.userLocation = country;
+      this.userCurrency = AFRICAN_CURRENCIES[country] || 'NGN';
+      return { country: this.userLocation, currency: this.userCurrency };
     } catch (error) {
       console.error('Failed to get user location:', error);
-      return { country: 'NG', currency: 'NGN' }; // Default to Nigeria
+      return { country: 'NG', currency: 'NGN' };
     }
   }
 
