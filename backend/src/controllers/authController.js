@@ -74,48 +74,7 @@ const register = async (req, res) => {
       // Don't fail registration if email fails
     }
 
-    // Create referral notification (bonus will be paid when they deposit ₦18k+)
-    if (referredBy) {
-      const referrerResult = await pool.query('SELECT id, full_name, email FROM users WHERE referral_code = $1', [referredBy]);
-      if (referrerResult.rows.length > 0) {
-        // Create referral notification
-        try {
-          await pool.query(
-            'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-            [
-              referrerResult.rows[0].id,
-              'New Team Member!',
-              `${fullName} joined your team. You'll earn a bonus when they deposit ₦18,000+`,
-              'info'
-            ]
-          );
-        } catch (notificationError) {
-          console.log('Failed to create referral notification:', notificationError.message);
-        }
-        
-        // Send referral email
-        try {
-          await sendReferralRegisteredEmail(referrerResult.rows[0].email, referrerResult.rows[0].full_name, fullName);
-        } catch (emailError) {
-          console.log('Failed to send referral email:', emailError.message);
-        }
-      }
-    }
-
-    // Create welcome notification for new user
-    try {
-      await pool.query(
-        'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-        [
-          user.id,
-          'Welcome to Baobab!',
-          'Complete your profile and make your first purchase to start earning',
-          'info'
-        ]
-      );
-    } catch (notificationError) {
-      console.log('Failed to create welcome notification:', notificationError.message);
-    }
+    // Don't send referral notifications until email is verified
 
     res.status(201).json({
       message: 'Registration successful! Please check your email for the verification code.',
@@ -360,6 +319,27 @@ const verifyOTP = async (req, res) => {
 
     // Send welcome email
     await sendWelcomeEmail(user.email, user.full_name, user.referral_code);
+
+    // NOW send referral notifications after verification
+    if (user.referred_by) {
+      const referrerResult = await pool.query('SELECT id, full_name, email FROM users WHERE referral_code = $1', [user.referred_by]);
+      if (referrerResult.rows.length > 0) {
+        try {
+          await pool.query(
+            'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+            [
+              referrerResult.rows[0].id,
+              'New Team Member!',
+              `${user.full_name} joined your team. You'll earn a bonus when they deposit ₦18,000+`,
+              'info'
+            ]
+          );
+          await sendReferralRegisteredEmail(referrerResult.rows[0].email, referrerResult.rows[0].full_name, user.full_name);
+        } catch (error) {
+          console.log('Failed to send referral notification:', error.message);
+        }
+      }
+    }
 
     res.json({ message: 'Email verified successfully! You can now log in.' });
   } catch (error) {
