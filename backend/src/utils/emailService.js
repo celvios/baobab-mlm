@@ -42,7 +42,7 @@ const sendOTPEmail = async (email, otpCode, fullName) => {
       </div>
       <p><strong>Important:</strong> This code will expire in 10 minutes.</p>
       <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-      <p style="color: #666; font-size: 12px;">You are receiving this email because you registered an account at Baobab. If you did not register, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+      <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because you registered an account at Baobab. If you did not register, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
     </div>
   `;
   await sendEmail(email, 'Your Baobab Verification Code', html);
@@ -61,7 +61,7 @@ const sendWelcomeEmail = async (email, fullName, referralCode) => {
         <a href="${process.env.FRONTEND_URL}/user/dashboard" style="background-color: #4a5d23; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Dashboard</a>
       </div>
       <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-      <p style="color: #666; font-size: 12px;">You are receiving this email because you have an account with Baobab. If you did not create this account, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+      <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because you have an account with Baobab. If you did not create this account, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
     </div>
   `;
   await sendEmail(email, 'Welcome to Baobab!', html);
@@ -80,7 +80,7 @@ const sendPasswordResetEmail = async (email, resetToken, fullName) => {
       <p>This link will expire in 1 hour.</p>
       <p>If you didn't request this, please ignore this email.</p>
       <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-      <p style="color: #666; font-size: 12px;">You are receiving this email because a password reset was requested for your Baobab account. If you did not request this, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+      <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because a password reset was requested for your Baobab account. If you did not request this, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
     </div>
   `;
   await sendEmail(email, 'Reset Your Baobab Password', html);
@@ -96,7 +96,7 @@ const sendReferralRegisteredEmail = async (email, fullName, refereeName) => {
         <a href="${process.env.FRONTEND_URL}/user/team" style="background-color: #4a5d23; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">View Your Team</a>
       </div>
       <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-      <p style="color: #666; font-size: 12px;">You are receiving this email because someone used your referral code to join Baobab. If you have any questions, contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+      <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because someone used your referral code to join Baobab. If you have any questions, contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
     </div>
   `;
   await sendEmail(email, 'New Team Member Joined!', html);

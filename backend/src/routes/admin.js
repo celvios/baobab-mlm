@@ -913,7 +913,7 @@ router.post('/emails/send', adminAuth, async (req, res) => {
               ${personalizedMessage}
             </div>
             <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-            <p style="color: #666; font-size: 12px;">You are receiving this email because you are a member of Baobab. If you have any questions, contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+            <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because you are a member of Baobab. If you have any questions, contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
           </div>
         `
       };

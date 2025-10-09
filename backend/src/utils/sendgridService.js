@@ -18,7 +18,7 @@ const sendOTPEmail = async (email, otpCode, fullName) => {
         </div>
         <p><strong>Important:</strong> This code will expire in 10 minutes.</p>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-        <p style="color: #666; font-size: 12px;">You are receiving this email because you registered an account at Baobab. If you did not register, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+        <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because you registered an account at Baobab. If you did not register, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
       </div>
     `
   };
@@ -77,7 +77,7 @@ const sendWelcomeEmail = async (email, fullName, referralCode) => {
           </a>
         </div>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-        <p style="color: #666; font-size: 12px;">You are receiving this email because you have an account with Baobab. If you did not create this account, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+        <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because you have an account with Baobab. If you did not create this account, please contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
       </div>
     `
   };
