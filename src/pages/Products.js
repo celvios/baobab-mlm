@@ -20,16 +20,28 @@ export default function Products() {
 
   const { formatPrice, loading: currencyLoading, getCurrencySymbol } = useCurrency();
 
-  const safeFormatPrice = (price) => {
-    if (currencyLoading || !formatPrice) {
-      return `₦${(price * 1500).toLocaleString()}`;
+  const [convertedPrices, setConvertedPrices] = useState({});
+
+  useEffect(() => {
+    const convertAllPrices = async () => {
+      if (!currencyLoading && allProducts.length > 0) {
+        const converted = {};
+        for (const product of allProducts) {
+          const price = await currencyService.convertPrice(product.usdPrice || 0);
+          converted[product.id] = price;
+        }
+        setConvertedPrices(converted);
+      }
+    };
+    convertAllPrices();
+  }, [allProducts, currencyLoading]);
+
+  const safeFormatPrice = (productId, usdPrice) => {
+    if (currencyLoading) {
+      return '...';
     }
-    try {
-      return formatPrice(price * 1500);
-    } catch (error) {
-      console.error('Price formatting error:', error);
-      return `₦${(price * 1500).toLocaleString()}`;
-    }
+    const convertedPrice = convertedPrices[productId] || (usdPrice * 1500);
+    return formatPrice(convertedPrice);
   };
 
   const handleAddToCart = (product, qty = 1) => {
@@ -208,7 +220,7 @@ export default function Products() {
                     <p className="text-gray-600 text-sm mb-3">Price</p>
                     <div className="flex items-center space-x-4 mb-6">
                       <div>
-                        <span className="text-3xl font-bold text-green-600">{safeFormatPrice(products[0]?.usdPrice || 0)}</span>
+                        <span className="text-3xl font-bold text-green-600">{safeFormatPrice(products[0]?.id, products[0]?.usdPrice || 0)}</span>
                         <p className="text-sm text-gray-500 mt-1">${Number(products[0]?.usdPrice || 0).toFixed(2)} USD</p>
                       </div>
                     </div>
@@ -269,7 +281,7 @@ export default function Products() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900 text-sm mb-1">{safeFormatPrice(product.usdPrice || 0)}</p>
+                      <p className="font-bold text-gray-900 text-sm mb-1">{safeFormatPrice(product.id, product.usdPrice || 0)}</p>
                       <p className="text-xs text-gray-400">${Number(product.usdPrice || 0).toFixed(2)} USD</p>
                       <p 
                         onClick={(e) => {
@@ -318,7 +330,7 @@ export default function Products() {
                   <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-xl font-bold">{safeFormatPrice(product.usdPrice || 0)}</span>
+                      <span className="text-xl font-bold">{safeFormatPrice(product.id, product.usdPrice || 0)}</span>
                       <p className="text-xs text-gray-500">${Number(product.usdPrice || 0).toFixed(2)} USD</p>
                     </div>
                     <button 
