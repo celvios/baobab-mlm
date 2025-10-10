@@ -1050,6 +1050,86 @@ const bulkEmailController = require('../controllers/bulkEmailController');
 router.post('/bulk-email', adminAuth, bulkEmailController.sendBulkEmail);
 router.get('/email-stats', adminAuth, bulkEmailController.getEmailStats);
 
+// Generate test referrals for a user
+router.get('/generate-test-referrals/:email', async (req, res) => {
+  const { email } = req.params;
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    const referrerResult = await client.query(
+      'SELECT id, referral_code, mlm_level FROM users WHERE email = $1',
+      [email]
+    );
+    
+    if (referrerResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const referrer = referrerResult.rows[0];
+    const bcrypt = require('bcryptjs');
+    const referrals = [];
+    
+    for (let i = 1; i <= 6; i++) {
+      const testEmail = `testreferral${i}_${Date.now()}@test.com`;
+      const password = await bcrypt.hash('Test@123', 10);
+      const referralCode = `TEST${Date.now()}${i}`;
+      
+      const userResult = await client.query(
+        `INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, joining_fee_paid, country)
+         VALUES ($1, $2, $3, $4, $5, $6, 'no_stage', true, 'NG') RETURNING id`,
+        [`Test Referral ${i}`, testEmail, password, `+23480${10000000 + i}`, referralCode, referrer.referral_code]
+      );
+      
+      const userId = userResult.rows[0].id;
+      
+      await client.query(
+        'INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, $2, $3)',
+        [userId, 18000, 18000]
+      );
+      
+      await client.query('INSERT INTO user_profiles (user_id) VALUES ($1)', [userId]);
+      
+      await client.query(
+        `INSERT INTO deposit_requests (user_id, amount, payment_method, status)
+         VALUES ($1, 18000, 'bank_transfer', 'approved')`,
+        [userId]
+      );
+      
+      const mlmService = require('../services/mlmService');
+      await mlmService.processReferral(referrer.id, userId);
+      
+      referrals.push({ id: userId, email: testEmail });
+    }
+    
+    await client.query('COMMIT');
+    
+    const updatedReferrer = await client.query(
+      'SELECT mlm_level FROM users WHERE id = $1',
+      [referrer.id]
+    );
+    
+    const earnings = await client.query(
+      'SELECT SUM(amount) as total FROM referral_earnings WHERE user_id = $1',
+      [referrer.id]
+    );
+    
+    res.json({
+      message: 'Test referrals generated successfully',
+      referrerNewLevel: updatedReferrer.rows[0].mlm_level,
+      totalReferrals: referrals.length,
+      totalEarnings: parseFloat(earnings.rows[0].total || 0),
+      referrals
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 // Convert product prices from Naira to USD
 router.get('/convert-prices-to-usd', async (req, res) => {
   try {
