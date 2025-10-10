@@ -177,9 +177,14 @@ export default function Dashboard() {
 
   const referralLink = userProfile?.referralCode ? `${process.env.REACT_APP_FRONTEND_URL || window.location.origin}/register?ref=${userProfile.referralCode}` : 'Loading...';
   
-  const copyReferralLink = () => {
-    navigator.clipboard.writeText(referralLink);
-    setShowReferralToast(true);
+  const copyReferralLink = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setShowReferralToast(true);
+      setTimeout(() => setShowReferralToast(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
   };
 
   const handleAddToCart = (product) => {
