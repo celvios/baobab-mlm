@@ -1053,12 +1053,9 @@ router.get('/email-stats', adminAuth, bulkEmailController.getEmailStats);
 // Generate test referrals for a user
 router.get('/generate-test-referrals/:email', async (req, res) => {
   const { email } = req.params;
-  const client = await pool.connect();
   
   try {
-    await client.query('BEGIN');
-    
-    const referrerResult = await client.query(
+    const referrerResult = await pool.query(
       'SELECT id, referral_code, mlm_level FROM users WHERE email = $1',
       [email]
     );
@@ -1070,13 +1067,14 @@ router.get('/generate-test-referrals/:email', async (req, res) => {
     const referrer = referrerResult.rows[0];
     const bcrypt = require('bcryptjs');
     const referrals = [];
+    const mlmService = require('../services/mlmService');
     
     for (let i = 1; i <= 6; i++) {
       const testEmail = `testreferral${i}_${Date.now()}@test.com`;
       const password = await bcrypt.hash('Test@123', 10);
       const referralCode = `TEST${Date.now()}${i}`;
       
-      const userResult = await client.query(
+      const userResult = await pool.query(
         `INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, joining_fee_paid, country)
          VALUES ($1, $2, $3, $4, $5, $6, 'no_stage', true, 'NG') RETURNING id`,
         [`Test Referral ${i}`, testEmail, password, `+23480${10000000 + i}`, referralCode, referrer.referral_code]
@@ -1084,33 +1082,30 @@ router.get('/generate-test-referrals/:email', async (req, res) => {
       
       const userId = userResult.rows[0].id;
       
-      await client.query(
+      await pool.query(
         'INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, $2, $3)',
         [userId, 18000, 18000]
       );
       
-      await client.query('INSERT INTO user_profiles (user_id) VALUES ($1)', [userId]);
+      await pool.query('INSERT INTO user_profiles (user_id) VALUES ($1)', [userId]);
       
-      await client.query(
+      await pool.query(
         `INSERT INTO deposit_requests (user_id, amount, status)
          VALUES ($1, 18000, 'approved')`,
         [userId]
       );
       
-      const mlmService = require('../services/mlmService');
       await mlmService.processReferral(referrer.id, userId);
       
       referrals.push({ id: userId, email: testEmail });
     }
     
-    await client.query('COMMIT');
-    
-    const updatedReferrer = await client.query(
+    const updatedReferrer = await pool.query(
       'SELECT mlm_level FROM users WHERE id = $1',
       [referrer.id]
     );
     
-    const earnings = await client.query(
+    const earnings = await pool.query(
       'SELECT SUM(amount) as total FROM referral_earnings WHERE user_id = $1',
       [referrer.id]
     );
@@ -1123,10 +1118,7 @@ router.get('/generate-test-referrals/:email', async (req, res) => {
       referrals
     });
   } catch (error) {
-    await client.query('ROLLBACK');
     res.status(500).json({ error: error.message });
-  } finally {
-    client.release();
   }
 });
 
