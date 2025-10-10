@@ -1050,6 +1050,73 @@ const bulkEmailController = require('../controllers/bulkEmailController');
 router.post('/bulk-email', adminAuth, bulkEmailController.sendBulkEmail);
 router.get('/email-stats', adminAuth, bulkEmailController.getEmailStats);
 
+// Check and update user level progression
+router.get('/check-level-progression/:email', async (req, res) => {
+  const { email } = req.params;
+  
+  try {
+    const userResult = await pool.query(
+      'SELECT id, mlm_level, referral_code FROM users WHERE email = $1',
+      [email]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Get referral count
+    const countResult = await pool.query(
+      'SELECT COUNT(*) as count FROM users WHERE referred_by = $1',
+      [user.referral_code]
+    );
+    
+    const count = parseInt(countResult.rows[0].count);
+    let newLevel = user.mlm_level;
+    
+    // Check progression
+    if (user.mlm_level === 'no_stage' && count >= 6) {
+      newLevel = 'feeder';
+    } else if (user.mlm_level === 'feeder' && count >= 6) {
+      newLevel = 'bronze';
+    } else if (user.mlm_level === 'bronze' && count >= 20) {
+      newLevel = 'silver';
+    } else if (user.mlm_level === 'silver' && count >= 34) {
+      newLevel = 'gold';
+    } else if (user.mlm_level === 'gold' && count >= 48) {
+      newLevel = 'diamond';
+    } else if (user.mlm_level === 'diamond' && count >= 62) {
+      newLevel = 'infinity';
+    }
+    
+    if (newLevel !== user.mlm_level) {
+      await pool.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [newLevel, user.id]);
+      
+      await pool.query(
+        `INSERT INTO level_progressions (user_id, from_level, to_level, referrals_count)
+         VALUES ($1, $2, $3, $4)`,
+        [user.id, user.mlm_level, newLevel, count]
+      );
+      
+      await pool.query(
+        `INSERT INTO market_updates (user_id, title, message, type)
+         VALUES ($1, $2, $3, 'success')`,
+        [user.id, 'Level Up!', `Congratulations! You've been promoted to ${newLevel.toUpperCase()} level!`]
+      );
+    }
+    
+    res.json({
+      message: newLevel !== user.mlm_level ? 'Level updated successfully' : 'No level change needed',
+      oldLevel: user.mlm_level,
+      newLevel: newLevel,
+      referralCount: count
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Generate test referrals for a user
 router.get('/generate-test-referrals/:email', async (req, res) => {
   const { email } = req.params;
