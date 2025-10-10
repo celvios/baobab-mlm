@@ -79,14 +79,19 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (userProfile?.wallet) {
-      // The wallet balance is already in local currency (Naira)
-      setConvertedBalances({
-        balance: userProfile.wallet.balance || 0,
-        mlmEarnings: userProfile.wallet.mlmEarnings || 0
-      });
-    }
-  }, [userProfile]);
+    const convertBalances = async () => {
+      if (userProfile?.wallet && !currencyLoading) {
+        const convertedBalance = await convertPrice(userProfile.wallet.balance || 0);
+        const convertedEarnings = await convertPrice(userProfile.wallet.mlmEarnings || 0);
+        
+        setConvertedBalances({
+          balance: convertedBalance,
+          mlmEarnings: convertedEarnings
+        });
+      }
+    };
+    convertBalances();
+  }, [userProfile, currencyLoading, convertPrice]);
 
   const fetchDashboardData = async () => {
     try {
