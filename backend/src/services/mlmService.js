@@ -25,8 +25,14 @@ class MLMService {
         throw new Error('Referrer not found');
       }
 
-      const referrerLevel = referrerResult.rows[0].mlm_level;
+      const referrerLevel = referrerResult.rows[0].mlm_level || 'no_stage';
       const levelConfig = MLM_LEVELS[referrerLevel];
+
+      // Only process if user has a valid MLM level
+      if (!levelConfig) {
+        await client.query('COMMIT');
+        return;
+      }
 
       // Add referral earning
       await client.query(`
