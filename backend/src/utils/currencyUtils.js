@@ -3,8 +3,8 @@ const axios = require('axios');
 const API_KEY = process.env.EXCHANGE_API_KEY || 'e3a4b965095aaeaeec259e9a';
 const BASE_URL = 'https://v6.exchangerate-api.com/v6';
 
-// Minimum deposit in USD (equivalent to ₦18,000)
-const MIN_DEPOSIT_USD = 100;
+// Minimum deposit in NGN
+const MIN_DEPOSIT_NGN = 18000;
 
 let cachedRates = null;
 let lastUpdate = null;
@@ -30,7 +30,9 @@ async function getExchangeRates() {
 }
 
 async function meetsMinimumDeposit(amountUSD) {
-  return parseFloat(amountUSD) >= MIN_DEPOSIT_USD;
+  const rates = await getExchangeRates();
+  const amountNGN = amountUSD * (rates.NGN || 1500);
+  return amountNGN >= MIN_DEPOSIT_NGN;
 }
 
 async function convertToUSD(amount, fromCurrency) {
@@ -50,5 +52,5 @@ module.exports = {
   meetsMinimumDeposit,
   convertToUSD,
   convertFromUSD,
-  MIN_DEPOSIT_USD
+  MIN_DEPOSIT_NGN
 };
