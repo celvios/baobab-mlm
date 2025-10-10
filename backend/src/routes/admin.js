@@ -866,6 +866,31 @@ router.get('/run-country-migration', async (req, res) => {
   }
 });
 
+// Create new admin
+router.get('/create-baobab-admin', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const email = 'info@baobabworldwide.com';
+    const password = 'Admin@2024';
+    const name = 'Baobab Admin';
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    await pool.query(
+      'INSERT INTO admin_users (name, email, password, role, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO UPDATE SET password = $3, name = $1',
+      [name, email, hashedPassword, 'admin', true]
+    );
+    
+    res.json({ 
+      message: 'Admin created successfully',
+      email: email,
+      password: password
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test email
 router.get('/test-email/:email', async (req, res) => {
   try {
