@@ -96,16 +96,7 @@ class CurrencyService {
       throw new Error('Failed to fetch exchange rates');
     } catch (error) {
       console.error('Exchange rate fetch error:', error);
-      // Fallback to hardcoded rates if API fails
-      if (Object.keys(this.rates).length === 0) {
-        this.rates = {
-          NGN: 1500, AOA: 900, XOF: 600, BWP: 13.5, NAD: 18, ZAR: 18,
-          KES: 130, GHS: 15, EGP: 49, TZS: 2600, UGX: 3700, ZMW: 27,
-          MUR: 46, ETB: 120, RWF: 1300, MWK: 1730, MZN: 64, LRD: 190,
-          USD: 1
-        };
-      }
-      return this.rates;
+      return this.rates; // Return cached rates
     }
   }
 

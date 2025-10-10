@@ -957,15 +957,21 @@ router.post('/emails/send', adminAuth, async (req, res) => {
         to: user.email,
         from: FROM_EMAIL,
         subject: subject,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="margin: 20px 0;">
-              ${personalizedMessage}
-            </div>
-            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-            <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because you are a member of Baobab. If you have any questions, contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
-          </div>
-        `
+        html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="margin: 20px 0; line-height: 1.6;">
+      ${personalizedMessage}
+    </div>
+    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+    <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because you are a member of Baobab. If you have any questions, contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+  </div>
+</body>
+</html>`
       };
       return sgMail.send(msg).then(() => {
         successCount++;
