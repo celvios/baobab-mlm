@@ -35,7 +35,12 @@ export default function Dashboard() {
   const [marketUpdates, setMarketUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const { currency, loading: currencyLoading, convertPrice, formatPrice, getCurrencySymbol } = useCurrency();
+  const { currency, loading: currencyLoading, convertPrice, formatPrice: currencyFormatPrice, getCurrencySymbol } = useCurrency();
+  
+  const formatPrice = (value) => {
+    if (currencyLoading || !currencyFormatPrice) return '...';
+    return currencyFormatPrice(value);
+  };
   
   const [convertedBalances, setConvertedBalances] = useState({
     balance: 0,
