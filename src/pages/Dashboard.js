@@ -58,6 +58,12 @@ export default function Dashboard() {
     }
   };
   
+  const formatLevel = (level) => {
+    if (!level || level === 'no_stage') return 'No Level';
+    if (level === 'feeder') return 'Feeder';
+    return level.charAt(0).toUpperCase() + level.slice(1);
+  };
+  
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -306,7 +312,7 @@ export default function Dashboard() {
     ...userOrders.map((order, index) => ({
       id: index + 1,
       account: userProfile?.email || 'user@example.com',
-      stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
+      stage: formatLevel(userProfile?.mlmLevel),
       transaction: 'Product Order',
       type: 'Outgoing',
       amount: formatPrice(order.amount),
@@ -315,7 +321,7 @@ export default function Dashboard() {
     ...withdrawals.map((withdrawal, index) => ({
       id: userOrders.length + index + 1,
       account: userProfile?.email || 'user@example.com',
-      stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
+      stage: formatLevel(userProfile?.mlmLevel),
       transaction: 'Withdrawal',
       type: 'Outgoing',
       amount: formatPrice(withdrawal.amount),
@@ -324,7 +330,7 @@ export default function Dashboard() {
     ...transactions.map((tx, index) => ({
       id: userOrders.length + withdrawals.length + index + 1,
       account: userProfile?.email || 'user@example.com',
-      stage: userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level',
+      stage: formatLevel(userProfile?.mlmLevel),
       transaction: tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction',
       type: tx.amount > 0 ? 'Incoming' : 'Outgoing',
       amount: formatPrice(Math.abs(tx.amount)),
@@ -375,7 +381,7 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <p className="text-white/70 text-xs">Current Level</p>
-                          <p className="font-medium text-sm">{userProfile?.mlmLevel === 'feeder' ? 'No Level' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level'}</p>
+                          <p className="font-medium text-sm">{formatLevel(userProfile?.mlmLevel)}</p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -436,7 +442,7 @@ export default function Dashboard() {
                   <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center mr-2">
                     <img src="/images/leaf-1.png" alt={userProfile?.mlmLevel} className="w-2 h-2" />
                   </div>
-                  <p className="text-gray-600 text-sm">{userProfile?.mlmLevel === 'feeder' ? 'No Level' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level'}</p>
+                  <p className="text-gray-600 text-sm">{formatLevel(userProfile?.mlmLevel)}</p>
                 </div>
               </div>
             </div>
