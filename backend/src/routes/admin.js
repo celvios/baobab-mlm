@@ -872,13 +872,17 @@ router.get('/create-baobab-admin', async (req, res) => {
     const bcrypt = require('bcryptjs');
     const email = 'info@baobabworldwide.com';
     const password = 'Admin@2024';
-    const name = 'Baobab Admin';
+    const fullName = 'Baobab Admin';
     
     const hashedPassword = await bcrypt.hash(password, 10);
     
+    // Add role column if not exists
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT \'user\'');
+    
+    // Create admin in users table
     await pool.query(
-      'INSERT INTO admin_users (name, email, password, role, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO UPDATE SET password = $3, name = $1',
-      [name, email, hashedPassword, 'admin', true]
+      'INSERT INTO users (full_name, email, password, role, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO UPDATE SET password = $3, role = $4',
+      [fullName, email, hashedPassword, 'admin', true]
     );
     
     res.json({ 
