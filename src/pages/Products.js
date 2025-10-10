@@ -365,7 +365,7 @@ export default function Products() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-gray-900 text-sm mb-1">₦{Math.round(product.price || 0).toLocaleString()}</p>
+                  <p className="font-bold text-gray-900 text-sm mb-1">{safeFormatPrice(product.id, product.usdPrice || 0)}</p>
                   <p className="text-xs text-gray-400">${Number(product.usdPrice || 0).toFixed(2)} USD</p>
                   <p 
                     onClick={() => handleAddToCart(product, 1)}

@@ -1050,6 +1050,19 @@ const bulkEmailController = require('../controllers/bulkEmailController');
 router.post('/bulk-email', adminAuth, bulkEmailController.sendBulkEmail);
 router.get('/email-stats', adminAuth, bulkEmailController.getEmailStats);
 
+// Convert product prices from Naira to USD
+router.get('/convert-prices-to-usd', async (req, res) => {
+  try {
+    const result = await pool.query('UPDATE products SET price = ROUND(price / 1500, 2) WHERE price > 100 RETURNING *');
+    res.json({ 
+      message: 'Product prices converted to USD successfully',
+      updatedProducts: result.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DANGER: Clear all database data
 router.get('/clear-all-data', async (req, res) => {
   try {
