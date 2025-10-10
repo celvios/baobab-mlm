@@ -220,7 +220,7 @@ export default function DashboardLayout() {
               <div className="flex items-center space-x-3 p-2">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-gray-900">{userProfile?.fullName || 'User'}</p>
-                  <p className="text-xs text-gray-500">{userProfile?.mlmLevel === 'feeder' ? 'No Level' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'No Level'}</p>
+                  <p className="text-xs text-gray-500">{!userProfile?.mlmLevel || userProfile?.mlmLevel === 'no_stage' ? 'No Level' : userProfile?.mlmLevel === 'feeder' ? 'Feeder' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1)}</p>
                 </div>
                 <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center">
                   <span className="text-black font-bold text-sm">{userProfile?.fullName?.charAt(0) || 'U'}</span>
