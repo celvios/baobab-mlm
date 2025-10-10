@@ -43,8 +43,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await apiService.login(email, password);
-      setUser(response.user);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Fetch full profile to get country and other details
+      const profile = await apiService.getProfile();
+      const fullUser = { ...response.user, ...profile };
+      
+      setUser(fullUser);
+      localStorage.setItem('user', JSON.stringify(fullUser));
       
       // Add welcome message to market updates
       const existingUpdates = JSON.parse(localStorage.getItem('marketUpdates') || '[]');

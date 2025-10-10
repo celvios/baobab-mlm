@@ -177,6 +177,7 @@ const login = async (req, res) => {
         email: user.email,
         fullName: user.full_name,
         referralCode: user.referral_code,
+        country: user.country || 'NG',
         isActive: user.is_active,
         mlmLevel: user.mlm_level,
         emailVerified: user.is_email_verified

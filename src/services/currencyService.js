@@ -72,8 +72,10 @@ class CurrencyService {
       // Get country from user profile in localStorage
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const country = user.country || 'NG';
+      console.log('Currency Service - User country:', country);
       this.userLocation = country;
       this.userCurrency = AFRICAN_CURRENCIES[country] || 'NGN';
+      console.log('Currency Service - Selected currency:', this.userCurrency);
       return { country: this.userLocation, currency: this.userCurrency };
     } catch (error) {
       console.error('Failed to get user location:', error);
@@ -117,25 +119,67 @@ class CurrencyService {
     const curr = currency || this.userCurrency;
     
     const formatters = {
-      'NGN': (p) => `₦${Math.round(p).toLocaleString()}`,
-      'ZAR': (p) => `R${p.toFixed(2)}`,
+      'DZD': (p) => `DA ${Math.round(p).toLocaleString()}`,
+      'AOA': (p) => `Kz ${p.toFixed(2)}`,
+      'XOF': (p) => `CFA ${Math.round(p).toLocaleString()}`,
+      'BWP': (p) => `P${p.toFixed(2)}`,
+      'BIF': (p) => `FBu ${Math.round(p).toLocaleString()}`,
+      'XAF': (p) => `FCFA ${Math.round(p).toLocaleString()}`,
+      'CVE': (p) => `$${p.toFixed(2)}`,
+      'KMF': (p) => `CF ${Math.round(p).toLocaleString()}`,
+      'CDF': (p) => `FC ${p.toFixed(2)}`,
+      'DJF': (p) => `Fdj ${Math.round(p).toLocaleString()}`,
       'EGP': (p) => `E£${p.toFixed(2)}`,
-      'KES': (p) => `KSh${Math.round(p).toLocaleString()}`,
+      'ERN': (p) => `Nfk ${p.toFixed(2)}`,
+      'ETB': (p) => `Br ${p.toFixed(2)}`,
+      'GMD': (p) => `D ${p.toFixed(2)}`,
       'GHS': (p) => `₵${p.toFixed(2)}`,
-      'MAD': (p) => `${p.toFixed(2)} DH`,
-      'TND': (p) => `${p.toFixed(3)} TND`,
+      'GNF': (p) => `FG ${Math.round(p).toLocaleString()}`,
+      'KES': (p) => `KSh ${Math.round(p).toLocaleString()}`,
+      'LSL': (p) => `L ${p.toFixed(2)}`,
+      'LRD': (p) => `L$ ${p.toFixed(2)}`,
+      'LYD': (p) => `LD ${p.toFixed(3)}`,
+      'MGA': (p) => `Ar ${Math.round(p).toLocaleString()}`,
+      'MWK': (p) => `MK ${Math.round(p).toLocaleString()}`,
+      'MRU': (p) => `UM ${p.toFixed(2)}`,
+      'MUR': (p) => `₨ ${p.toFixed(2)}`,
+      'MAD': (p) => `DH ${p.toFixed(2)}`,
+      'MZN': (p) => `MT ${p.toFixed(2)}`,
+      'NAD': (p) => `N$ ${p.toFixed(2)}`,
+      'NGN': (p) => `₦${Math.round(p).toLocaleString()}`,
+      'RWF': (p) => `RF ${Math.round(p).toLocaleString()}`,
+      'STN': (p) => `Db ${p.toFixed(2)}`,
+      'SCR': (p) => `₨ ${p.toFixed(2)}`,
+      'SLL': (p) => `Le ${Math.round(p).toLocaleString()}`,
+      'SOS': (p) => `Sh ${Math.round(p).toLocaleString()}`,
+      'ZAR': (p) => `R ${p.toFixed(2)}`,
+      'SSP': (p) => `£ ${p.toFixed(2)}`,
+      'SDG': (p) => `SDG ${p.toFixed(2)}`,
+      'SZL': (p) => `L ${p.toFixed(2)}`,
+      'TZS': (p) => `TSh ${Math.round(p).toLocaleString()}`,
+      'TND': (p) => `DT ${p.toFixed(3)}`,
+      'UGX': (p) => `USh ${Math.round(p).toLocaleString()}`,
+      'ZMW': (p) => `ZK ${p.toFixed(2)}`,
+      'ZWL': (p) => `Z$ ${p.toFixed(2)}`,
       'USD': (p) => `$${p.toFixed(2)}`
     };
 
-    const formatter = formatters[curr] || formatters['USD'];
+    const formatter = formatters[curr] || ((p) => `${curr} ${p.toFixed(2)}`);
     return formatter(price);
   }
 
   getCurrencySymbol(currency = null) {
     const curr = currency || this.userCurrency;
     const symbols = {
-      'NGN': '₦', 'ZAR': 'R', 'EGP': 'E£', 'KES': 'KSh',
-      'GHS': '₵', 'MAD': 'DH', 'TND': 'TND', 'USD': '$'
+      'DZD': 'DA', 'AOA': 'Kz', 'XOF': 'CFA', 'BWP': 'P', 'BIF': 'FBu',
+      'XAF': 'FCFA', 'CVE': '$', 'KMF': 'CF', 'CDF': 'FC', 'DJF': 'Fdj',
+      'EGP': 'E£', 'ERN': 'Nfk', 'ETB': 'Br', 'GMD': 'D', 'GHS': '₵',
+      'GNF': 'FG', 'KES': 'KSh', 'LSL': 'L', 'LRD': 'L$', 'LYD': 'LD',
+      'MGA': 'Ar', 'MWK': 'MK', 'MRU': 'UM', 'MUR': '₨', 'MAD': 'DH',
+      'MZN': 'MT', 'NAD': 'N$', 'NGN': '₦', 'RWF': 'RF', 'STN': 'Db',
+      'SCR': '₨', 'SLL': 'Le', 'SOS': 'Sh', 'ZAR': 'R', 'SSP': '£',
+      'SDG': 'SDG', 'SZL': 'L', 'TZS': 'TSh', 'TND': 'DT', 'UGX': 'USh',
+      'ZMW': 'ZK', 'ZWL': 'Z$', 'USD': '$'
     };
     return symbols[curr] || curr;
   }
