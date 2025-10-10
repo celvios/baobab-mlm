@@ -78,4 +78,46 @@ const getLevelProgress = async (req, res) => {
   }
 };
 
-module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress };
+const getFullTree = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const userResult = await pool.query(
+      'SELECT id, full_name, email, mlm_level, referral_code, referred_by FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    let referrer = null;
+    
+    if (user.referred_by) {
+      const referrerResult = await pool.query(
+        'SELECT id, full_name, email, mlm_level, referral_code FROM users WHERE referral_code = $1',
+        [user.referred_by]
+      );
+      
+      if (referrerResult.rows.length > 0) {
+        referrer = referrerResult.rows[0];
+      }
+    }
+    
+    const team = await mlmService.getTeamMembers(userId);
+    
+    res.json({ 
+      user: {
+        ...user,
+        team
+      },
+      referrer
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree };

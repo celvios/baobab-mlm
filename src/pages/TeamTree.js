@@ -125,7 +125,7 @@ export default function TeamTree() {
 
   const TreeNode = ({ node, level = 0, isRoot = false }) => {
     const hasChildren = node.children && node.children.length > 0;
-    const isExpanded = expandedNodes.has(node.id) || level < 2;
+    const isExpanded = isRoot || expandedNodes.has(node.id);
     
     return (
       <div className="flex flex-col items-center">
@@ -172,7 +172,7 @@ export default function TeamTree() {
             {isRoot ? 'You' : (node.full_name || node.email)}
           </p>
           <p className="text-xs text-gray-500">
-            {node.mlm_level === 'no_stage' ? 'No Stage' : ((node.mlm_level || 'no_stage').charAt(0).toUpperCase() + (node.mlm_level || 'no_stage').slice(1))}
+            {!node.mlm_level || node.mlm_level === 'no_stage' ? 'No Level' : node.mlm_level === 'feeder' ? 'Feeder' : node.mlm_level.charAt(0).toUpperCase() + node.mlm_level.slice(1)}
           </p>
           {!isRoot && (
             node.has_deposited ? (
