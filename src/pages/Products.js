@@ -208,7 +208,7 @@ export default function Products() {
                     <p className="text-gray-600 text-sm mb-3">Price</p>
                     <div className="flex items-center space-x-4 mb-6">
                       <div>
-                        <span className="text-3xl font-bold text-green-600">₦{Math.round(products[0]?.price || 0).toLocaleString()}</span>
+                        <span className="text-3xl font-bold text-green-600">{safeFormatPrice(products[0]?.usdPrice || 0)}</span>
                         <p className="text-sm text-gray-500 mt-1">${Number(products[0]?.usdPrice || 0).toFixed(2)} USD</p>
                       </div>
                     </div>
@@ -269,7 +269,7 @@ export default function Products() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900 text-sm mb-1">₦{Math.round(product.price || 0).toLocaleString()}</p>
+                      <p className="font-bold text-gray-900 text-sm mb-1">{safeFormatPrice(product.usdPrice || 0)}</p>
                       <p className="text-xs text-gray-400">${Number(product.usdPrice || 0).toFixed(2)} USD</p>
                       <p 
                         onClick={(e) => {
@@ -318,7 +318,7 @@ export default function Products() {
                   <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-xl font-bold">₦{Math.round(product.price || 0).toLocaleString()}</span>
+                      <span className="text-xl font-bold">{safeFormatPrice(product.usdPrice || 0)}</span>
                       <p className="text-xs text-gray-500">${Number(product.usdPrice || 0).toFixed(2)} USD</p>
                     </div>
                     <button 
