@@ -88,8 +88,10 @@ export default function Dashboard() {
   useEffect(() => {
     const convertBalances = async () => {
       if (userProfile?.wallet && !currencyLoading) {
+        console.log('Converting MLM earnings:', userProfile.wallet.mlmEarnings);
         const convertedBalance = await convertPrice(userProfile.wallet.balance || 0);
         const convertedEarnings = await convertPrice(userProfile.wallet.mlmEarnings || 0);
+        console.log('Converted MLM earnings:', convertedEarnings);
         
         setConvertedBalances({
           balance: convertedBalance,
