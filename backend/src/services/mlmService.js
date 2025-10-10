@@ -1,13 +1,13 @@
 const pool = require('../config/database');
 
 const MLM_LEVELS = {
-  no_stage: { bonus: 1.5, requiredReferrals: 2, matrixSize: '2x1' },
-  feeder: { bonus: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
-  bronze: { bonus: 4.8, requiredReferrals: 14, matrixSize: '2x3' },
-  silver: { bonus: 30, requiredReferrals: 14, matrixSize: '2x3' },
-  gold: { bonus: 150, requiredReferrals: 14, matrixSize: '2x3' },
-  diamond: { bonus: 750, requiredReferrals: 14, matrixSize: '2x3' },
-  infinity: { bonus: 15000, requiredReferrals: 0, matrixSize: 'unlimited' }
+  no_stage: { bonusUSD: 1.5, requiredReferrals: 2, matrixSize: '2x1' },
+  feeder: { bonusUSD: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
+  bronze: { bonusUSD: 4.8, requiredReferrals: 14, matrixSize: '2x3' },
+  silver: { bonusUSD: 30, requiredReferrals: 14, matrixSize: '2x3' },
+  gold: { bonusUSD: 150, requiredReferrals: 14, matrixSize: '2x3' },
+  diamond: { bonusUSD: 750, requiredReferrals: 14, matrixSize: '2x3' },
+  infinity: { bonusUSD: 15000, requiredReferrals: 0, matrixSize: 'unlimited' }
 };
 
 class MLMService {
@@ -33,20 +33,20 @@ class MLMService {
       await client.query(`
         INSERT INTO referral_earnings (user_id, referred_user_id, level, amount, status)
         VALUES ($1, $2, $3, $4, 'completed')
-      `, [referrerId, newUserId, referrerLevel, levelConfig.bonus]);
+      `, [referrerId, newUserId, referrerLevel, levelConfig.bonusUSD]);
 
       // Update referrer's wallet
       await client.query(`
         UPDATE wallets 
         SET balance = balance + $1, total_earned = total_earned + $1
         WHERE user_id = $2
-      `, [levelConfig.bonus, referrerId]);
+      `, [levelConfig.bonusUSD, referrerId]);
 
       // Add transaction record
       await client.query(`
         INSERT INTO transactions (user_id, type, amount, description, status)
         VALUES ($1, 'referral_bonus', $2, $3, 'completed')
-      `, [referrerId, levelConfig.bonus, `Referral bonus for ${referrerLevel} level`]);
+      `, [referrerId, levelConfig.bonusUSD, `Referral bonus for ${referrerLevel} level`]);
 
       // Check for level progression
       await this.checkLevelProgression(client, referrerId);

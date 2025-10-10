@@ -552,8 +552,11 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
       ['approved', depositId]
     );
     
-    // Check if deposit is ₦18,000 or more and user was referred
-    if (parseFloat(amount) >= 18000 && deposit.referred_by) {
+    // Check if deposit meets minimum threshold (USD equivalent) and user was referred
+    const { meetsMinimumDeposit } = require('../utils/currencyUtils');
+    const meetsThreshold = await meetsMinimumDeposit(amount);
+    
+    if (meetsThreshold && deposit.referred_by) {
       // Get referrer ID
       const referrerResult = await client.query('SELECT id FROM users WHERE referral_code = $1', [deposit.referred_by]);
       
