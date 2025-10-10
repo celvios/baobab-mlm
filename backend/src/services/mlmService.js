@@ -29,20 +29,13 @@ class MLMService {
       const referrerLevel = referrerResult.rows[0].mlm_level || 'no_stage';
       const levelConfig = MLM_LEVELS[referrerLevel] || MLM_LEVELS['no_stage'];
 
-      // Add referral earning
+      // Add referral earning (stored separately, not in wallet)
       await client.query(`
         INSERT INTO referral_earnings (user_id, referred_user_id, level, amount, status)
         VALUES ($1, $2, $3, $4, 'completed')
       `, [referrerId, newUserId, referrerLevel, levelConfig.bonusUSD]);
 
-      // Update referrer's wallet
-      await client.query(`
-        UPDATE wallets 
-        SET balance = balance + $1, total_earned = total_earned + $1
-        WHERE user_id = $2
-      `, [levelConfig.bonusUSD, referrerId]);
-
-      // Add transaction record
+      // Add transaction record for tracking
       await client.query(`
         INSERT INTO transactions (user_id, type, amount, description, status)
         VALUES ($1, 'referral_bonus', $2, $3, 'completed')

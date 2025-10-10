@@ -76,13 +76,16 @@ const getProfile = async (req, res) => {
       user.mlm_level = 'feeder';
     }
     
+    // Get actual MLM earnings from referral_earnings table
     let mlmEarnings = 0;
-    if (user.joining_fee_paid || walletData.balance >= 18000) {
-      if (teamSize >= 2) mlmEarnings = teamSize * 1.5;
-      if (teamSize >= 6) mlmEarnings = teamSize * 4.8;
-      if (teamSize >= 14) mlmEarnings = teamSize * 30;
-      if (teamSize >= 30) mlmEarnings = teamSize * 150;
-      if (teamSize >= 62) mlmEarnings = teamSize * 750;
+    try {
+      const earningsResult = await pool.query(
+        'SELECT COALESCE(SUM(amount), 0) as total FROM referral_earnings WHERE user_id = $1 AND status = $2',
+        [userId, 'completed']
+      );
+      mlmEarnings = parseFloat(earningsResult.rows[0]?.total || 0);
+    } catch (e) {
+      console.log('Error getting MLM earnings');
     }
 
     res.json({
