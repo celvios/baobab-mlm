@@ -20,6 +20,8 @@ export default function Products() {
 
   const { formatPrice, loading: currencyLoading, getCurrencySymbol } = useCurrency();
 
+  const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [convertedPrices, setConvertedPrices] = useState({});
 
   useEffect(() => {
@@ -74,9 +76,6 @@ export default function Products() {
       setShowToast(true);
     }
   };
-
-  const [allProducts, setAllProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProducts = async () => {
