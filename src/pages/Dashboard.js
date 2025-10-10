@@ -392,7 +392,7 @@ export default function Dashboard() {
               <div className="bg-gray-100 p-6 rounded-2xl shadow-card h-48 flex flex-col justify-between">
                 <div>
                   <p className="text-3xl font-bold text-gray-900 mb-1">{currencyLoading ? '...' : formatPrice(convertedBalances.mlmEarnings)}</p>
-                  <p className="text-gray-500 text-xs">${(convertedBalances.mlmEarnings / 1500).toFixed(2)} USD</p>
+                  <p className="text-gray-500 text-xs">${Number(userProfile?.wallet?.mlmEarnings || 0).toFixed(2)} USD</p>
                   <p className="text-gray-500 text-xs mt-1">From {teamMembers.length} referrals</p>
                 </div>
                 <Link to="/user/history" className="text-gray-700 px-4 py-2 rounded-full text-sm font-bold flex items-center w-fit hover:text-gray-900 transition-colors">
