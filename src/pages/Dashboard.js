@@ -42,6 +42,8 @@ export default function Dashboard() {
     mlmEarnings: 0
   });
 
+  const [convertedTeamEarnings, setConvertedTeamEarnings] = useState({});
+
   const formatCurrency = (value) => {
     try {
       const num = Number(value) || 0;
@@ -92,6 +94,21 @@ export default function Dashboard() {
     };
     convertBalances();
   }, [userProfile, currencyLoading, convertPrice]);
+
+  useEffect(() => {
+    const convertTeamEarnings = async () => {
+      if (teamMembers.length > 0 && !currencyLoading) {
+        const converted = {};
+        for (const member of teamMembers) {
+          if (member.has_deposited) {
+            converted[member.id] = await convertPrice(member.earning_from_user || 1.5);
+          }
+        }
+        setConvertedTeamEarnings(converted);
+      }
+    };
+    convertTeamEarnings();
+  }, [teamMembers, currencyLoading, convertPrice]);
 
   const fetchDashboardData = async () => {
     try {
@@ -421,7 +438,7 @@ export default function Dashboard() {
                     <p className="font-medium text-gray-900 text-sm">{member.email}</p>
                   </div>
                   {member.has_deposited ? (
-                    <p className="text-green-600 font-semibold text-sm">+{formatPrice((member.earning_from_user || 1.5) * 1500)}</p>
+                    <p className="text-green-600 font-semibold text-sm">+{currencyLoading ? '...' : formatPrice(convertedTeamEarnings[member.id] || 0)}</p>
                   ) : (
                     <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
                   )}
