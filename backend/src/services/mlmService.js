@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 
 const MLM_LEVELS = {
+  no_stage: { bonus: 1.5, requiredReferrals: 2, matrixSize: '2x1' },
   feeder: { bonus: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
   bronze: { bonus: 4.8, requiredReferrals: 14, matrixSize: '2x3' },
   silver: { bonus: 30, requiredReferrals: 14, matrixSize: '2x3' },
@@ -26,13 +27,7 @@ class MLMService {
       }
 
       const referrerLevel = referrerResult.rows[0].mlm_level || 'no_stage';
-      const levelConfig = MLM_LEVELS[referrerLevel];
-
-      // Only process if user has a valid MLM level
-      if (!levelConfig) {
-        await client.query('COMMIT');
-        return;
-      }
+      const levelConfig = MLM_LEVELS[referrerLevel] || MLM_LEVELS['no_stage'];
 
       // Add referral earning
       await client.query(`

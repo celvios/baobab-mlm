@@ -569,9 +569,13 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
         if (bonusCheck.rows.length === 0) {
           // Process referral bonus
           const mlmService = require('../services/mlmService');
-          await mlmService.processReferral(referrerId, deposit.user_id);
-          
-          console.log(`Referral bonus activated for user ${deposit.user_id} (deposited ₦${amount})`);
+          try {
+            await mlmService.processReferral(referrerId, deposit.user_id);
+            console.log(`Referral bonus activated for user ${deposit.user_id} (deposited ₦${amount})`);
+          } catch (mlmError) {
+            console.error('Error processing referral:', mlmError);
+            // Continue even if MLM processing fails
+          }
         }
       }
     }
