@@ -855,6 +855,17 @@ router.get('/add-password-reset-columns', async (req, res) => {
   }
 });
 
+// Run country migration
+router.get('/run-country-migration', async (req, res) => {
+  try {
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(2) DEFAULT \'NG\'');
+    await pool.query('UPDATE users SET country = \'NG\' WHERE country IS NULL');
+    res.json({ message: 'Country migration completed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test email
 router.get('/test-email/:email', async (req, res) => {
   try {
