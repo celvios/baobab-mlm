@@ -947,11 +947,13 @@ router.post('/emails/send', adminAuth, async (req, res) => {
     const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@baobab.com';
     let successCount = 0;
     const emailPromises = users.map(user => {
-      // Replace shortcodes with user data
+      // Replace shortcodes with user data (case-insensitive)
       const personalizedMessage = message
-        .replace(/{fullName}/g, user.full_name || 'User')
-        .replace(/{email}/g, user.email)
-        .replace(/{firstName}/g, (user.full_name || 'User').split(' ')[0]);
+        .replace(/{fullName}/gi, user.full_name || 'User')
+        .replace(/{fullname}/gi, user.full_name || 'User')
+        .replace(/{email}/gi, user.email)
+        .replace(/{firstName}/gi, (user.full_name || 'User').split(' ')[0])
+        .replace(/{firstname}/gi, (user.full_name || 'User').split(' ')[0]);
       
       const msg = {
         to: user.email,
