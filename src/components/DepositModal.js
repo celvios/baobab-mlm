@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XMarkIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline';
 import apiService from '../services/api';
 import Toast from './Toast';
+import { useCurrency } from '../hooks/useCurrency';
 
 export default function DepositModal({ isOpen, onClose, onSuccess }) {
   const [amount, setAmount] = useState('');
@@ -10,6 +11,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess }) {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('error');
+  const { getCurrencySymbol } = useCurrency();
 
   if (!isOpen) return null;
 
@@ -86,7 +88,7 @@ export default function DepositModal({ isOpen, onClose, onSuccess }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Deposit Amount (₦)
+                Deposit Amount ({getCurrencySymbol()})
               </label>
               <input
                 type="number"
