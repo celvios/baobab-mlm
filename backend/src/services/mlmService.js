@@ -72,7 +72,9 @@ class MLMService {
     let newLevel = currentLevel;
 
     // Check progression rules
-    if (currentLevel === 'feeder' && count >= 6) {
+    if (currentLevel === 'no_stage' && count >= 6) {
+      newLevel = 'feeder';
+    } else if (currentLevel === 'feeder' && count >= 6) {
       newLevel = 'bronze';
     } else if (currentLevel === 'bronze' && count >= 20) { // 6 + 14
       newLevel = 'silver';
