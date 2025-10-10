@@ -74,6 +74,7 @@ class ApiService {
         password: userData.password,
         fullName: `${userData.firstName} ${userData.lastName}`,
         phone: userData.phone,
+        country: userData.country,
         referredBy: userData.referralCode || null
       }),
     });
