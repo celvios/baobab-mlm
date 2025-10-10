@@ -1092,8 +1092,8 @@ router.get('/generate-test-referrals/:email', async (req, res) => {
       await client.query('INSERT INTO user_profiles (user_id) VALUES ($1)', [userId]);
       
       await client.query(
-        `INSERT INTO deposit_requests (user_id, amount, payment_method, status)
-         VALUES ($1, 18000, 'bank_transfer', 'approved')`,
+        `INSERT INTO deposit_requests (user_id, amount, status)
+         VALUES ($1, 18000, 'approved')`,
         [userId]
       );
       
