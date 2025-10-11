@@ -1145,6 +1145,61 @@ app.get('/api/setup-database', async (req, res) => {
   }
 });
 
+// Fix user wallet balance (remove MLM earnings from balance)
+app.get('/api/fix-wallet-balance/:email', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    const { email } = req.params;
+    
+    const user = await client.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
+      client.release();
+      return res.json({ error: 'User not found' });
+    }
+    
+    const userId = user.rows[0].id;
+    
+    // Get total MLM earnings
+    const mlmEarnings = await client.query(
+      'SELECT COALESCE(SUM(amount), 0) as total FROM referral_earnings WHERE user_id = $1 AND status = $2',
+      [userId, 'completed']
+    );
+    
+    const totalEarned = parseFloat(mlmEarnings.rows[0].total);
+    
+    // Get current wallet
+    const wallet = await client.query('SELECT balance, total_earned FROM wallets WHERE user_id = $1', [userId]);
+    const currentBalance = parseFloat(wallet.rows[0].balance);
+    const currentTotalEarned = parseFloat(wallet.rows[0].total_earned);
+    
+    // Calculate actual deposit balance (current balance - MLM earnings)
+    const depositBalance = currentBalance - totalEarned;
+    
+    // Update wallet: set balance to deposits only, total_earned to MLM earnings
+    await client.query(
+      'UPDATE wallets SET balance = $1, total_earned = $2 WHERE user_id = $3',
+      [Math.max(0, depositBalance), totalEarned, userId]
+    );
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: 'Wallet balance fixed',
+      before: { balance: currentBalance, total_earned: currentTotalEarned },
+      after: { balance: Math.max(0, depositBalance), total_earned: totalEarned }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug user data
 app.get('/api/debug-user/:email', async (req, res) => {
   const { Pool } = require('pg');
