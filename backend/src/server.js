@@ -1145,6 +1145,49 @@ app.get('/api/setup-database', async (req, res) => {
   }
 });
 
+// Fix stage matrix counts
+app.get('/api/fix-stage-matrix', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    // Fix stage_matrix for all users based on actual referral_earnings
+    await client.query(`
+      INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+      SELECT 
+        u.id,
+        u.mlm_level,
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM referral_earnings re
+          WHERE re.user_id = u.id AND re.stage = u.mlm_level AND re.status = 'completed'
+        ), 0) as slots_filled,
+        CASE 
+          WHEN u.mlm_level = 'feeder' THEN 6
+          WHEN u.mlm_level IN ('bronze', 'silver', 'gold', 'diamond') THEN 14
+          ELSE 0
+        END as slots_required
+      FROM users u
+      WHERE u.mlm_level IS NOT NULL AND u.mlm_level != 'no_stage'
+      ON CONFLICT (user_id, stage) 
+      DO UPDATE SET 
+        slots_filled = EXCLUDED.slots_filled,
+        is_complete = (EXCLUDED.slots_filled >= EXCLUDED.slots_required)
+    `);
+    
+    client.release();
+    res.json({ success: true, message: 'Stage matrix fixed successfully!' });
+  } catch (error) {
+    console.error('Fix stage matrix error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Test endpoint: Generate full matrix for a user
 app.get('/api/test-generate-matrix/:email', async (req, res) => {
   const { Pool } = require('pg');
