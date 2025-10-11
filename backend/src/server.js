@@ -1191,6 +1191,13 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
     const slotsRequired = currentStage === 'feeder' ? 6 : 14;
     const bonusAmount = currentStage === 'feeder' ? 1.5 : (currentStage === 'bronze' ? 4.8 : (currentStage === 'silver' ? 30 : (currentStage === 'gold' ? 150 : 750)));
     
+    // Ensure main user has mlm_matrix entry
+    await client.query(`
+      INSERT INTO mlm_matrix (user_id, stage, parent_id, position, level)
+      VALUES ($1, $2, NULL, 'root', 1)
+      ON CONFLICT DO NOTHING
+    `, [userId, currentStage]);
+    
     const createdUsers = [];
     
     // Generate paid users
@@ -1225,6 +1232,27 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
         VALUES ($1, 'feeder', 0, 6)
         ON CONFLICT (user_id, stage) DO NOTHING
       `, [newUser.id]);
+      
+      // Add to mlm_matrix (binary tree structure)
+      const position = i % 2 === 1 ? 'left' : 'right';
+      const level = Math.floor((i - 1) / 2) + 1;
+      await client.query(`
+        INSERT INTO mlm_matrix (user_id, stage, parent_id, position, level)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [newUser.id, currentStage, userId, position, level]);
+      
+      // Update parent's left or right child reference
+      if (position === 'left') {
+        await client.query(
+          'UPDATE mlm_matrix SET left_child_id = $1 WHERE user_id = $2 AND stage = $3',
+          [newUser.id, userId, currentStage]
+        );
+      } else {
+        await client.query(
+          'UPDATE mlm_matrix SET right_child_id = $1 WHERE user_id = $2 AND stage = $3',
+          [newUser.id, userId, currentStage]
+        );
+      }
       
       // Process referral (this will credit the main user)
       await client.query(`
