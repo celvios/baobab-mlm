@@ -1,12 +1,12 @@
 const pool = require('../config/database');
 
 const STAGES = {
-  feeder: { bonus: 1.5, slots: 6, matrixSize: '2x2', next: 'bronze' },
-  bronze: { bonus: 4.8, slots: 14, matrixSize: '2x3', next: 'silver' },
-  silver: { bonus: 30, slots: 14, matrixSize: '2x3', next: 'gold' },
-  gold: { bonus: 150, slots: 14, matrixSize: '2x3', next: 'diamond' },
-  diamond: { bonus: 750, slots: 14, matrixSize: '2x3', next: 'infinity' },
-  infinity: { bonus: 15000, slots: 0, matrixSize: 'unlimited', next: null }
+  feeder: { bonus: 1.5, slots: 6, levels: 2, next: 'bronze' },
+  bronze: { bonus: 4.8, slots: 14, levels: 3, next: 'silver' },
+  silver: { bonus: 30, slots: 14, levels: 3, next: 'gold' },
+  gold: { bonus: 150, slots: 14, levels: 3, next: 'diamond' },
+  diamond: { bonus: 750, slots: 14, levels: 3, next: 'infinity' },
+  infinity: { bonus: 15000, slots: 0, levels: 0, next: null }
 };
 
 class MLMService {
@@ -36,25 +36,37 @@ class MLMService {
     try {
       await client.query('BEGIN');
       
-      // Find placement position (spillover logic)
-      let placementUser = await this.findPlacementPosition(client, sponsorId);
+      // Find placement position in binary tree
+      const placement = await this.findBinaryPlacement(client, sponsorId);
       
       // Get placement user's current stage
       const stageResult = await client.query(
         'SELECT mlm_level FROM users WHERE id = $1',
-        [placementUser]
+        [placement.parentId]
       );
       const currentStage = stageResult.rows[0].mlm_level;
-      const stageConfig = STAGES[currentStage];
       
-      // Add to matrix
+      // Add to matrix with proper position (left or right)
       await client.query(`
-        INSERT INTO mlm_matrix (user_id, stage, parent_id, position)
-        VALUES ($1, $2, $3, 1)
-      `, [newUserId, currentStage, placementUser]);
+        INSERT INTO mlm_matrix (user_id, stage, parent_id, position, level)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [newUserId, currentStage, placement.parentId, placement.position, placement.level]);
       
-      // Pay upline members in the matrix
-      await this.payUpline(client, newUserId, placementUser, currentStage);
+      // Update parent's left or right child
+      if (placement.position === 'left') {
+        await client.query(
+          'UPDATE mlm_matrix SET left_child_id = $1 WHERE user_id = $2 AND stage = $3',
+          [newUserId, placement.parentId, currentStage]
+        );
+      } else {
+        await client.query(
+          'UPDATE mlm_matrix SET right_child_id = $1 WHERE user_id = $2 AND stage = $3',
+          [newUserId, placement.parentId, currentStage]
+        );
+      }
+      
+      // Pay all upline members in the matrix
+      await this.payUplineChain(client, newUserId, placement.parentId, currentStage);
       
       await client.query('COMMIT');
     } catch (error) {
@@ -65,100 +77,110 @@ class MLMService {
     }
   }
   
-  async findPlacementPosition(client, sponsorId) {
-    // Check if sponsor has space in their current stage matrix
-    const sponsorMatrix = await client.query(`
-      SELECT sm.slots_filled, sm.slots_required, sm.is_complete, u.mlm_level
-      FROM stage_matrix sm
-      JOIN users u ON sm.user_id = u.id
-      WHERE sm.user_id = $1 AND sm.stage = u.mlm_level
-    `, [sponsorId]);
+  async findBinaryPlacement(client, sponsorId) {
+    // Get sponsor's current stage
+    const sponsorStage = await client.query(
+      'SELECT mlm_level FROM users WHERE id = $1',
+      [sponsorId]
+    );
+    const stage = sponsorStage.rows[0].mlm_level;
     
-    if (sponsorMatrix.rows.length === 0 || sponsorMatrix.rows[0].is_complete) {
-      // Sponsor's matrix is full, find next available position in downline (breadth-first)
-      return await this.findNextAvailableInDownline(client, sponsorId);
-    }
-    
-    // Sponsor has space
-    return sponsorId;
-  }
-  
-  async findNextAvailableInDownline(client, rootUserId) {
-    // Breadth-first search through downline to find first incomplete matrix
-    const queue = [rootUserId];
-    const visited = new Set();
+    // Breadth-first search for first available position
+    const queue = [{ userId: sponsorId, level: 1 }];
     
     while (queue.length > 0) {
-      const currentUserId = queue.shift();
+      const { userId, level } = queue.shift();
       
-      if (visited.has(currentUserId)) continue;
-      visited.add(currentUserId);
+      // Get this user's matrix entry
+      const matrixEntry = await client.query(`
+        SELECT left_child_id, right_child_id, level
+        FROM mlm_matrix
+        WHERE user_id = $1 AND stage = $2
+      `, [userId, stage]);
       
-      // Get this user's matrix status
-      const matrixStatus = await client.query(`
-        SELECT sm.is_complete, sm.slots_filled, sm.slots_required
-        FROM stage_matrix sm
-        JOIN users u ON sm.user_id = u.id
-        WHERE sm.user_id = $1 AND sm.stage = u.mlm_level
-      `, [currentUserId]);
-      
-      if (matrixStatus.rows.length > 0 && !matrixStatus.rows[0].is_complete) {
-        return currentUserId;
+      if (matrixEntry.rows.length === 0) {
+        // User doesn't have matrix entry yet, they can be a parent
+        return { parentId: userId, position: 'left', level: 1 };
       }
       
-      // Get children in this user's matrix
-      const children = await client.query(`
-        SELECT user_id FROM mlm_matrix WHERE parent_id = $1
-      `, [currentUserId]);
+      const { left_child_id, right_child_id } = matrixEntry.rows[0];
       
-      // Add children to queue
-      children.rows.forEach(child => queue.push(child.user_id));
+      // Check left position
+      if (!left_child_id) {
+        return { parentId: userId, position: 'left', level: level };
+      }
+      
+      // Check right position
+      if (!right_child_id) {
+        return { parentId: userId, position: 'right', level: level };
+      }
+      
+      // Both positions filled, add children to queue
+      queue.push({ userId: left_child_id, level: level + 1 });
+      queue.push({ userId: right_child_id, level: level + 1 });
     }
     
-    // Fallback to root if no space found
-    return rootUserId;
+    // Fallback
+    return { parentId: sponsorId, position: 'left', level: 1 };
   }
   
-  async payUpline(client, newUserId, placementUserId, stage) {
+  async payUplineChain(client, newUserId, parentId, stage) {
     const stageConfig = STAGES[stage];
     
-    // Update stage matrix
+    // Find the root of this matrix (the person who earns from this placement)
+    let currentId = parentId;
+    let rootId = null;
+    
+    // Traverse up to find the matrix owner
+    while (currentId) {
+      const parent = await client.query(`
+        SELECT parent_id FROM mlm_matrix WHERE user_id = $1 AND stage = $2
+      `, [currentId, stage]);
+      
+      if (parent.rows.length === 0 || !parent.rows[0].parent_id) {
+        rootId = currentId;
+        break;
+      }
+      currentId = parent.rows[0].parent_id;
+    }
+    
+    if (!rootId) rootId = parentId;
+    
+    // Pay the matrix owner
+    await client.query(`
+      INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount)
+      VALUES ($1, $2, $3, $4)
+    `, [rootId, newUserId, stage, stageConfig.bonus]);
+    
+    await client.query(`
+      UPDATE wallets 
+      SET balance = balance + $1, total_earned = total_earned + $1
+      WHERE user_id = $2
+    `, [stageConfig.bonus, rootId]);
+    
+    await client.query(`
+      INSERT INTO transactions (user_id, type, amount, description, status)
+      VALUES ($1, 'matrix_bonus', $2, $3, 'completed')
+    `, [rootId, stageConfig.bonus, `${stage.toUpperCase()} stage bonus`]);
+    
+    // Update stage matrix count
     await client.query(`
       UPDATE stage_matrix 
       SET slots_filled = slots_filled + 1
       WHERE user_id = $1 AND stage = $2
-    `, [placementUserId, stage]);
+    `, [rootId, stage]);
     
     // Check if matrix is complete
     const matrixCheck = await client.query(`
       SELECT slots_filled, slots_required FROM stage_matrix
       WHERE user_id = $1 AND stage = $2
-    `, [placementUserId, stage]);
+    `, [rootId, stage]);
     
-    const { slots_filled, slots_required } = matrixCheck.rows[0];
-    
-    // Record earning
-    await client.query(`
-      INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount)
-      VALUES ($1, $2, $3, $4)
-    `, [placementUserId, newUserId, stage, stageConfig.bonus]);
-    
-    // Update wallet
-    await client.query(`
-      UPDATE wallets 
-      SET balance = balance + $1, total_earned = total_earned + $1
-      WHERE user_id = $2
-    `, [stageConfig.bonus, placementUserId]);
-    
-    // Add transaction
-    await client.query(`
-      INSERT INTO transactions (user_id, type, amount, description, status)
-      VALUES ($1, 'matrix_bonus', $2, $3, 'completed')
-    `, [placementUserId, stageConfig.bonus, `${stage.toUpperCase()} stage bonus`]);
-    
-    // Check for stage completion and progression
-    if (slots_filled >= slots_required) {
-      await this.completeStage(client, placementUserId, stage);
+    if (matrixCheck.rows.length > 0) {
+      const { slots_filled, slots_required } = matrixCheck.rows[0];
+      if (slots_filled >= slots_required) {
+        await this.completeStage(client, rootId, stage);
+      }
     }
   }
   
