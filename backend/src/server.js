@@ -1157,30 +1157,32 @@ app.post('/api/test-generate-matrix', async (req, res) => {
   });
   
   try {
-    const { userId, stage = 'feeder' } = req.body;
+    const { email, stage } = req.body;
     
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
     }
     
     const client = await pool.connect();
     
-    // Check if user exists
-    const userCheck = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+    // Check if user exists by email
+    const userCheck = await client.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userCheck.rows.length === 0) {
       client.release();
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User not found with that email' });
     }
     
     const user = userCheck.rows[0];
-    const slotsRequired = stage === 'feeder' ? 6 : 14;
-    const bonusAmount = stage === 'feeder' ? 1.5 : (stage === 'bronze' ? 4.8 : (stage === 'silver' ? 30 : (stage === 'gold' ? 150 : 750)));
+    const userId = user.id;
+    const currentStage = stage || user.mlm_level || 'feeder';
+    const slotsRequired = currentStage === 'feeder' ? 6 : 14;
+    const bonusAmount = currentStage === 'feeder' ? 1.5 : (currentStage === 'bronze' ? 4.8 : (currentStage === 'silver' ? 30 : (currentStage === 'gold' ? 150 : 750)));
     
     const createdUsers = [];
     
     // Generate paid users
     for (let i = 1; i <= slotsRequired; i++) {
-      const email = `test${Date.now()}_${i}@example.com`;
+      const testEmail = `test${Date.now()}_${i}@example.com`;
       const hashedPassword = await bcrypt.hash('password123', 10);
       
       // Create user
@@ -1188,7 +1190,7 @@ app.post('/api/test-generate-matrix', async (req, res) => {
         INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
         VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
         RETURNING id, email, full_name
-      `, [`Test User ${i}`, email, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.referral_code]);
+      `, [`Test User ${i}`, testEmail, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.referral_code]);
       
       const newUser = newUserResult.rows[0];
       
@@ -1209,7 +1211,7 @@ app.post('/api/test-generate-matrix', async (req, res) => {
       await client.query(`
         INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
         VALUES ($1, $2, $3, $4, 'completed')
-      `, [userId, newUser.id, stage, bonusAmount]);
+      `, [userId, newUser.id, currentStage, bonusAmount]);
       
       // Update main user's wallet
       await client.query(`
@@ -1232,7 +1234,7 @@ app.post('/api/test-generate-matrix', async (req, res) => {
       UPDATE stage_matrix 
       SET slots_filled = $1, is_complete = true, completed_at = CURRENT_TIMESTAMP
       WHERE user_id = $2 AND stage = $3
-    `, [slotsRequired, userId, stage]);
+    `, [slotsRequired, userId, currentStage]);
     
     // Get updated user info
     const updatedUser = await client.query(`
