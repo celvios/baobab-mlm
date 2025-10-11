@@ -137,7 +137,7 @@ export default function RankingsEarnings() {
           <p className="text-gray-600">Per Person</p>
         </div>
         <div className="bg-white p-6 rounded-lg border text-center">
-          <h3 className="text-2xl font-bold text-orange-600 mb-2">{stageProgress?.slotsFilled || 0}/{stageProgress?.slotsRequired || 6}</h3>
+          <h3 className="text-2xl font-bold text-orange-600 mb-2">{stageProgress?.slotsFilled || 0}/{stageProgress?.slotsRequired || currentStage.teamRequired}</h3>
           <p className="text-gray-600">Matrix Progress</p>
         </div>
         <div className="bg-white p-6 rounded-lg border text-center">

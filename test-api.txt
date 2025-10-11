@@ -1,0 +1,12 @@
+Visit this URL to check stage progress API:
+https://baobab-backend.onrender.com/api/mlm/level-progress
+
+This should return something like:
+{
+  "currentStage": "bronze",
+  "nextStage": "silver",
+  "slotsFilled": 0,
+  "slotsRequired": 14,
+  "progress": 0,
+  "bonusPerPerson": 4.8
+}
