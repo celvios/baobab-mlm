@@ -66,17 +66,57 @@ class MLMService {
   }
   
   async findPlacementPosition(client, sponsorId) {
-    // Simple spillover: find first user with incomplete matrix
-    const result = await client.query(`
-      SELECT u.id FROM users u
-      INNER JOIN stage_matrix sm ON u.id = sm.user_id
-      WHERE sm.is_complete = false
-      AND u.id >= $1
-      ORDER BY u.id ASC
-      LIMIT 1
+    // Check if sponsor has space in their current stage matrix
+    const sponsorMatrix = await client.query(`
+      SELECT sm.slots_filled, sm.slots_required, sm.is_complete, u.mlm_level
+      FROM stage_matrix sm
+      JOIN users u ON sm.user_id = u.id
+      WHERE sm.user_id = $1 AND sm.stage = u.mlm_level
     `, [sponsorId]);
     
-    return result.rows.length > 0 ? result.rows[0].id : sponsorId;
+    if (sponsorMatrix.rows.length === 0 || sponsorMatrix.rows[0].is_complete) {
+      // Sponsor's matrix is full, find next available position in downline (breadth-first)
+      return await this.findNextAvailableInDownline(client, sponsorId);
+    }
+    
+    // Sponsor has space
+    return sponsorId;
+  }
+  
+  async findNextAvailableInDownline(client, rootUserId) {
+    // Breadth-first search through downline to find first incomplete matrix
+    const queue = [rootUserId];
+    const visited = new Set();
+    
+    while (queue.length > 0) {
+      const currentUserId = queue.shift();
+      
+      if (visited.has(currentUserId)) continue;
+      visited.add(currentUserId);
+      
+      // Get this user's matrix status
+      const matrixStatus = await client.query(`
+        SELECT sm.is_complete, sm.slots_filled, sm.slots_required
+        FROM stage_matrix sm
+        JOIN users u ON sm.user_id = u.id
+        WHERE sm.user_id = $1 AND sm.stage = u.mlm_level
+      `, [currentUserId]);
+      
+      if (matrixStatus.rows.length > 0 && !matrixStatus.rows[0].is_complete) {
+        return currentUserId;
+      }
+      
+      // Get children in this user's matrix
+      const children = await client.query(`
+        SELECT user_id FROM mlm_matrix WHERE parent_id = $1
+      `, [currentUserId]);
+      
+      // Add children to queue
+      children.rows.forEach(child => queue.push(child.user_id));
+    }
+    
+    // Fallback to root if no space found
+    return rootUserId;
   }
   
   async payUpline(client, newUserId, placementUserId, stage) {
