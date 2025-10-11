@@ -12,6 +12,17 @@ const getMatrix = async (req, res) => {
   }
 };
 
+const getBinaryTree = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const tree = await mlmService.getBinaryTree(userId);
+    res.json({ tree });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const getEarnings = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -92,4 +103,4 @@ const getFullTree = async (req, res) => {
   }
 };
 
-module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree };
+module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree };

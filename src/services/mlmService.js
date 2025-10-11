@@ -251,15 +251,66 @@ class MLMService {
 
   async getUserMatrix(userId) {
     const result = await pool.query(`
-      SELECT m.stage, m.position, m.created_at,
-             u.full_name, u.email, u.mlm_level
+      SELECT m.stage, m.position, m.level, m.created_at,
+             u.id, u.full_name, u.email, u.mlm_level
       FROM mlm_matrix m
       JOIN users u ON m.user_id = u.id
       WHERE m.parent_id = $1
-      ORDER BY m.created_at ASC
+      ORDER BY m.level ASC, m.position ASC
     `, [userId]);
 
     return result.rows;
+  }
+  
+  async getBinaryTree(userId) {
+    // Get user's current stage
+    const userStage = await pool.query(
+      'SELECT mlm_level FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (userStage.rows.length === 0) return null;
+    const stage = userStage.rows[0].mlm_level;
+    
+    // Get the full tree recursively
+    const tree = await this.buildTreeNode(userId, stage);
+    return tree;
+  }
+  
+  async buildTreeNode(userId, stage) {
+    const userInfo = await pool.query(
+      'SELECT id, full_name, email, mlm_level FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (userInfo.rows.length === 0) return null;
+    
+    const matrixInfo = await pool.query(
+      'SELECT left_child_id, right_child_id, level, position FROM mlm_matrix WHERE user_id = $1 AND stage = $2',
+      [userId, stage]
+    );
+    
+    const node = {
+      ...userInfo.rows[0],
+      left: null,
+      right: null,
+      level: matrixInfo.rows.length > 0 ? matrixInfo.rows[0].level : 0,
+      position: matrixInfo.rows.length > 0 ? matrixInfo.rows[0].position : 'root'
+    };
+    
+    if (matrixInfo.rows.length > 0) {
+      const { left_child_id, right_child_id } = matrixInfo.rows[0];
+      
+      if (left_child_id) {
+        node.left = await this.buildTreeNode(left_child_id, stage);
+      }
+      
+      if (right_child_id) {
+        node.right = await this.buildTreeNode(right_child_id, stage);
+      }
+    }
+    
+    return node;
   }
 
   async getUserEarnings(userId) {

@@ -197,6 +197,10 @@ class ApiService {
     return this.request('/mlm/matrix');
   }
 
+  async getBinaryTree() {
+    return this.request('/mlm/binary-tree');
+  }
+
   // Orders methods
   async createOrder(orderData) {
     return this.request('/orders', {

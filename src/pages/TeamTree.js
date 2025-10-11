@@ -21,34 +21,37 @@ export default function TeamTree() {
 
   const fetchData = async () => {
     try {
-      const [profile, team, matrix] = await Promise.all([
+      const [profile, binaryTree] = await Promise.all([
         apiService.getProfile(),
-        apiService.getTeam(),
-        apiService.getUserMatrix().catch(() => ({ matrix: [] }))
+        apiService.getBinaryTree().catch(() => ({ tree: null }))
       ]);
       
       setUserProfile(profile);
-      setTeamMembers(team?.team || []);
       
-      // Get referrer if user has one
-      if (profile.referredBy) {
-        try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/referrer`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setReferrer(data.referrer);
-          }
-        } catch (err) {
-          console.log('No referrer data');
-        }
+      // Extract team members from binary tree
+      if (binaryTree.tree) {
+        const members = extractTeamMembers(binaryTree.tree);
+        setTeamMembers(members);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
+  };
+  
+  const extractTeamMembers = (node) => {
+    if (!node) return [];
+    const members = [];
+    if (node.left) {
+      members.push(node.left);
+      members.push(...extractTeamMembers(node.left));
+    }
+    if (node.right) {
+      members.push(node.right);
+      members.push(...extractTeamMembers(node.right));
+    }
+    return members;
   };
 
   const referralLink = userProfile?.referralCode ? `${process.env.REACT_APP_FRONTEND_URL || 'https://baobab-frontend.vercel.app'}/register?ref=${userProfile.referralCode}` : 'Loading...';
