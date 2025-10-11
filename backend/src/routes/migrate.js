@@ -29,4 +29,28 @@ router.post('/run-mlm-migration', async (req, res) => {
   }
 });
 
+router.post('/fix-no-stage', async (req, res) => {
+  try {
+    console.log('Fixing no_stage users...');
+    
+    const sqlPath = path.join(__dirname, '../../database/fix-no-stage.sql');
+    const sql = fs.readFileSync(sqlPath, 'utf8');
+    
+    await pool.query(sql);
+    
+    console.log('✅ All users updated to feeder stage!');
+    res.json({ 
+      success: true, 
+      message: 'All users now have feeder stage' 
+    });
+  } catch (error) {
+    console.error('❌ Fix failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Fix failed', 
+      error: error.message 
+    });
+  }
+});
+
 module.exports = router;

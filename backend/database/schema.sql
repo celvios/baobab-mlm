@@ -7,7 +7,7 @@ CREATE TABLE users (
     phone VARCHAR(20),
     referral_code VARCHAR(50) UNIQUE,
     referred_by INTEGER REFERENCES users(id),
-    mlm_level VARCHAR(50) DEFAULT 'no_stage',
+    mlm_level VARCHAR(50) DEFAULT 'feeder',
     joining_fee_paid BOOLEAN DEFAULT FALSE,
     joining_fee_amount DECIMAL(10,2) DEFAULT 0,
     payment_proof_url VARCHAR(500),
