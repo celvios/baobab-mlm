@@ -933,11 +933,6 @@ app.get('/api/setup-mlm', async (req, res) => {
     console.error('MLM setup error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
-}); system setup complete! All users are now in feeder stage.' });
-  } catch (error) {
-    console.error('MLM setup error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
 });
 
 // Reset database tables
