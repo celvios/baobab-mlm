@@ -156,10 +156,10 @@ const getCommissionReport = async (req, res) => {
           COALESCE(AVG(amount), 0) as avg_commission
         FROM transactions 
         WHERE type = 'commission'
-        ${start_date ? `AND created_at >= '${start_date}'` : ''}
-        ${end_date ? `AND created_at <= '${end_date}'` : ''}
-        ${user_id ? `AND user_id = ${user_id}` : ''}
-      `)
+        ${start_date ? `AND created_at >= $${params.length + 1}` : ''}
+        ${end_date ? `AND created_at <= $${params.length + (start_date ? 2 : 1)}` : ''}
+        ${user_id ? `AND user_id = $${params.length + (start_date ? 1 : 0) + (end_date ? 1 : 0) + 1}` : ''}
+      `, [...params])
     ]);
 
     res.json({

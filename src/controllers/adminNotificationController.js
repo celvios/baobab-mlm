@@ -26,11 +26,12 @@ const getNotifications = async (req, res) => {
     }
 
     query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-    params.push(limit, offset);
+    params.push(parseInt(limit), parseInt(offset));
 
+    const countParams = params.slice(0, paramIndex - 1);
     const [notifications, count] = await Promise.all([
       pool.query(query, params),
-      pool.query(countQuery, params.slice(0, -2))
+      pool.query(countQuery, countParams)
     ]);
 
     res.json({

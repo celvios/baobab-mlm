@@ -43,7 +43,7 @@ const getEmailList = async (req, res) => {
     }
     
     query += ` GROUP BY u.id, u.email, u.full_name, u.current_stage, u.created_at, u.is_active
-               ORDER BY u.created_at DESC`;
+               ORDER BY u.created_at DESC LIMIT 1000`;
     
     const result = await pool.query(query, params);
     
