@@ -31,11 +31,12 @@ const getUsers = async (req, res) => {
 
     query += ` GROUP BY u.id, u.full_name, u.email, u.phone, u.status, u.current_stage, u.created_at, u.is_active
                ORDER BY u.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-    params.push(limit, offset);
+    params.push(parseInt(limit), parseInt(offset));
 
+    const countParams = params.slice(0, paramIndex - 1);
     const [users, count] = await Promise.all([
       pool.query(query, params),
-      pool.query(countQuery, params.slice(0, -2))
+      pool.query(countQuery, countParams)
     ]);
 
     res.json({

@@ -13,7 +13,8 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const sanitizedName = path.basename(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(sanitizedName));
   }
 });
 
@@ -97,7 +98,19 @@ const uploadImages = (req, res) => {
 const deleteFile = (req, res) => {
   try {
     const { filename } = req.params;
-    const filePath = path.join(__dirname, '../../uploads', filename);
+    
+    // Prevent path traversal
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({ message: 'Invalid filename' });
+    }
+    
+    const uploadsPath = path.join(__dirname, '../../uploads');
+    const filePath = path.join(uploadsPath, path.basename(filename));
+    
+    // Ensure file is within uploads directory
+    if (!filePath.startsWith(uploadsPath)) {
+      return res.status(400).json({ message: 'Invalid file path' });
+    }
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);

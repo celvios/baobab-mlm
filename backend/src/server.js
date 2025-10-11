@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -10,9 +11,12 @@ const marketUpdatesRoutes = require('./routes/marketUpdates');
 const mlmRoutes = require('./routes/mlm');
 const ordersRoutes = require('./routes/orders');
 const depositRoutes = require('./routes/deposit');
-
+const { loginLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
+
+// Security middleware
+app.use(helmet());
 
 // Middleware
 app.use(cors({
@@ -45,10 +49,15 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Rate limiting
+app.use('/api/', apiLimiter);
+
 // Serve static files for payment proofs
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Routes
+// Routes with rate limiting
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/admin/auth/login', loginLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/withdrawal', withdrawalRoutes);
@@ -75,7 +84,7 @@ app.post('/api/admin-setup', async (req, res) => {
   const bcrypt = require('bcryptjs');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -131,7 +140,7 @@ app.get('/api/admin-stats', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -163,7 +172,7 @@ app.get('/api/settings', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -191,7 +200,7 @@ app.get('/api/fix-withdrawal-table', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -299,7 +308,7 @@ app.get('/api/fix-db', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -405,7 +414,7 @@ app.get('/api/test-profile', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -445,7 +454,7 @@ app.get('/api/create-user-records', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -571,7 +580,7 @@ app.get('/api/fix-market-updates', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -595,7 +604,7 @@ app.get('/api/add-pickup-column', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -619,7 +628,7 @@ app.get('/api/create-sample-products', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -655,7 +664,7 @@ app.get('/api/setup-deposit-table', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -693,7 +702,7 @@ app.get('/api/create-sample-users', async (req, res) => {
   const bcrypt = require('bcryptjs');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -738,7 +747,7 @@ app.get('/api/fix-database', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -802,7 +811,7 @@ app.get('/api/reset-database', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
@@ -832,7 +841,7 @@ app.get('/api/setup-database', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
   });
   
   try {
