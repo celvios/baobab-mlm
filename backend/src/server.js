@@ -868,12 +868,12 @@ app.get('/api/setup-mlm', async (req, res) => {
   try {
     const client = await pool.connect();
     
-    await client.query('DROP INDEX IF EXISTS idx_mlm_matrix_stage');
-    await client.query('DROP INDEX IF EXISTS idx_mlm_matrix_user');
-    await client.query('DROP INDEX IF EXISTS idx_referral_earnings_user');
-    await client.query('DROP INDEX IF EXISTS idx_stage_matrix_user');
+    await client.query('DROP TABLE IF EXISTS mlm_matrix CASCADE');
+    await client.query('DROP TABLE IF EXISTS referral_earnings CASCADE');
+    await client.query('DROP TABLE IF EXISTS level_progressions CASCADE');
+    await client.query('DROP TABLE IF EXISTS stage_matrix CASCADE');
     
-    await client.query(`CREATE TABLE IF NOT EXISTS mlm_matrix (
+    await client.query(`CREATE TABLE mlm_matrix (
       id SERIAL PRIMARY KEY,
       user_id INTEGER REFERENCES users(id) NOT NULL,
       stage VARCHAR(50) NOT NULL,
@@ -887,7 +887,7 @@ app.get('/api/setup-mlm', async (req, res) => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    await client.query(`CREATE TABLE IF NOT EXISTS referral_earnings (
+    await client.query(`CREATE TABLE referral_earnings (
       id SERIAL PRIMARY KEY,
       user_id INTEGER REFERENCES users(id) NOT NULL,
       referred_user_id INTEGER REFERENCES users(id) NOT NULL,
@@ -897,7 +897,7 @@ app.get('/api/setup-mlm', async (req, res) => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    await client.query(`CREATE TABLE IF NOT EXISTS level_progressions (
+    await client.query(`CREATE TABLE level_progressions (
       id SERIAL PRIMARY KEY,
       user_id INTEGER REFERENCES users(id) NOT NULL,
       from_stage VARCHAR(50) NOT NULL,
@@ -906,7 +906,7 @@ app.get('/api/setup-mlm', async (req, res) => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
     
-    await client.query(`CREATE TABLE IF NOT EXISTS stage_matrix (
+    await client.query(`CREATE TABLE stage_matrix (
       id SERIAL PRIMARY KEY,
       user_id INTEGER REFERENCES users(id) NOT NULL,
       stage VARCHAR(50) NOT NULL,
