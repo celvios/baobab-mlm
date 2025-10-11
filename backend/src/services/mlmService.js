@@ -31,7 +31,7 @@ class MLMService {
 
       // Add referral earning (stored separately, not in wallet)
       await client.query(`
-        INSERT INTO referral_earnings (user_id, referred_user_id, level, amount, status)
+        INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
         VALUES ($1, $2, $3, $4, 'completed')
       `, [referrerId, newUserId, referrerLevel, levelConfig.bonusUSD]);
 
@@ -92,7 +92,7 @@ class MLMService {
 
       // Record progression
       await client.query(`
-        INSERT INTO level_progressions (user_id, from_level, to_level, referrals_count)
+        INSERT INTO level_progressions (user_id, from_stage, to_stage, matrix_count)
         VALUES ($1, $2, $3, $4)
       `, [userId, currentLevel, newLevel, count]);
 
@@ -104,14 +104,14 @@ class MLMService {
     }
   }
 
-  async placeInMatrix(client, userId, parentId, level) {
+  async placeInMatrix(client, userId, parentId, stage) {
     // Simple matrix placement - find next available position
     const matrixResult = await client.query(`
       SELECT * FROM mlm_matrix 
-      WHERE level = $1 AND (left_child_id IS NULL OR right_child_id IS NULL)
+      WHERE stage = $1 AND (left_child_id IS NULL OR right_child_id IS NULL)
       ORDER BY created_at ASC
       LIMIT 1
-    `, [level]);
+    `, [stage]);
 
     let position = 1;
     let actualParentId = parentId;
@@ -137,9 +137,9 @@ class MLMService {
 
     // Create matrix entry for new user
     await client.query(`
-      INSERT INTO mlm_matrix (user_id, level, position, parent_id)
+      INSERT INTO mlm_matrix (user_id, stage, position, parent_id)
       VALUES ($1, $2, $3, $4)
-    `, [userId, level, position, actualParentId]);
+    `, [userId, stage, position, actualParentId]);
   }
 
   async getUserMatrix(userId) {
@@ -153,7 +153,7 @@ class MLMService {
       LEFT JOIN users lc ON m.left_child_id = lc.id
       LEFT JOIN users rc ON m.right_child_id = rc.id
       WHERE m.user_id = $1
-      ORDER BY m.level, m.position
+      ORDER BY m.stage, m.position
     `, [userId]);
 
     return result.rows;
@@ -162,14 +162,14 @@ class MLMService {
   async getUserEarnings(userId) {
     const result = await pool.query(`
       SELECT 
-        level,
+        stage,
         COUNT(*) as referrals_count,
         SUM(amount) as total_earned
       FROM referral_earnings 
       WHERE user_id = $1 AND status = 'completed'
-      GROUP BY level
+      GROUP BY stage
       ORDER BY 
-        CASE level
+        CASE stage
           WHEN 'feeder' THEN 1
           WHEN 'bronze' THEN 2
           WHEN 'silver' THEN 3
@@ -198,6 +198,36 @@ class MLMService {
     `, [userId]);
 
     return result.rows;
+  }
+
+  async getStageProgress(userId) {
+    const result = await pool.query(`
+      SELECT u.mlm_level as current_stage,
+             sm.slots_filled,
+             sm.slots_required,
+             sm.is_complete
+      FROM users u
+      LEFT JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = u.mlm_level
+      WHERE u.id = $1
+    `, [userId]);
+
+    return result.rows[0] || null;
+  }
+
+  async getBinaryTree(userId) {
+    const result = await pool.query(`
+      SELECT m.*,
+             u.full_name, u.email, u.mlm_level,
+             lc.full_name as left_name, lc.mlm_level as left_level,
+             rc.full_name as right_name, rc.mlm_level as right_level
+      FROM mlm_matrix m
+      JOIN users u ON m.user_id = u.id
+      LEFT JOIN users lc ON m.left_child_id = lc.id
+      LEFT JOIN users rc ON m.right_child_id = rc.id
+      WHERE m.user_id = $1
+    `, [userId]);
+
+    return result.rows[0] || null;
   }
 }
 
