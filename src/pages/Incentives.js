@@ -131,7 +131,7 @@ export default function Incentives() {
       <div className="space-y-6">
         {Object.entries(mlmStages).map(([key, stage]) => (
           <div key={key} className={`bg-white rounded-lg border-2 p-6 ${
-            key === currentStage ? 'border-green-500 bg-green-50' : 'border-gray-200'
+            key === (stageProgress?.currentStage || 'feeder') ? 'border-green-500 bg-green-50' : 'border-gray-200'
           }`}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
