@@ -1260,10 +1260,10 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
         VALUES ($1, $2, $3, $4, 'completed')
       `, [userId, newUser.id, currentStage, bonusAmount]);
       
-      // Update main user's wallet
+      // Update main user's wallet (only MLM earnings, not deposit balance)
       await client.query(`
         UPDATE wallets 
-        SET balance = balance + $1, total_earned = total_earned + $1
+        SET total_earned = total_earned + $1
         WHERE user_id = $2
       `, [bonusAmount, userId]);
       

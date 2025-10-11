@@ -59,7 +59,7 @@ class MLMService {
 
       // Update wallet
       await client.query(`
-        UPDATE wallets SET balance = balance + $1, total_earned = total_earned + $1
+        UPDATE wallets SET total_earned = total_earned + $1
         WHERE user_id = $2
       `, [levelConfig.bonusUSD, referrerId]);
 
