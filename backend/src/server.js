@@ -868,6 +868,11 @@ app.get('/api/setup-mlm', async (req, res) => {
   try {
     const client = await pool.connect();
     
+    await client.query('DROP INDEX IF EXISTS idx_mlm_matrix_stage');
+    await client.query('DROP INDEX IF EXISTS idx_mlm_matrix_user');
+    await client.query('DROP INDEX IF EXISTS idx_referral_earnings_user');
+    await client.query('DROP INDEX IF EXISTS idx_stage_matrix_user');
+    
     await client.query(`CREATE TABLE IF NOT EXISTS mlm_matrix (
       id SERIAL PRIMARY KEY,
       user_id INTEGER REFERENCES users(id) NOT NULL,
