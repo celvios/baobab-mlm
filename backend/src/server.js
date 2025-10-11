@@ -1175,7 +1175,19 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
     
     const user = userCheck.rows[0];
     const userId = user.id;
-    const currentStage = stage || user.mlm_level || 'feeder';
+    
+    // If user is at no_stage, update them to feeder first
+    if (user.mlm_level === 'no_stage' || !user.mlm_level) {
+      await client.query("UPDATE users SET mlm_level = 'feeder' WHERE id = $1", [userId]);
+      await client.query(`
+        INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+        VALUES ($1, 'feeder', 0, 6)
+        ON CONFLICT (user_id, stage) DO NOTHING
+      `, [userId]);
+      user.mlm_level = 'feeder';
+    }
+    
+    const currentStage = stage || user.mlm_level;
     const slotsRequired = currentStage === 'feeder' ? 6 : 14;
     const bonusAmount = currentStage === 'feeder' ? 1.5 : (currentStage === 'bronze' ? 4.8 : (currentStage === 'silver' ? 30 : (currentStage === 'gold' ? 150 : 750)));
     
@@ -1239,6 +1251,7 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
     
     // Trigger automatic progression
     const stageProgression = {
+      'no_stage': 'feeder',
       'feeder': 'bronze',
       'bronze': 'silver',
       'silver': 'gold',
