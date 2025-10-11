@@ -924,7 +924,6 @@ app.get('/api/setup-mlm', async (req, res) => {
       INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
       SELECT id, 'feeder', 0, 6
       FROM users
-      WHERE id NOT IN (SELECT user_id FROM stage_matrix WHERE stage = 'feeder')
       ON CONFLICT (user_id, stage) DO NOTHING
     `);
     
