@@ -1145,6 +1145,120 @@ app.get('/api/setup-database', async (req, res) => {
   }
 });
 
+// Test endpoint: Generate full matrix for a user
+app.post('/api/test-generate-matrix', async (req, res) => {
+  const { Pool } = require('pg');
+  const bcrypt = require('bcryptjs');
+  const mlmService = require('./services/mlmService');
+  
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { userId, stage = 'feeder' } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    
+    const client = await pool.connect();
+    
+    // Check if user exists
+    const userCheck = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userCheck.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userCheck.rows[0];
+    const slotsRequired = stage === 'feeder' ? 6 : 14;
+    const bonusAmount = stage === 'feeder' ? 1.5 : (stage === 'bronze' ? 4.8 : (stage === 'silver' ? 30 : (stage === 'gold' ? 150 : 750)));
+    
+    const createdUsers = [];
+    
+    // Generate paid users
+    for (let i = 1; i <= slotsRequired; i++) {
+      const email = `test${Date.now()}_${i}@example.com`;
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      
+      // Create user
+      const newUserResult = await client.query(`
+        INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+        VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
+        RETURNING id, email, full_name
+      `, [`Test User ${i}`, email, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.referral_code]);
+      
+      const newUser = newUserResult.rows[0];
+      
+      // Create wallet
+      await client.query(
+        'INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)',
+        [newUser.id]
+      );
+      
+      // Create stage_matrix for new user
+      await client.query(`
+        INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+        VALUES ($1, 'feeder', 0, 6)
+        ON CONFLICT (user_id, stage) DO NOTHING
+      `, [newUser.id]);
+      
+      // Process referral (this will credit the main user)
+      await client.query(`
+        INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
+        VALUES ($1, $2, $3, $4, 'completed')
+      `, [userId, newUser.id, stage, bonusAmount]);
+      
+      // Update main user's wallet
+      await client.query(`
+        UPDATE wallets 
+        SET balance = balance + $1, total_earned = total_earned + $1
+        WHERE user_id = $2
+      `, [bonusAmount, userId]);
+      
+      // Add transaction
+      await client.query(`
+        INSERT INTO transactions (user_id, type, amount, description, status)
+        VALUES ($1, 'referral_bonus', $2, $3, 'completed')
+      `, [userId, bonusAmount, `Referral bonus from ${newUser.email}`]);
+      
+      createdUsers.push(newUser);
+    }
+    
+    // Update stage_matrix to mark as complete
+    await client.query(`
+      UPDATE stage_matrix 
+      SET slots_filled = $1, is_complete = true, completed_at = CURRENT_TIMESTAMP
+      WHERE user_id = $2 AND stage = $3
+    `, [slotsRequired, userId, stage]);
+    
+    // Get updated user info
+    const updatedUser = await client.query(`
+      SELECT u.*, w.balance, w.total_earned, sm.slots_filled, sm.is_complete
+      FROM users u
+      LEFT JOIN wallets w ON u.id = w.user_id
+      LEFT JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = u.mlm_level
+      WHERE u.id = $1
+    `, [userId]);
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: `Generated ${slotsRequired} paid users for ${user.email}`,
+      user: updatedUser.rows[0],
+      createdUsers: createdUsers,
+      totalEarnings: bonusAmount * slotsRequired,
+      matrixComplete: true
+    });
+  } catch (error) {
+    console.error('Generate matrix error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
