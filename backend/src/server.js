@@ -1213,6 +1213,12 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
         [newUser.id]
       );
       
+      // Create approved deposit so they show as paid
+      await client.query(`
+        INSERT INTO deposit_requests (user_id, amount, status)
+        VALUES ($1, 18000, 'approved')
+      `, [newUser.id]);
+      
       // Create stage_matrix for new user
       await client.query(`
         INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
