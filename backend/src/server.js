@@ -857,6 +857,41 @@ app.get('/api/fix-no-stage', async (req, res) => {
   }
 });
 
+// Setup MLM system (creates tables + fixes users)
+app.get('/api/setup-mlm', async (req, res) => {
+  const { Pool } = require('pg');
+  const fs = require('fs');
+  const path = require('path');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    const mlmTablesPath = path.join(__dirname, '../database/mlm-tables.sql');
+    const mlmTablesSql = fs.readFileSync(mlmTablesPath, 'utf8');
+    await client.query(mlmTablesSql);
+    
+    await client.query("UPDATE users SET mlm_level = 'feeder' WHERE mlm_level = 'no_stage' OR mlm_level IS NULL");
+    
+    await client.query(`
+      INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+      SELECT id, 'feeder', 0, 6
+      FROM users
+      WHERE id NOT IN (SELECT user_id FROM stage_matrix WHERE stage = 'feeder')
+      ON CONFLICT (user_id, stage) DO NOTHING
+    `);
+    
+    client.release();
+    res.json({ success: true, message: 'MLM system setup complete! All users are now in feeder stage.' });
+  } catch (error) {
+    console.error('MLM setup error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Reset database tables
 app.get('/api/reset-database', async (req, res) => {
   const { Pool } = require('pg');
