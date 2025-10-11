@@ -7,33 +7,27 @@ export default function Team() {
   const [userProfile, setUserProfile] = useState({ fullName: 'User', mlmLevel: 'no_stage' });
   const [teamMembers, setTeamMembers] = useState([]);
   const [earnings, setEarnings] = useState(0);
-  const [orders, setOrders] = useState([]);
-  const [hasFeederRequirements, setHasFeederRequirements] = useState(false);
+  const [stageProgress, setStageProgress] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get team members and earnings from API
-        const [teamData, earningsData] = await Promise.all([
+        const [profile, teamData, earningsData, progress] = await Promise.all([
+          apiService.getProfile(),
           apiService.getTeam(),
-          apiService.getEarnings()
+          apiService.getEarnings(),
+          apiService.getStageProgress()
         ]);
         
+        setUserProfile(profile);
         setTeamMembers(teamData.team || []);
+        setStageProgress(progress);
+        
         const totalEarnings = (earningsData.earnings || []).reduce((sum, earning) => sum + parseFloat(earning.total_earned || 0), 0);
         setEarnings(totalEarnings);
-        
-        // Check feeder requirements from database: registration fee + product purchase
-        const meetsFeederReq = (userProfile?.registrationFeePaid && userProfile?.productPurchasePaid) || false;
-        const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]'); // Keep for display
-        setHasFeederRequirements(meetsFeederReq);
-        setOrders(userOrders);
-        
-        setUserProfile(prev => ({ ...prev, mlmLevel: meetsFeederReq ? 'feeder' : 'no_stage' }));
       } catch (error) {
         console.error('Error fetching team data:', error);
-        // Fallback to localStorage/default values
         setTeamMembers([]);
         setEarnings(0);
       }
@@ -107,10 +101,13 @@ export default function Team() {
           <h3 className="text-gray-600 text-sm mb-2">Current Stage</h3>
           <div className="flex items-center mb-2">
             <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center mr-2">
-              <span className="text-white font-bold text-xs">F</span>
+              <span className="text-white font-bold text-xs">{(userProfile?.mlmLevel || 'feeder').charAt(0).toUpperCase()}</span>
             </div>
           </div>
-          <p className="text-gray-900 font-semibold mb-6">{userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1)} Stage</p>
+          <p className="text-gray-900 font-semibold mb-2">{userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1)} Stage</p>
+          {stageProgress && (
+            <p className="text-gray-500 text-xs mb-4">{stageProgress.slotsFilled}/{stageProgress.slotsRequired} slots filled</p>
+          )}
           <Link to="/user/rankings-earnings" className="flex items-center text-white">
             <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center mr-2">
               <span className="text-xs">→</span>

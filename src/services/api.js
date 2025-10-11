@@ -189,6 +189,14 @@ class ApiService {
     return this.request('/mlm/level-progress');
   }
 
+  async getStageProgress() {
+    return this.request('/mlm/level-progress');
+  }
+
+  async getUserMatrix() {
+    return this.request('/mlm/matrix');
+  }
+
   // Orders methods
   async createOrder(orderData) {
     return this.request('/orders', {

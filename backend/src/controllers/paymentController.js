@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const multer = require('multer');
 const path = require('path');
+const mlmService = require('../services/mlmService');
 
 // Configure multer for payment proof uploads
 const upload = multer({ 
@@ -63,9 +64,21 @@ const confirmPayment = async (req, res) => {
     if (type === 'joining_fee') {
       // Update user as paid
       await pool.query(
-        'UPDATE users SET joining_fee_paid = true, payment_confirmed_by = $1, payment_confirmed_at = CURRENT_TIMESTAMP WHERE id = $2',
-        [adminId, userId]
+        'UPDATE users SET joining_fee_paid = true, mlm_level = $1, payment_confirmed_by = $2, payment_confirmed_at = CURRENT_TIMESTAMP WHERE id = $3',
+        ['feeder', adminId, userId]
       );
+      
+      // Initialize MLM for user
+      await mlmService.initializeUser(userId);
+      
+      // Get referrer and place in matrix
+      const userResult = await pool.query('SELECT referred_by FROM users WHERE id = $1', [userId]);
+      if (userResult.rows[0]?.referred_by) {
+        const referrerResult = await pool.query('SELECT id FROM users WHERE referral_code = $1', [userResult.rows[0].referred_by]);
+        if (referrerResult.rows.length > 0) {
+          await mlmService.placeUserInMatrix(userId, referrerResult.rows[0].id);
+        }
+      }
     }
 
     // Credit user wallet

@@ -12,39 +12,26 @@ export default function RankingsEarnings() {
   const [hasFeederRequirements, setHasFeederRequirements] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [stageProgress, setStageProgress] = useState(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [profile, earningsData, team] = await Promise.all([
+        const [profile, earningsData, team, progress] = await Promise.all([
           apiService.getProfile(),
           apiService.getEarnings(),
-          apiService.getTeam()
+          apiService.getTeam(),
+          apiService.getStageProgress()
         ]);
         
         setUserProfile(profile);
         setTeamMembers(team.team || []);
+        setStageProgress(progress);
         
         const totalEarnings = earningsData.earnings?.reduce((sum, e) => sum + parseFloat(e.total_earned || 0), 0) || 0;
         setEarnings(totalEarnings);
-        
-        const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-        const approvedOrders = userOrders.filter(order => order.status === 'approved');
-        const meetsFeederReq = approvedOrders.some(order => order.amount >= 9000);
-        setHasFeederRequirements(meetsFeederReq);
       } catch (error) {
         console.error('Error fetching data:', error);
-        const userOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-        const approvedOrders = userOrders.filter(order => order.status === 'approved');
-        const totalEarnings = approvedOrders.reduce((sum, order) => sum + (order.amount * 0.1), 0);
-        const meetsFeederReq = approvedOrders.some(order => order.amount >= 9000);
-        
-        setHasFeederRequirements(meetsFeederReq);
-        setEarnings(totalEarnings);
-        setUserProfile({ 
-          mlmLevel: meetsFeederReq ? 'feeder' : 'no_stage', 
-          wallet: { balance: totalEarnings },
-          referralCode: 'BAO' + Math.random().toString(36).substr(2, 6).toUpperCase()
-        });
       }
     };
     
@@ -80,16 +67,18 @@ export default function RankingsEarnings() {
   };
 
   const mlmStages = {
-    feeder: { name: 'Feeder Stage', level: 1, bonus: 1.5, matrix: '2x2', teamRequired: 6, current: teamMembers.length >= 0 && teamMembers.length < 14 },
-    bronze: { name: 'Bronze Stage', level: 2, bonus: 4.8, matrix: '2x3', teamRequired: 14, current: teamMembers.length >= 14 && teamMembers.length < 28, incentives: ['Lentoc water flask', 'Food voucher worth ₦100,000'] },
-    silver: { name: 'Silver Stage', level: 3, bonus: 30, matrix: '2x3', teamRequired: 14, current: teamMembers.length >= 28 && teamMembers.length < 42, incentives: ['Food voucher worth $150', 'Android Phone'] },
-    gold: { name: 'Gold Stage', level: 4, bonus: 150, matrix: '2x3', teamRequired: 14, current: teamMembers.length >= 42 && teamMembers.length < 56, incentives: ['Food voucher worth $750', 'International Trip worth ₦5m', 'Smartphone + Appliances'] },
-    diamond: { name: 'Diamond Stage', level: 5, bonus: 750, matrix: '2x3', teamRequired: 14, current: teamMembers.length >= 56 && teamMembers.length < 70, incentives: ['Food voucher worth $1,500', 'International trip worth $7,000', 'Brand new car worth $20,000', 'Chairman Award worth $10,000'] },
-    infinity: { name: 'Infinity Stage', level: 6, bonus: 15000, matrix: 'Infinity', teamRequired: 0, current: teamMembers.length >= 70, incentives: ['Generational wealth through MLM'] }
+    feeder: { name: 'Feeder Stage', level: 1, bonus: 1.5, matrix: '2x2', teamRequired: 6 },
+    bronze: { name: 'Bronze Stage', level: 2, bonus: 4.8, matrix: '2x3', teamRequired: 14, incentives: ['Lentoc water flask', 'Food voucher worth ₦100,000'] },
+    silver: { name: 'Silver Stage', level: 3, bonus: 30, matrix: '2x3', teamRequired: 14, incentives: ['Food voucher worth $150', 'Android Phone'] },
+    gold: { name: 'Gold Stage', level: 4, bonus: 150, matrix: '2x3', teamRequired: 14, incentives: ['Food voucher worth $750', 'International Trip worth ₦5m', 'Smartphone + Appliances'] },
+    diamond: { name: 'Diamond Stage', level: 5, bonus: 750, matrix: '2x3', teamRequired: 14, incentives: ['Food voucher worth $1,500', 'International trip worth $7,000', 'Brand new car worth $20,000', 'Chairman Award worth $10,000'] },
+    infinity: { name: 'Infinity Stage', level: 6, bonus: 15000, matrix: 'Infinity', teamRequired: 0, incentives: ['Generational wealth through MLM'] }
   };
   
-  const currentStage = Object.values(mlmStages).find(stage => stage.current) || mlmStages.feeder;
-  const totalMLMEarnings = teamMembers.length * currentStage.bonus;
+  const currentStageKey = stageProgress?.currentStage || userProfile?.mlmLevel || 'feeder';
+  const currentStage = mlmStages[currentStageKey] || mlmStages.feeder;
+  currentStage.current = true;
+  const totalMLMEarnings = earnings;
 
   const earningsHistory = teamMembers.length > 0 ? teamMembers.slice(0, 3).map((member, index) => ({
     date: new Date(Date.now() - index * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB'),
@@ -144,12 +133,12 @@ export default function RankingsEarnings() {
           <p className="text-gray-600">Total MLM Earnings</p>
         </div>
         <div className="bg-white p-6 rounded-lg border text-center">
-          <h3 className="text-2xl font-bold text-blue-600 mb-2">${currentStage.bonus}</h3>
-          <p className="text-gray-600">Per Referral</p>
+          <h3 className="text-2xl font-bold text-blue-600 mb-2">${stageProgress?.bonusPerPerson || currentStage.bonus}</h3>
+          <p className="text-gray-600">Per Person</p>
         </div>
         <div className="bg-white p-6 rounded-lg border text-center">
-          <h3 className="text-2xl font-bold text-orange-600 mb-2">{teamMembers.length.toString().padStart(2, '0')}</h3>
-          <p className="text-gray-600">Active Referrals</p>
+          <h3 className="text-2xl font-bold text-orange-600 mb-2">{stageProgress?.slotsFilled || 0}/{stageProgress?.slotsRequired || 6}</h3>
+          <p className="text-gray-600">Matrix Progress</p>
         </div>
         <div className="bg-white p-6 rounded-lg border text-center">
           <h3 className="text-2xl font-bold text-purple-600 mb-2">{currentStage.name}</h3>

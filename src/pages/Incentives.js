@@ -8,7 +8,7 @@ export default function Incentives() {
   const [showToast, setShowToast] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
-  const [currentStage, setCurrentStage] = useState('feeder');
+  const [stageProgress, setStageProgress] = useState(null);
   const [earnings, setEarnings] = useState(0);
   const referralCode = localStorage.getItem('userReferralCode') || 'USER123';
   const referralLink = `${process.env.REACT_APP_FRONTEND_URL || 'https://baobab-frontend.vercel.app'}/register?ref=${referralCode}`;
@@ -28,27 +28,17 @@ export default function Incentives() {
   
   const fetchData = async () => {
     try {
-      const [profile, team] = await Promise.all([
+      const [profile, team, progress, earningsData] = await Promise.all([
         apiService.getProfile(),
-        apiService.getTeam()
+        apiService.getTeam(),
+        apiService.getStageProgress(),
+        apiService.getEarnings()
       ]);
       setUserProfile(profile);
       setTeamMembers(team.team || []);
+      setStageProgress(progress);
       
-      // Calculate current stage based on team size
-      const teamSize = team.team?.length || 0;
-      let stage = 'feeder';
-      if (teamSize >= 14 && teamSize < 28) stage = 'bronze';
-      else if (teamSize >= 28 && teamSize < 42) stage = 'silver';
-      else if (teamSize >= 42 && teamSize < 56) stage = 'gold';
-      else if (teamSize >= 56 && teamSize < 70) stage = 'diamond';
-      else if (teamSize >= 70) stage = 'infinity';
-      
-      setCurrentStage(stage);
-      
-      // Calculate earnings based on current stage
-      const stageInfo = mlmStages[stage];
-      const totalEarnings = teamSize * stageInfo.bonus;
+      const totalEarnings = earningsData.earnings?.reduce((sum, e) => sum + parseFloat(e.total_earned || 0), 0) || 0;
       setEarnings(totalEarnings);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -96,9 +86,9 @@ export default function Incentives() {
           <div className="flex items-center space-x-2">
             <span className="text-gray-600">Current Stage:</span>
             <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-xs">{mlmStages[currentStage].icon}</span>
+              <span className="text-white font-bold text-xs">{mlmStages[stageProgress?.currentStage || 'feeder'].icon}</span>
             </div>
-            <span className="font-semibold">{mlmStages[currentStage].name}</span>
+            <span className="font-semibold">{mlmStages[stageProgress?.currentStage || 'feeder'].name}</span>
           </div>
           <button className="text-gray-400">→</button>
         </div>
@@ -108,9 +98,17 @@ export default function Incentives() {
       <div className="text-center">
         <div className="inline-flex items-center bg-black text-white px-6 py-2 rounded-full">
           <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-          <span className="font-medium">{mlmStages[currentStage].name}</span>
+          <span className="font-medium">{mlmStages[stageProgress?.currentStage || 'feeder'].name}</span>
         </div>
-        <h2 className="text-xl font-semibold text-gray-700 mt-4">{mlmStages[currentStage].name} - Earnings</h2>
+        <h2 className="text-xl font-semibold text-gray-700 mt-4">{mlmStages[stageProgress?.currentStage || 'feeder'].name} - Earnings</h2>
+        {stageProgress && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-600">Matrix Progress: {stageProgress.slotsFilled}/{stageProgress.slotsRequired} slots filled</p>
+            <div className="w-full max-w-md mx-auto bg-gray-200 rounded-full h-2 mt-2">
+              <div className="bg-green-600 h-2 rounded-full" style={{width: `${stageProgress.progress}%`}}></div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Earnings Overview */}
@@ -124,8 +122,8 @@ export default function Incentives() {
           <p className="text-gray-600">Team Members</p>
         </div>
         <div className="bg-white p-6 rounded-lg border text-center">
-          <h3 className="text-2xl font-bold text-purple-600 mb-2">${mlmStages[currentStage].bonus}</h3>
-          <p className="text-gray-600">Per Referral</p>
+          <h3 className="text-2xl font-bold text-purple-600 mb-2">${stageProgress?.bonusPerPerson || 1.5}</h3>
+          <p className="text-gray-600">Per Person</p>
         </div>
       </div>
 
@@ -138,7 +136,7 @@ export default function Incentives() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                  key === currentStage ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+                  key === (stageProgress?.currentStage || 'feeder') ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
                 }`}>
                   <span className="font-bold text-sm">{stage.icon}</span>
                 </div>
@@ -147,7 +145,7 @@ export default function Incentives() {
                   <p className="text-sm text-gray-600">{stage.matrix} Matrix</p>
                 </div>
               </div>
-              {key === currentStage && (
+              {key === (stageProgress?.currentStage || 'feeder') && (
                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">Current</span>
               )}
             </div>

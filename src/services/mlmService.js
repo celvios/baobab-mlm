@@ -1,58 +1,27 @@
 const pool = require('../config/database');
 
-const MLM_LEVELS = {
-  feeder: { bonus: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
-  bronze: { bonus: 4.8, requiredReferrals: 14, matrixSize: '2x3' },
-  silver: { bonus: 30, requiredReferrals: 14, matrixSize: '2x3' },
-  gold: { bonus: 150, requiredReferrals: 14, matrixSize: '2x3' },
-  diamond: { bonus: 750, requiredReferrals: 14, matrixSize: '2x3' },
-  infinity: { bonus: 15000, requiredReferrals: 0, matrixSize: 'unlimited' }
+const STAGES = {
+  feeder: { bonus: 1.5, slots: 6, matrixSize: '2x2', next: 'bronze' },
+  bronze: { bonus: 4.8, slots: 14, matrixSize: '2x3', next: 'silver' },
+  silver: { bonus: 30, slots: 14, matrixSize: '2x3', next: 'gold' },
+  gold: { bonus: 150, slots: 14, matrixSize: '2x3', next: 'diamond' },
+  diamond: { bonus: 750, slots: 14, matrixSize: '2x3', next: 'infinity' },
+  infinity: { bonus: 15000, slots: 0, matrixSize: 'unlimited', next: null }
 };
 
 class MLMService {
-  async processReferral(referrerId, newUserId) {
+  async initializeUser(userId) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-
-      // Get referrer's current level
-      const referrerResult = await client.query(
-        'SELECT mlm_level FROM users WHERE id = $1',
-        [referrerId]
-      );
       
-      if (referrerResult.rows.length === 0) {
-        throw new Error('Referrer not found');
-      }
-
-      const referrerLevel = referrerResult.rows[0].mlm_level;
-      const levelConfig = MLM_LEVELS[referrerLevel];
-
-      // Add referral earning
+      // Initialize stage matrix for feeder
       await client.query(`
-        INSERT INTO referral_earnings (user_id, referred_user_id, level, amount, status)
-        VALUES ($1, $2, $3, $4, 'completed')
-      `, [referrerId, newUserId, referrerLevel, levelConfig.bonus]);
-
-      // Update referrer's wallet
-      await client.query(`
-        UPDATE wallets 
-        SET balance = balance + $1, total_earned = total_earned + $1
-        WHERE user_id = $2
-      `, [levelConfig.bonus, referrerId]);
-
-      // Add transaction record
-      await client.query(`
-        INSERT INTO transactions (user_id, type, amount, description, status)
-        VALUES ($1, 'referral_bonus', $2, $3, 'completed')
-      `, [referrerId, levelConfig.bonus, `Referral bonus for ${referrerLevel} level`]);
-
-      // Check for level progression
-      await this.checkLevelProgression(client, referrerId);
-
-      // Place user in matrix
-      await this.placeInMatrix(client, newUserId, referrerId, referrerLevel);
-
+        INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+        VALUES ($1, 'feeder', 0, 6)
+        ON CONFLICT (user_id, stage) DO NOTHING
+      `, [userId]);
+      
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');
@@ -62,102 +31,170 @@ class MLMService {
     }
   }
 
-  async checkLevelProgression(client, userId) {
-    // Get current referral count
-    const referralCount = await client.query(
-      'SELECT COUNT(*) FROM users WHERE referred_by = (SELECT referral_code FROM users WHERE id = $1)',
-      [userId]
-    );
-
-    const count = parseInt(referralCount.rows[0].count);
-    
-    // Get current level
-    const userResult = await client.query('SELECT mlm_level FROM users WHERE id = $1', [userId]);
-    const currentLevel = userResult.rows[0].mlm_level;
-
-    let newLevel = currentLevel;
-
-    // Check progression rules
-    if (currentLevel === 'feeder' && count >= 6) {
-      newLevel = 'bronze';
-    } else if (currentLevel === 'bronze' && count >= 20) { // 6 + 14
-      newLevel = 'silver';
-    } else if (currentLevel === 'silver' && count >= 34) { // 20 + 14
-      newLevel = 'gold';
-    } else if (currentLevel === 'gold' && count >= 48) { // 34 + 14
-      newLevel = 'diamond';
-    } else if (currentLevel === 'diamond' && count >= 62) { // 48 + 14
-      newLevel = 'infinity';
+  async placeUserInMatrix(newUserId, sponsorId) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Find placement position (spillover logic)
+      let placementUser = await this.findPlacementPosition(client, sponsorId);
+      
+      // Get placement user's current stage
+      const stageResult = await client.query(
+        'SELECT mlm_level FROM users WHERE id = $1',
+        [placementUser]
+      );
+      const currentStage = stageResult.rows[0].mlm_level;
+      const stageConfig = STAGES[currentStage];
+      
+      // Add to matrix
+      await client.query(`
+        INSERT INTO mlm_matrix (user_id, stage, parent_id, position)
+        VALUES ($1, $2, $3, 1)
+      `, [newUserId, currentStage, placementUser]);
+      
+      // Pay upline members in the matrix
+      await this.payUpline(client, newUserId, placementUser, currentStage);
+      
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
-
-    if (newLevel !== currentLevel) {
+  }
+  
+  async findPlacementPosition(client, sponsorId) {
+    // Simple spillover: find first user with incomplete matrix
+    const result = await client.query(`
+      SELECT u.id FROM users u
+      INNER JOIN stage_matrix sm ON u.id = sm.user_id
+      WHERE sm.is_complete = false
+      AND u.id >= $1
+      ORDER BY u.id ASC
+      LIMIT 1
+    `, [sponsorId]);
+    
+    return result.rows.length > 0 ? result.rows[0].id : sponsorId;
+  }
+  
+  async payUpline(client, newUserId, placementUserId, stage) {
+    const stageConfig = STAGES[stage];
+    
+    // Update stage matrix
+    await client.query(`
+      UPDATE stage_matrix 
+      SET slots_filled = slots_filled + 1
+      WHERE user_id = $1 AND stage = $2
+    `, [placementUserId, stage]);
+    
+    // Check if matrix is complete
+    const matrixCheck = await client.query(`
+      SELECT slots_filled, slots_required FROM stage_matrix
+      WHERE user_id = $1 AND stage = $2
+    `, [placementUserId, stage]);
+    
+    const { slots_filled, slots_required } = matrixCheck.rows[0];
+    
+    // Record earning
+    await client.query(`
+      INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount)
+      VALUES ($1, $2, $3, $4)
+    `, [placementUserId, newUserId, stage, stageConfig.bonus]);
+    
+    // Update wallet
+    await client.query(`
+      UPDATE wallets 
+      SET balance = balance + $1, total_earned = total_earned + $1
+      WHERE user_id = $2
+    `, [stageConfig.bonus, placementUserId]);
+    
+    // Add transaction
+    await client.query(`
+      INSERT INTO transactions (user_id, type, amount, description, status)
+      VALUES ($1, 'matrix_bonus', $2, $3, 'completed')
+    `, [placementUserId, stageConfig.bonus, `${stage.toUpperCase()} stage bonus`]);
+    
+    // Check for stage completion and progression
+    if (slots_filled >= slots_required) {
+      await this.completeStage(client, placementUserId, stage);
+    }
+  }
+  
+  async completeStage(client, userId, currentStage) {
+    const stageConfig = STAGES[currentStage];
+    
+    // Mark stage as complete
+    await client.query(`
+      UPDATE stage_matrix 
+      SET is_complete = true, completed_at = NOW()
+      WHERE user_id = $1 AND stage = $2
+    `, [userId, currentStage]);
+    
+    // Progress to next stage
+    if (stageConfig.next) {
+      const nextStage = stageConfig.next;
+      const nextConfig = STAGES[nextStage];
+      
       // Update user level
-      await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [newLevel, userId]);
-
+      await client.query(
+        'UPDATE users SET mlm_level = $1 WHERE id = $2',
+        [nextStage, userId]
+      );
+      
+      // Initialize next stage matrix
+      await client.query(`
+        INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+        VALUES ($1, $2, 0, $3)
+        ON CONFLICT (user_id, stage) DO NOTHING
+      `, [userId, nextStage, nextConfig.slots]);
+      
       // Record progression
       await client.query(`
-        INSERT INTO level_progressions (user_id, from_level, to_level, referrals_count)
+        INSERT INTO level_progressions (user_id, from_stage, to_stage, matrix_count)
         VALUES ($1, $2, $3, $4)
-      `, [userId, currentLevel, newLevel, count]);
-
+      `, [userId, currentStage, nextStage, stageConfig.slots]);
+      
       // Send notification
       await client.query(`
         INSERT INTO market_updates (user_id, title, message, type)
-        VALUES ($1, $2, $3, 'success')
-      `, [userId, 'Level Up!', `Congratulations! You've been promoted to ${newLevel.toUpperCase()} level!`]);
+        VALUES ($1, 'Stage Complete!', $2, 'success')
+      `, [userId, `Congratulations! You've completed ${currentStage.toUpperCase()} and advanced to ${nextStage.toUpperCase()}!`]);
     }
   }
 
-  async placeInMatrix(client, userId, parentId, level) {
-    // Simple matrix placement - find next available position
-    const matrixResult = await client.query(`
-      SELECT * FROM mlm_matrix 
-      WHERE level = $1 AND (left_child_id IS NULL OR right_child_id IS NULL)
-      ORDER BY created_at ASC
-      LIMIT 1
-    `, [level]);
-
-    let position = 1;
-    let actualParentId = parentId;
-
-    if (matrixResult.rows.length > 0) {
-      const matrix = matrixResult.rows[0];
-      if (!matrix.left_child_id) {
-        await client.query(
-          'UPDATE mlm_matrix SET left_child_id = $1 WHERE id = $2',
-          [userId, matrix.id]
-        );
-        position = matrix.position * 2;
-        actualParentId = matrix.user_id;
-      } else if (!matrix.right_child_id) {
-        await client.query(
-          'UPDATE mlm_matrix SET right_child_id = $1 WHERE id = $2',
-          [userId, matrix.id]
-        );
-        position = matrix.position * 2 + 1;
-        actualParentId = matrix.user_id;
-      }
-    }
-
-    // Create matrix entry for new user
-    await client.query(`
-      INSERT INTO mlm_matrix (user_id, level, position, parent_id)
-      VALUES ($1, $2, $3, $4)
-    `, [userId, level, position, actualParentId]);
+  async getStageProgress(userId) {
+    const result = await pool.query(`
+      SELECT u.mlm_level, sm.slots_filled, sm.slots_required, sm.is_complete
+      FROM users u
+      LEFT JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = u.mlm_level
+      WHERE u.id = $1
+    `, [userId]);
+    
+    if (result.rows.length === 0) return null;
+    
+    const { mlm_level, slots_filled, slots_required } = result.rows[0];
+    const stageConfig = STAGES[mlm_level];
+    
+    return {
+      currentStage: mlm_level,
+      nextStage: stageConfig.next,
+      slotsFilled: slots_filled || 0,
+      slotsRequired: slots_required || stageConfig.slots,
+      progress: slots_required ? Math.round((slots_filled / slots_required) * 100) : 0,
+      bonusPerPerson: stageConfig.bonus
+    };
   }
 
   async getUserMatrix(userId) {
     const result = await pool.query(`
-      SELECT m.*, 
-             u.full_name, u.email, u.referral_code,
-             lc.full_name as left_child_name, lc.email as left_child_email,
-             rc.full_name as right_child_name, rc.email as right_child_email
+      SELECT m.stage, m.position, m.created_at,
+             u.full_name, u.email, u.mlm_level
       FROM mlm_matrix m
       JOIN users u ON m.user_id = u.id
-      LEFT JOIN users lc ON m.left_child_id = lc.id
-      LEFT JOIN users rc ON m.right_child_id = rc.id
-      WHERE m.user_id = $1
-      ORDER BY m.level, m.position
+      WHERE m.parent_id = $1
+      ORDER BY m.created_at ASC
     `, [userId]);
 
     return result.rows;
@@ -166,14 +203,14 @@ class MLMService {
   async getUserEarnings(userId) {
     const result = await pool.query(`
       SELECT 
-        level,
-        COUNT(*) as referrals_count,
+        stage,
+        COUNT(*) as people_count,
         SUM(amount) as total_earned
       FROM referral_earnings 
-      WHERE user_id = $1 AND status = 'completed'
-      GROUP BY level
+      WHERE user_id = $1
+      GROUP BY stage
       ORDER BY 
-        CASE level
+        CASE stage
           WHEN 'feeder' THEN 1
           WHEN 'bronze' THEN 2
           WHEN 'silver' THEN 3

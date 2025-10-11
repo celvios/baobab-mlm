@@ -10,6 +10,7 @@ export default function TeamTree() {
   const [showToast, setShowToast] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [referrer, setReferrer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [expandedNodes, setExpandedNodes] = useState(new Set());
@@ -20,33 +21,29 @@ export default function TeamTree() {
 
   const fetchData = async () => {
     try {
-      const [profile, team] = await Promise.all([
-        apiService.getProfile().catch((err) => {
-          console.error('Profile fetch error:', err);
-          return null;
-        }),
-        apiService.getTeam().catch((err) => {
-          console.error('Team fetch error:', err);
-          return { team: [] };
-        })
+      const [profile, team, matrix] = await Promise.all([
+        apiService.getProfile(),
+        apiService.getTeam(),
+        apiService.getUserMatrix().catch(() => ({ matrix: [] }))
       ]);
       
-      console.log('Profile data:', profile);
-      console.log('Team data:', team);
-      
-      // Check if user qualifies for feeder stage from database
-      const qualifiesForFeeder = (profile?.registrationFeePaid && profile?.productPurchasePaid) || false;
-      
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const actualProfile = profile || {
-        fullName: storedUser.fullName || 'User',
-        email: storedUser.email || 'user@example.com',
-        referralCode: storedUser.referralCode || 'LOADING',
-        mlmLevel: qualifiesForFeeder ? 'feeder' : 'no_stage'
-      };
-      
-      setUserProfile(actualProfile);
+      setUserProfile(profile);
       setTeamMembers(team?.team || []);
+      
+      // Get referrer if user has one
+      if (profile.referredBy) {
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/referrer`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setReferrer(data.referrer);
+          }
+        } catch (err) {
+          console.log('No referrer data');
+        }
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -126,6 +123,7 @@ export default function TeamTree() {
   const TreeNode = ({ node, level = 0, isRoot = false }) => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = isRoot || expandedNodes.has(node.id);
+    const isCurrentUser = node.id === 'current-user';
     
     return (
       <div className="flex flex-col items-center">
@@ -169,7 +167,7 @@ export default function TeamTree() {
         {/* Node info */}
         <div className="mt-2 text-center">
           <p className="text-sm font-semibold text-gray-900">
-            {isRoot ? 'You' : (node.full_name || node.email)}
+            {isRoot || isCurrentUser ? 'You' : (node.full_name || node.email)}
           </p>
           <p className="text-xs text-gray-500">
             {!node.mlm_level || node.mlm_level === 'no_stage' ? 'No Level' : node.mlm_level === 'feeder' ? 'Feeder' : node.mlm_level.charAt(0).toUpperCase() + node.mlm_level.slice(1)}
@@ -301,8 +299,8 @@ export default function TeamTree() {
               <span className="text-purple-600 font-bold">$</span>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Team Earnings</p>
-              <p className="text-xl font-bold text-gray-900">${(teamMembers.filter(m => m.has_deposited).length * 1.5).toFixed(1)}</p>
+              <p className="text-sm text-gray-600">Matrix Members</p>
+              <p className="text-xl font-bold text-gray-900">{teamMembers.length}</p>
             </div>
           </div>
         </div>
@@ -329,7 +327,21 @@ export default function TeamTree() {
         </div>
         
         <div className="min-w-full">
-          <TreeNode 
+          {referrer ? (
+            <TreeNode 
+              node={{
+                ...referrer,
+                children: [{
+                  ...userProfile,
+                  children: treeData.children,
+                  id: 'current-user'
+                }],
+                id: 'referrer'
+              }} 
+              isRoot={false}
+            />
+          ) : (
+            <TreeNode 
               node={{
                 ...userProfile,
                 children: treeData.children,
