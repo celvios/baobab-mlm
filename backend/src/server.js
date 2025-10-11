@@ -1146,7 +1146,7 @@ app.get('/api/setup-database', async (req, res) => {
 });
 
 // Test endpoint: Generate full matrix for a user
-app.post('/api/test-generate-matrix', async (req, res) => {
+app.get('/api/test-generate-matrix/:email', async (req, res) => {
   const { Pool } = require('pg');
   const bcrypt = require('bcryptjs');
   const mlmService = require('./services/mlmService');
@@ -1157,10 +1157,11 @@ app.post('/api/test-generate-matrix', async (req, res) => {
   });
   
   try {
-    const { email, stage } = req.body;
+    const { email } = req.params;
+    const { stage } = req.query;
     
     if (!email) {
-      return res.status(400).json({ error: 'email is required' });
+      return res.status(400).json({ error: 'email is required in URL' });
     }
     
     const client = await pool.connect();
