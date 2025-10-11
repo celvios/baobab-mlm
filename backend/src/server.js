@@ -1237,9 +1237,49 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
       WHERE user_id = $2 AND stage = $3
     `, [slotsRequired, userId, currentStage]);
     
-    // Get updated user info
+    // Trigger automatic progression
+    const stageProgression = {
+      'feeder': 'bronze',
+      'bronze': 'silver',
+      'silver': 'gold',
+      'gold': 'diamond',
+      'diamond': 'infinity'
+    };
+    
+    const nextStage = stageProgression[currentStage];
+    let progressionMessage = '';
+    
+    if (nextStage) {
+      // Update user to next stage
+      await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [nextStage, userId]);
+      
+      // Create stage_matrix for next stage
+      const nextStageSlots = nextStage === 'infinity' ? 0 : (nextStage === 'feeder' ? 6 : 14);
+      await client.query(`
+        INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+        VALUES ($1, $2, 0, $3)
+        ON CONFLICT (user_id, stage) DO NOTHING
+      `, [userId, nextStage, nextStageSlots]);
+      
+      // Record progression
+      await client.query(`
+        INSERT INTO level_progressions (user_id, from_stage, to_stage, matrix_count)
+        VALUES ($1, $2, $3, $4)
+      `, [userId, currentStage, nextStage, slotsRequired]);
+      
+      // Send notification
+      await client.query(`
+        INSERT INTO market_updates (user_id, title, message, type)
+        VALUES ($1, $2, $3, 'success')
+      `, [userId, 'Stage Upgrade!', `Congratulations! You've been promoted from ${currentStage.toUpperCase()} to ${nextStage.toUpperCase()} stage!`]);
+      
+      progressionMessage = ` → Automatically progressed to ${nextStage.toUpperCase()}`;
+    }
+    
+    // Get updated user info with referral count
     const updatedUser = await client.query(`
-      SELECT u.*, w.balance, w.total_earned, sm.slots_filled, sm.is_complete
+      SELECT u.*, w.balance, w.total_earned, sm.slots_filled, sm.is_complete,
+             (SELECT COUNT(*) FROM users WHERE referred_by = u.referral_code) as total_referrals
       FROM users u
       LEFT JOIN wallets w ON u.id = w.user_id
       LEFT JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = u.mlm_level
@@ -1250,7 +1290,10 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
     
     res.json({
       success: true,
-      message: `Generated ${slotsRequired} paid users for ${user.email}`,
+      message: `Generated ${slotsRequired} paid users for ${user.email}${progressionMessage}`,
+      previousStage: currentStage,
+      currentStage: updatedUser.rows[0].mlm_level,
+      progressed: nextStage ? true : false,
       user: updatedUser.rows[0],
       createdUsers: createdUsers,
       totalEarnings: bonusAmount * slotsRequired,
