@@ -811,6 +811,52 @@ app.get('/api/fix-database', async (req, res) => {
 
 
 
+// Run MLM migration
+app.get('/api/run-mlm-migration', async (req, res) => {
+  const { Pool } = require('pg');
+  const fs = require('fs');
+  const path = require('path');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    const sqlPath = path.join(__dirname, '../database/mlm-tables.sql');
+    const sql = fs.readFileSync(sqlPath, 'utf8');
+    await client.query(sql);
+    client.release();
+    res.json({ success: true, message: 'MLM tables created successfully!' });
+  } catch (error) {
+    console.error('MLM migration error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Fix no_stage users
+app.get('/api/fix-no-stage', async (req, res) => {
+  const { Pool } = require('pg');
+  const fs = require('fs');
+  const path = require('path');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    const sqlPath = path.join(__dirname, '../database/fix-no-stage.sql');
+    const sql = fs.readFileSync(sqlPath, 'utf8');
+    await client.query(sql);
+    client.release();
+    res.json({ success: true, message: 'All users updated to feeder stage!' });
+  } catch (error) {
+    console.error('Fix no_stage error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Reset database tables
 app.get('/api/reset-database', async (req, res) => {
   const { Pool } = require('pg');
