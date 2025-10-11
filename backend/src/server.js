@@ -928,7 +928,12 @@ app.get('/api/setup-mlm', async (req, res) => {
     `);
     
     client.release();
-    res.json({ success: true, message: 'MLM system setup complete! All users are now in feeder stage.' });
+    res.json({ success: true, message: 'MLM system setup completed successfully!' });
+  } catch (error) {
+    console.error('MLM setup error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+}); system setup complete! All users are now in feeder stage.' });
   } catch (error) {
     console.error('MLM setup error:', error);
     res.status(500).json({ success: false, error: error.message });
