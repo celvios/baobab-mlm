@@ -15,28 +15,42 @@ export default function RankingsEarnings() {
   const [stageProgress, setStageProgress] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [profile, earningsData, team, progress] = await Promise.all([
-          apiService.getProfile(),
-          apiService.getEarnings(),
-          apiService.getTeam(),
-          apiService.getStageProgress()
-        ]);
-        
-        setUserProfile(profile);
-        setTeamMembers(team.team || []);
-        setStageProgress(progress);
-        
-        const totalEarnings = earningsData.earnings?.reduce((sum, e) => sum + parseFloat(e.total_earned || 0), 0) || 0;
-        setEarnings(totalEarnings);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-    
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const [profile, earningsData, team, progress] = await Promise.all([
+        apiService.getProfile(),
+        apiService.getEarnings(),
+        apiService.getTeam(),
+        apiService.getStageProgress()
+      ]);
+      
+      setUserProfile(profile);
+      setTeamMembers(team.team || []);
+      setStageProgress(progress);
+      
+      const totalEarnings = earningsData.earnings?.reduce((sum, e) => sum + parseFloat(e.total_earned || 0), 0) || 0;
+      setEarnings(totalEarnings);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const handleSyncMatrix = async () => {
+    try {
+      setLoading(true);
+      await apiService.syncMatrix();
+      await fetchData();
+      alert('Matrix synced successfully!');
+    } catch (error) {
+      console.error('Sync error:', error);
+      alert('Failed to sync matrix');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const referralLink = userProfile ? `${process.env.REACT_APP_FRONTEND_URL || 'https://baobab-frontend.vercel.app'}/register?ref=${userProfile.referralCode}` : '';
 
@@ -75,7 +89,7 @@ export default function RankingsEarnings() {
     infinity: { name: 'Infinity Stage', level: 6, bonus: 15000, matrix: 'Infinity', teamRequired: 0, incentives: ['Generational wealth through MLM'] }
   };
   
-  const currentStageKey = stageProgress?.currentStage || userProfile?.mlmLevel || 'feeder';
+  const currentStageKey = stageProgress?.current_stage || userProfile?.mlmLevel || 'feeder';
   const currentStage = mlmStages[currentStageKey] || mlmStages.feeder;
   currentStage.current = true;
   const totalMLMEarnings = earnings;
@@ -137,7 +151,16 @@ export default function RankingsEarnings() {
           <p className="text-gray-600">Per Person</p>
         </div>
         <div className="bg-white p-6 rounded-lg border text-center">
-          <h3 className="text-2xl font-bold text-orange-600 mb-2">{stageProgress?.slotsFilled || 0}/{stageProgress?.slotsRequired || currentStage.teamRequired}</h3>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h3 className="text-2xl font-bold text-orange-600">{stageProgress?.slots_filled || 0}/{stageProgress?.slots_required || currentStage.teamRequired}</h3>
+            <button 
+              onClick={handleSyncMatrix}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              title="Sync matrix"
+            >
+              🔄
+            </button>
+          </div>
           <p className="text-gray-600">Matrix Progress</p>
         </div>
         <div className="bg-white p-6 rounded-lg border text-center">
