@@ -14,10 +14,11 @@ const autoUpgradeStages = async (req, res) => {
              ) as paid_count
       FROM users u
       WHERE u.mlm_level = 'feeder'
-      HAVING paid_count >= 6
     `);
+    
+    const feederToUpgrade = feederUsers.rows.filter(u => u.paid_count >= 6);
 
-    for (const user of feederUsers.rows) {
+    for (const user of feederToUpgrade) {
       await client.query("UPDATE users SET mlm_level = 'bronze' WHERE id = $1", [user.id]);
       await client.query(`
         INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
