@@ -83,38 +83,8 @@ export default function TeamTree() {
   };
 
   const buildTreeStructure = (members) => {
-    const tree = { children: [] };
-    const memberMap = new Map();
-    
-    // Add root user
-    memberMap.set('root', tree);
-    
-    // Process members and build tree
-    members.forEach((member, index) => {
-      const node = {
-        ...member,
-        children: [],
-        level: Math.floor(index / 2) + 1,
-        position: index % 2
-      };
-      
-      // For demo, assign to levels based on index
-      if (index < 2) {
-        tree.children.push(node);
-      } else {
-        const parentIndex = Math.floor((index - 2) / 2);
-        const parent = members[parentIndex];
-        if (parent && memberMap.has(parent.id)) {
-          memberMap.get(parent.id).children.push(node);
-        } else {
-          tree.children.push(node);
-        }
-      }
-      
-      memberMap.set(member.id, node);
-    });
-    
-    return tree;
+    // Members already come with nested children from backend
+    return { children: members };
   };
 
   const toggleNode = (nodeId) => {
