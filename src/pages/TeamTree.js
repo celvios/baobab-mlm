@@ -21,16 +21,16 @@ export default function TeamTree() {
 
   const fetchData = async () => {
     try {
-      const [profile, binaryTree] = await Promise.all([
+      const [profile, matrixTree] = await Promise.all([
         apiService.getProfile(),
-        apiService.getBinaryTree().catch(() => ({ tree: null }))
+        apiService.getMatrixTree().catch(() => ({ tree: null }))
       ]);
       
       setUserProfile(profile);
       
-      // Extract team members from binary tree
-      if (binaryTree.tree) {
-        const members = extractTeamMembers(binaryTree.tree);
+      // Extract team members from matrix tree
+      if (matrixTree.tree) {
+        const members = extractTeamMembers(matrixTree.tree);
         setTeamMembers(members);
       }
     } catch (error) {

@@ -106,7 +106,15 @@ export default function Team() {
           </div>
           <p className="text-gray-900 font-semibold mb-2">{userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1)} Stage</p>
           {stageProgress && (
-            <p className="text-gray-500 text-xs mb-4">{stageProgress.slotsFilled}/{stageProgress.slotsRequired} slots filled</p>
+            <>
+              <p className="text-gray-500 text-xs mb-1">{stageProgress.slotsFilled}/{stageProgress.slotsRequired} slots filled</p>
+              <div className="w-full bg-gray-300 rounded-full h-2 mb-4">
+                <div 
+                  className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                  style={{ width: `${(stageProgress.slotsFilled / stageProgress.slotsRequired) * 100}%` }}
+                ></div>
+              </div>
+            </>
           )}
           <Link to="/user/rankings-earnings" className="flex items-center text-white">
             <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center mr-2">

@@ -179,4 +179,15 @@ const completeMatrix = async (req, res) => {
   }
 };
 
-module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix };
+const getMatrixTree = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const tree = await mlmService.getFullMatrixTree(userId);
+    res.json({ tree });
+  } catch (error) {
+    console.error('Get matrix tree error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree };

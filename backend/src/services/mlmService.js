@@ -49,43 +49,12 @@ class MLMService {
       }
 
       const referrerLevel = referrerResult.rows[0].mlm_level || 'feeder';
-      const levelConfig = MLM_LEVELS[referrerLevel] || MLM_LEVELS['feeder'];
 
-      // Add referral earning
-      await client.query(`
-        INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
-        VALUES ($1, $2, $3, $4, 'completed')
-      `, [referrerId, newUserId, referrerLevel, levelConfig.bonusUSD]);
-
-      // Update wallet
-      await client.query(`
-        UPDATE wallets SET total_earned = total_earned + $1
-        WHERE user_id = $2
-      `, [levelConfig.bonusUSD, referrerId]);
-
-      // Add transaction record
-      await client.query(`
-        INSERT INTO transactions (user_id, type, amount, description, status)
-        VALUES ($1, 'referral_bonus', $2, $3, 'completed')
-      `, [referrerId, levelConfig.bonusUSD, `Referral bonus for ${referrerLevel} stage`]);
-
-      // Update stage matrix slots
-      await client.query(`
-        UPDATE stage_matrix 
-        SET slots_filled = slots_filled + 1,
-            is_complete = (slots_filled + 1 >= slots_required),
-            completed_at = CASE WHEN (slots_filled + 1 >= slots_required) THEN CURRENT_TIMESTAMP ELSE completed_at END
-        WHERE user_id = $1 AND stage = $2
-      `, [referrerId, referrerLevel]);
-
-      // Check for level progression
-      await this.checkLevelProgression(client, referrerId);
-
-      // Place user in matrix
-      await this.placeInMatrix(client, newUserId, referrerId, referrerLevel);
+      // Place user in matrix and get placement info
+      const placementInfo = await this.placeInMatrixWithSpillover(client, newUserId, referrerId, referrerLevel);
 
       await client.query('COMMIT');
-      return { success: true, message: 'Referral processed successfully' };
+      return { success: true, message: 'Referral processed successfully', placementInfo };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -146,42 +115,172 @@ class MLMService {
     }
   }
 
-  async placeInMatrix(client, userId, parentId, stage) {
-    // Simple matrix placement - find next available position
-    const matrixResult = await client.query(`
-      SELECT * FROM mlm_matrix 
-      WHERE stage = $1 AND (left_child_id IS NULL OR right_child_id IS NULL)
-      ORDER BY created_at ASC
-      LIMIT 1
-    `, [stage]);
+  async placeInMatrixWithSpillover(client, userId, referrerId, initialStage) {
+    // Get referrer info
+    const referrerResult = await client.query(
+      'SELECT id, mlm_level, referral_code FROM users WHERE id = $1',
+      [referrerId]
+    );
+    
+    if (referrerResult.rows.length === 0) {
+      throw new Error('Referrer not found');
+    }
 
-    let position = 1;
-    let actualParentId = parentId;
+    const referrer = referrerResult.rows[0];
+    const stage = referrer.mlm_level || 'feeder';
+    const stageConfig = MLM_LEVELS[stage];
 
-    if (matrixResult.rows.length > 0) {
-      const matrix = matrixResult.rows[0];
-      if (!matrix.left_child_id) {
+    // Find placement position in referrer's matrix for this stage
+    let placementParentId = referrerId;
+    let matrixEntry = await client.query(
+      'SELECT * FROM mlm_matrix WHERE user_id = $1 AND stage = $2',
+      [referrerId, stage]
+    );
+
+    // If referrer doesn't have matrix entry for this stage, create it
+    if (matrixEntry.rows.length === 0) {
+      await client.query(
+        'INSERT INTO mlm_matrix (user_id, stage, position, parent_id) VALUES ($1, $2, 1, NULL)',
+        [referrerId, stage]
+      );
+      matrixEntry = await client.query(
+        'SELECT * FROM mlm_matrix WHERE user_id = $1 AND stage = $2',
+        [referrerId, stage]
+      );
+    }
+
+    // Find available slot in the matrix tree (breadth-first search)
+    const availableSlot = await this.findAvailableMatrixSlot(client, referrerId, stage);
+    
+    if (availableSlot) {
+      placementParentId = availableSlot.user_id;
+      
+      // Update parent's matrix with new child
+      if (!availableSlot.left_child_id) {
         await client.query(
           'UPDATE mlm_matrix SET left_child_id = $1 WHERE id = $2',
-          [userId, matrix.id]
+          [userId, availableSlot.id]
         );
-        position = matrix.position * 2;
-        actualParentId = matrix.user_id;
-      } else if (!matrix.right_child_id) {
+      } else {
         await client.query(
           'UPDATE mlm_matrix SET right_child_id = $1 WHERE id = $2',
-          [userId, matrix.id]
+          [userId, availableSlot.id]
         );
-        position = matrix.position * 2 + 1;
-        actualParentId = matrix.user_id;
       }
     }
 
     // Create matrix entry for new user
-    await client.query(`
-      INSERT INTO mlm_matrix (user_id, stage, position, parent_id)
-      VALUES ($1, $2, $3, $4)
-    `, [userId, stage, position, actualParentId]);
+    await client.query(
+      'INSERT INTO mlm_matrix (user_id, stage, position, parent_id) VALUES ($1, $2, 1, $3)',
+      [userId, stage, placementParentId]
+    );
+
+    // Credit all uplines in the matrix path
+    await this.creditUplineChain(client, placementParentId, userId, stage);
+
+    return { placementParentId, stage };
+  }
+
+  async findAvailableMatrixSlot(client, rootUserId, stage) {
+    // Breadth-first search for first available slot
+    const queue = [rootUserId];
+    const visited = new Set();
+
+    while (queue.length > 0) {
+      const currentUserId = queue.shift();
+      
+      if (visited.has(currentUserId)) continue;
+      visited.add(currentUserId);
+
+      const matrixResult = await client.query(
+        'SELECT * FROM mlm_matrix WHERE user_id = $1 AND stage = $2',
+        [currentUserId, stage]
+      );
+
+      if (matrixResult.rows.length > 0) {
+        const matrix = matrixResult.rows[0];
+        
+        // Check if this node has available slots
+        if (!matrix.left_child_id || !matrix.right_child_id) {
+          return matrix;
+        }
+
+        // Add children to queue
+        if (matrix.left_child_id) queue.push(matrix.left_child_id);
+        if (matrix.right_child_id) queue.push(matrix.right_child_id);
+      }
+    }
+
+    return null;
+  }
+
+  async creditUplineChain(client, startUserId, newUserId, stage) {
+    // Walk up the matrix tree and credit everyone
+    let currentUserId = startUserId;
+    const creditedUsers = [];
+
+    while (currentUserId) {
+      // Get user's current stage
+      const userResult = await client.query(
+        'SELECT id, mlm_level FROM users WHERE id = $1',
+        [currentUserId]
+      );
+
+      if (userResult.rows.length === 0) break;
+
+      const user = userResult.rows[0];
+      const userStage = user.mlm_level || 'feeder';
+      const stageConfig = MLM_LEVELS[userStage];
+
+      // Only credit if user is at same or higher stage
+      if (this.isStageEqualOrHigher(userStage, stage)) {
+        // Add referral earning
+        await client.query(
+          'INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, $4, $5)',
+          [currentUserId, newUserId, userStage, stageConfig.bonusUSD, 'completed']
+        );
+
+        // Update wallet
+        await client.query(
+          'UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2',
+          [stageConfig.bonusUSD, currentUserId]
+        );
+
+        // Add transaction
+        await client.query(
+          'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+          [currentUserId, 'matrix_bonus', stageConfig.bonusUSD, `Matrix bonus from spillover at ${userStage} stage`, 'completed']
+        );
+
+        // Update stage matrix slots
+        await client.query(
+          'UPDATE stage_matrix SET slots_filled = slots_filled + 1, is_complete = (slots_filled + 1 >= slots_required), completed_at = CASE WHEN (slots_filled + 1 >= slots_required) THEN CURRENT_TIMESTAMP ELSE completed_at END WHERE user_id = $1 AND stage = $2',
+          [currentUserId, userStage]
+        );
+
+        // Check for level progression
+        await this.checkLevelProgression(client, currentUserId);
+
+        creditedUsers.push(currentUserId);
+      }
+
+      // Move to parent in matrix
+      const parentResult = await client.query(
+        'SELECT parent_id FROM mlm_matrix WHERE user_id = $1 AND stage = $2',
+        [currentUserId, stage]
+      );
+
+      currentUserId = parentResult.rows[0]?.parent_id || null;
+    }
+
+    return creditedUsers;
+  }
+
+  isStageEqualOrHigher(userStage, requiredStage) {
+    const stageOrder = ['feeder', 'bronze', 'silver', 'gold', 'diamond', 'infinity'];
+    const userIndex = stageOrder.indexOf(userStage);
+    const requiredIndex = stageOrder.indexOf(requiredStage);
+    return userIndex >= requiredIndex;
   }
 
   async getUserMatrix(userId) {
@@ -270,6 +369,73 @@ class MLMService {
     `, [userId]);
 
     return result.rows[0] || null;
+  }
+
+  async getFullMatrixTree(userId) {
+    // Get user's current stage
+    const userResult = await pool.query(
+      'SELECT id, full_name, email, mlm_level FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      throw new Error('User not found');
+    }
+
+    const user = userResult.rows[0];
+    const stage = user.mlm_level || 'feeder';
+
+    // Build tree recursively
+    const tree = await this.buildMatrixNode(userId, stage, 0);
+    return tree;
+  }
+
+  async buildMatrixNode(userId, stage, depth) {
+    // Limit depth to prevent infinite recursion
+    if (depth > 5) return null;
+
+    // Get user info
+    const userResult = await pool.query(
+      'SELECT id, full_name, email, mlm_level FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) return null;
+
+    const user = userResult.rows[0];
+
+    // Get matrix entry
+    const matrixResult = await pool.query(
+      'SELECT * FROM mlm_matrix WHERE user_id = $1 AND stage = $2',
+      [userId, stage]
+    );
+
+    const node = {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      mlm_level: user.mlm_level,
+      stage: stage,
+      children: []
+    };
+
+    if (matrixResult.rows.length > 0) {
+      const matrix = matrixResult.rows[0];
+
+      // Get left child
+      if (matrix.left_child_id) {
+        const leftChild = await this.buildMatrixNode(matrix.left_child_id, stage, depth + 1);
+        if (leftChild) node.children.push(leftChild);
+      }
+
+      // Get right child
+      if (matrix.right_child_id) {
+        const rightChild = await this.buildMatrixNode(matrix.right_child_id, stage, depth + 1);
+        if (rightChild) node.children.push(rightChild);
+      }
+    }
+
+    return node;
   }
 
   async completeUserMatrix(userId, currentStage) {
