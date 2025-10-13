@@ -448,16 +448,6 @@ class MLMService {
         throw new Error('Invalid stage');
       }
 
-      const matrixResult = await client.query(
-        'SELECT slots_filled, slots_required FROM stage_matrix WHERE user_id = $1 AND stage = $2',
-        [userId, currentStage]
-      );
-
-      let slotsNeeded = stageConfig.requiredReferrals;
-      if (matrixResult.rows.length > 0) {
-        slotsNeeded = stageConfig.requiredReferrals - matrixResult.rows[0].slots_filled;
-      }
-
       const userResult = await client.query(
         'SELECT referral_code FROM users WHERE id = $1',
         [userId]
@@ -465,22 +455,24 @@ class MLMService {
       const referralCode = userResult.rows[0].referral_code;
 
       const generatedUsers = [];
-      const earnings = [];
+      const directReferrals = [];
 
-      for (let i = 0; i < slotsNeeded; i++) {
+      // Generate 2 direct referrals
+      for (let i = 0; i < 2; i++) {
         const newUser = await client.query(`
-          INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active)
-          VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true)
+          INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified)
+          VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true)
           RETURNING id, full_name, email, referral_code
         `, [
-          `Generated User ${Date.now()}-${i}`,
-          `generated_${Date.now()}_${i}@test.com`,
+          `Direct Referral ${i + 1}`,
+          `direct_${Date.now()}_${i}@test.com`,
           '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
           `+234${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
-          `GEN${Date.now()}${i}`,
+          `DIR${Date.now()}${i}`,
           referralCode
         ]);
 
+        directReferrals.push(newUser.rows[0]);
         generatedUsers.push(newUser.rows[0]);
 
         await client.query(`
@@ -497,69 +489,57 @@ class MLMService {
           INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
           VALUES ($1, 'feeder', 0, 6)
         `, [newUser.rows[0].id]);
-
-        const earning = await client.query(`
-          INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
-          VALUES ($1, $2, $3, $4, 'completed')
-          RETURNING id, amount
-        `, [userId, newUser.rows[0].id, currentStage, stageConfig.bonusUSD]);
-
-        earnings.push(earning.rows[0]);
-
-        await client.query(`
-          UPDATE wallets SET total_earned = total_earned + $1
-          WHERE user_id = $2
-        `, [stageConfig.bonusUSD, userId]);
-
-        await client.query(`
-          INSERT INTO transactions (user_id, type, amount, description, status)
-          VALUES ($1, 'referral_bonus', $2, $3, 'completed')
-        `, [userId, stageConfig.bonusUSD, `Referral bonus from ${newUser.rows[0].full_name} at ${currentStage} stage`]);
       }
 
-      await client.query(`
-        UPDATE stage_matrix 
-        SET slots_filled = slots_required, is_complete = true, completed_at = NOW()
-        WHERE user_id = $1 AND stage = $2
-      `, [userId, currentStage]);
+      // Generate 4 spillover referrals (2 for each direct referral)
+      for (let i = 0; i < 2; i++) {
+        const parentReferral = directReferrals[i];
+        
+        for (let j = 0; j < 2; j++) {
+          const spilloverUser = await client.query(`
+            INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified)
+            VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true)
+            RETURNING id, full_name, email, referral_code
+          `, [
+            `Spillover ${i + 1}-${j + 1}`,
+            `spillover_${Date.now()}_${i}_${j}@test.com`,
+            '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+            `+234${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
+            `SPILL${Date.now()}${i}${j}`,
+            parentReferral.referral_code
+          ]);
 
-      const stageProgression = {
-        'feeder': 'bronze',
-        'bronze': 'silver',
-        'silver': 'gold',
-        'gold': 'diamond',
-        'diamond': 'infinity'
-      };
+          generatedUsers.push(spilloverUser.rows[0]);
 
-      const nextStage = stageProgression[currentStage];
+          await client.query(`
+            INSERT INTO deposit_requests (user_id, amount, status)
+            VALUES ($1, 18000, 'approved')
+          `, [spilloverUser.rows[0].id]);
 
-      if (nextStage) {
-        await client.query(`
-          UPDATE users SET mlm_level = $1 WHERE id = $2
-        `, [nextStage, userId]);
+          await client.query(`
+            INSERT INTO wallets (user_id, balance, total_earned)
+            VALUES ($1, 0, 0)
+          `, [spilloverUser.rows[0].id]);
 
-        const nextStageSlots = nextStage === 'infinity' ? 0 : (nextStage === 'feeder' ? 6 : 14);
-        await client.query(`
-          INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-          VALUES ($1, $2, 0, $3)
-          ON CONFLICT (user_id, stage) DO NOTHING
-        `, [userId, nextStage, nextStageSlots]);
+          await client.query(`
+            INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+            VALUES ($1, 'feeder', 0, 6)
+          `, [spilloverUser.rows[0].id]);
+        }
+      }
 
-        await client.query(`
-          INSERT INTO level_progressions (user_id, from_stage, to_stage, matrix_count)
-          VALUES ($1, $2, $3, 1)
-        `, [userId, currentStage, nextStage]);
+      // Process all referrals through the spillover system
+      for (const user of generatedUsers) {
+        await this.processReferral(userId, user.id);
       }
 
       await client.query('COMMIT');
 
       return {
         generatedUsers: generatedUsers.length,
-        totalEarnings: earnings.reduce((sum, e) => sum + parseFloat(e.amount), 0),
-        completedStage: currentStage,
-        newStage: nextStage || 'infinity',
-        users: generatedUsers,
-        earnings
+        directReferrals: 2,
+        spilloverReferrals: 4,
+        users: generatedUsers
       };
     } catch (error) {
       await client.query('ROLLBACK');
