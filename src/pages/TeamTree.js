@@ -129,8 +129,16 @@ export default function TeamTree() {
 
   const TreeNode = ({ node, level = 0, isRoot = false }) => {
     const hasChildren = node.children && node.children.length > 0;
-    const isExpanded = isRoot || expandedNodes.has(node.id);
+    const isExpanded = expandedNodes.has(node.id) || isRoot;
     const isCurrentUser = node.id === 'current-user';
+    
+    // Calculate dynamic spacing based on number of children
+    const getSpacing = (childCount) => {
+      if (childCount <= 2) return 'gap-32';
+      if (childCount <= 4) return 'gap-16';
+      if (childCount <= 6) return 'gap-8';
+      return 'gap-4';
+    };
     
     return (
       <div className="flex flex-col items-center">
@@ -161,10 +169,10 @@ export default function TeamTree() {
           </div>
           
           {/* Expand/Collapse button */}
-          {hasChildren && (
+          {hasChildren && !isRoot && (
             <button
               onClick={() => toggleNode(node.id)}
-              className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-white border-2 border-gray-300 rounded-full flex items-center justify-center text-xs hover:bg-gray-50"
+              className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-white border-2 border-gray-400 rounded-full flex items-center justify-center text-sm font-bold hover:bg-gray-100 shadow-md z-10"
             >
               {isExpanded ? '−' : '+'}
             </button>
@@ -194,25 +202,47 @@ export default function TeamTree() {
         {hasChildren && isExpanded && (
           <div className="mt-6">
             {/* Connection lines */}
-            <div className="relative mt-8">
-              {/* Vertical line from parent */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-400" style={{ top: '-2rem' }}></div>
+            <div className="relative mt-12">
+              {/* Vertical line from parent down */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-6 bg-gray-400" style={{ top: '-1.5rem' }}></div>
               
-              {/* Horizontal line connecting children */}
-              {node.children.length > 1 && (
-                <div className="absolute left-0 right-0 h-1 bg-gray-400" style={{ top: '-0.5rem' }}>
-                  <div className="absolute left-1/2 transform -translate-x-1/2" style={{ width: `${(node.children.length - 1) * 8}rem` }}>
-                    <div className="h-1 bg-gray-400 w-full"></div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Children nodes */}
-              <div className="flex justify-center gap-32">
+              {/* Children container */}
+              <div className={`flex justify-center ${getSpacing(node.children.length)}`}>
                 {node.children.map((child, index) => (
-                  <div key={child.id || index} className="relative">
-                    {/* Vertical line to child */}
-                    <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-400" style={{ top: '-2rem' }}></div>
+                  <div key={child.id || index} className="relative flex flex-col items-center">
+                    {/* Vertical line down to this child */}
+                    <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-6 bg-gray-400" style={{ top: '-1.5rem' }}></div>
+                    
+                    {/* Horizontal line segment */}
+                    {node.children.length > 1 && (
+                      <>
+                        {/* Left side of T */}
+                        {index === 0 && (
+                          <div className="absolute h-1 bg-gray-400" style={{ 
+                            top: '-1.5rem',
+                            left: '50%',
+                            right: `-${getSpacing(node.children.length).includes('32') ? '8rem' : getSpacing(node.children.length).includes('16') ? '4rem' : '2rem'}`
+                          }}></div>
+                        )}
+                        {/* Right side of T */}
+                        {index === node.children.length - 1 && index > 0 && (
+                          <div className="absolute h-1 bg-gray-400" style={{ 
+                            top: '-1.5rem',
+                            right: '50%',
+                            left: `-${getSpacing(node.children.length).includes('32') ? '8rem' : getSpacing(node.children.length).includes('16') ? '4rem' : '2rem'}`
+                          }}></div>
+                        )}
+                        {/* Middle segments */}
+                        {index > 0 && index < node.children.length - 1 && (
+                          <div className="absolute h-1 bg-gray-400" style={{ 
+                            top: '-1.5rem',
+                            left: `-${getSpacing(node.children.length).includes('32') ? '8rem' : getSpacing(node.children.length).includes('16') ? '4rem' : '2rem'}`,
+                            right: `-${getSpacing(node.children.length).includes('32') ? '8rem' : getSpacing(node.children.length).includes('16') ? '4rem' : '2rem'}`
+                          }}></div>
+                        )}
+                      </>
+                    )}
+                    
                     <TreeNode node={child} level={level + 1} />
                   </div>
                 ))}
