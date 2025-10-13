@@ -303,8 +303,8 @@ class MLMService {
 
       for (let i = 0; i < slotsNeeded; i++) {
         const newUser = await client.query(`
-          INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, joining_fee_paid, is_active)
-          VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true)
+          INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active)
+          VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true)
           RETURNING id, full_name, email, referral_code
         `, [
           `Generated User ${Date.now()}-${i}`,
@@ -316,6 +316,11 @@ class MLMService {
         ]);
 
         generatedUsers.push(newUser.rows[0]);
+
+        await client.query(`
+          INSERT INTO deposit_requests (user_id, amount, status, approved_at)
+          VALUES ($1, 18000, 'approved', NOW())
+        `, [newUser.rows[0].id]);
 
         await client.query(`
           INSERT INTO wallets (user_id, balance, total_earned)
