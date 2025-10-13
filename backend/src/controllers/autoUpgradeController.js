@@ -16,7 +16,7 @@ const autoUpgradeStages = async (req, res) => {
       WHERE u.mlm_level = 'feeder'
     `);
     
-    const feederToUpgrade = feederUsers.rows.filter(u => u.paid_count >= 6);
+    const feederToUpgrade = feederUsers.rows.filter(u => parseInt(u.paid_count) >= 6);
 
     for (const user of feederToUpgrade) {
       await client.query("UPDATE users SET mlm_level = 'bronze' WHERE id = $1", [user.id]);
@@ -27,6 +27,8 @@ const autoUpgradeStages = async (req, res) => {
       `, [user.id]);
       upgraded++;
     }
+    
+    const debugInfo = { feederUsers: feederUsers.rows.map(u => ({ email: u.email, paid_count: u.paid_count })) };
 
     // Bronze to Silver (14+ paid referrals)
     const bronzeUsers = await client.query(`
@@ -109,7 +111,7 @@ const autoUpgradeStages = async (req, res) => {
     }
 
     client.release();
-    res.json({ success: true, upgraded, message: `${upgraded} users upgraded` });
+    res.json({ success: true, upgraded, message: `${upgraded} users upgraded`, debug: debugInfo });
   } catch (error) {
     console.error('Auto upgrade error:', error);
     res.status(500).json({ success: false, error: error.message });
