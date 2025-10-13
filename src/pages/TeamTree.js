@@ -87,6 +87,34 @@ export default function TeamTree() {
     return { children: members };
   };
 
+  const countAllMembers = (members) => {
+    let count = 0;
+    const countRecursive = (nodes) => {
+      nodes.forEach(node => {
+        count++;
+        if (node.children && node.children.length > 0) {
+          countRecursive(node.children);
+        }
+      });
+    };
+    countRecursive(members);
+    return count;
+  };
+
+  const countActiveMembers = (members) => {
+    let count = 0;
+    const countRecursive = (nodes) => {
+      nodes.forEach(node => {
+        if (node.has_deposited) count++;
+        if (node.children && node.children.length > 0) {
+          countRecursive(node.children);
+        }
+      });
+    };
+    countRecursive(members);
+    return count;
+  };
+
   const toggleNode = (nodeId) => {
     const newExpanded = new Set(expandedNodes);
     if (newExpanded.has(nodeId)) {
@@ -271,7 +299,7 @@ export default function TeamTree() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Team</p>
-              <p className="text-xl font-bold text-gray-900">{teamMembers.length}</p>
+              <p className="text-xl font-bold text-gray-900">{countAllMembers(teamMembers)}</p>
             </div>
           </div>
         </div>
@@ -283,7 +311,7 @@ export default function TeamTree() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Active Members</p>
-              <p className="text-xl font-bold text-gray-900">{teamMembers.filter(m => m.is_active !== false).length}</p>
+              <p className="text-xl font-bold text-gray-900">{countActiveMembers(teamMembers)}</p>
             </div>
           </div>
         </div>
@@ -309,7 +337,7 @@ export default function TeamTree() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Matrix Members</p>
-              <p className="text-xl font-bold text-gray-900">{teamMembers.length}</p>
+              <p className="text-xl font-bold text-gray-900">{countAllMembers(teamMembers)}</p>
             </div>
           </div>
         </div>
