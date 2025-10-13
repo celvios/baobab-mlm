@@ -271,6 +271,132 @@ class MLMService {
 
     return result.rows[0] || null;
   }
+
+  async completeUserMatrix(userId, currentStage) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const stageConfig = MLM_LEVELS[currentStage];
+      if (!stageConfig) {
+        throw new Error('Invalid stage');
+      }
+
+      const matrixResult = await client.query(
+        'SELECT slots_filled, slots_required FROM stage_matrix WHERE user_id = $1 AND stage = $2',
+        [userId, currentStage]
+      );
+
+      let slotsNeeded = stageConfig.requiredReferrals;
+      if (matrixResult.rows.length > 0) {
+        slotsNeeded = stageConfig.requiredReferrals - matrixResult.rows[0].slots_filled;
+      }
+
+      const userResult = await client.query(
+        'SELECT referral_code FROM users WHERE id = $1',
+        [userId]
+      );
+      const referralCode = userResult.rows[0].referral_code;
+
+      const generatedUsers = [];
+      const earnings = [];
+
+      for (let i = 0; i < slotsNeeded; i++) {
+        const newUser = await client.query(`
+          INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, joining_fee_paid, joining_fee_amount, is_active)
+          VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, 18000, true)
+          RETURNING id, full_name, email, referral_code
+        `, [
+          `Generated User ${Date.now()}-${i}`,
+          `generated_${Date.now()}_${i}@test.com`,
+          '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+          `+234${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
+          `GEN${Date.now()}${i}`,
+          referralCode
+        ]);
+
+        generatedUsers.push(newUser.rows[0]);
+
+        await client.query(`
+          INSERT INTO wallets (user_id, balance, total_earned)
+          VALUES ($1, 0, 0)
+        `, [newUser.rows[0].id]);
+
+        await client.query(`
+          INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+          VALUES ($1, 'feeder', 0, 6)
+        `, [newUser.rows[0].id]);
+
+        const earning = await client.query(`
+          INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
+          VALUES ($1, $2, $3, $4, 'completed')
+          RETURNING id, amount
+        `, [userId, newUser.rows[0].id, currentStage, stageConfig.bonusUSD]);
+
+        earnings.push(earning.rows[0]);
+
+        await client.query(`
+          UPDATE wallets SET total_earned = total_earned + $1
+          WHERE user_id = $2
+        `, [stageConfig.bonusUSD, userId]);
+
+        await client.query(`
+          INSERT INTO transactions (user_id, type, amount, description, status)
+          VALUES ($1, 'referral_bonus', $2, $3, 'completed')
+        `, [userId, stageConfig.bonusUSD, `Referral bonus from ${newUser.rows[0].full_name} at ${currentStage} stage`]);
+      }
+
+      await client.query(`
+        UPDATE stage_matrix 
+        SET slots_filled = slots_required, is_complete = true, completed_at = NOW()
+        WHERE user_id = $1 AND stage = $2
+      `, [userId, currentStage]);
+
+      const stageProgression = {
+        'feeder': 'bronze',
+        'bronze': 'silver',
+        'silver': 'gold',
+        'gold': 'diamond',
+        'diamond': 'infinity'
+      };
+
+      const nextStage = stageProgression[currentStage];
+
+      if (nextStage) {
+        await client.query(`
+          UPDATE users SET mlm_level = $1 WHERE id = $2
+        `, [nextStage, userId]);
+
+        const nextStageSlots = nextStage === 'infinity' ? 0 : (nextStage === 'feeder' ? 6 : 14);
+        await client.query(`
+          INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+          VALUES ($1, $2, 0, $3)
+          ON CONFLICT (user_id, stage) DO NOTHING
+        `, [userId, nextStage, nextStageSlots]);
+
+        await client.query(`
+          INSERT INTO level_progressions (user_id, from_stage, to_stage, matrix_count)
+          VALUES ($1, $2, $3, 1)
+        `, [userId, currentStage, nextStage]);
+      }
+
+      await client.query('COMMIT');
+
+      return {
+        generatedUsers: generatedUsers.length,
+        totalEarnings: earnings.reduce((sum, e) => sum + parseFloat(e.amount), 0),
+        completedStage: currentStage,
+        newStage: nextStage || 'infinity',
+        users: generatedUsers,
+        earnings
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = new MLMService();
