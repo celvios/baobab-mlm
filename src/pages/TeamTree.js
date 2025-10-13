@@ -193,33 +193,30 @@ export default function TeamTree() {
         {/* Children */}
         {hasChildren && isExpanded && (
           <div className="mt-6">
-            {/* Connection line */}
-            <div className="flex justify-center mb-4">
-              <div className="tree-connection w-1 h-8 bg-gray-400"></div>
-            </div>
-            
-            {/* Children nodes */}
-            <div className="flex justify-center space-x-16">
-              {node.children.map((child, index) => (
-                <div key={child.id || index} className="relative">
-                  {/* Vertical connection line */}
-                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8">
-                    <div className="tree-connection w-1 h-8 bg-gray-400"></div>
+            {/* Connection lines */}
+            <div className="relative mt-8">
+              {/* Vertical line from parent */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-400" style={{ top: '-2rem' }}></div>
+              
+              {/* Horizontal line connecting children */}
+              {node.children.length > 1 && (
+                <div className="absolute left-0 right-0 h-1 bg-gray-400" style={{ top: '-0.5rem' }}>
+                  <div className="absolute left-1/2 transform -translate-x-1/2" style={{ width: `${(node.children.length - 1) * 8}rem` }}>
+                    <div className="h-1 bg-gray-400 w-full"></div>
                   </div>
-                  {/* Horizontal connection line */}
-                  {node.children.length > 1 && (
-                    <div className="absolute top-0 transform -translate-y-8" style={{
-                      left: index === 0 ? '50%' : '-50%',
-                      width: index === 0 ? `calc(50% + 4rem)` : `calc(50% + 4rem)`,
-                      right: index === 0 ? 'auto' : '50%'
-                    }}>
-                      <div className="tree-connection h-1 bg-gray-400 w-full"></div>
-                    </div>
-                  )}
-                  
-                  <TreeNode node={child} level={level + 1} />
                 </div>
-              ))}
+              )}
+              
+              {/* Children nodes */}
+              <div className="flex justify-center gap-32">
+                {node.children.map((child, index) => (
+                  <div key={child.id || index} className="relative">
+                    {/* Vertical line to child */}
+                    <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-8 bg-gray-400" style={{ top: '-2rem' }}></div>
+                    <TreeNode node={child} level={level + 1} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
