@@ -7,10 +7,12 @@ const autoUpgradeStages = async (req, res) => {
 
     // Feeder to Bronze (6+ paid referrals)
     const feederUsers = await client.query(`
-      SELECT u.id, u.email, u.full_name, sm.slots_filled
+      SELECT u.id, u.email, COUNT(re.id) as paid_count
       FROM users u
-      JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = 'feeder'
-      WHERE u.mlm_level = 'feeder' AND sm.slots_filled >= 6
+      LEFT JOIN referral_earnings re ON u.id = re.user_id AND re.stage = 'feeder' AND re.status = 'completed'
+      WHERE u.mlm_level = 'feeder'
+      GROUP BY u.id, u.email
+      HAVING COUNT(re.id) >= 6
     `);
 
     for (const user of feederUsers.rows) {
@@ -25,9 +27,12 @@ const autoUpgradeStages = async (req, res) => {
 
     // Bronze to Silver (14+ paid referrals)
     const bronzeUsers = await client.query(`
-      SELECT u.id FROM users u
-      JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = 'bronze'
-      WHERE u.mlm_level = 'bronze' AND sm.slots_filled >= 14
+      SELECT u.id, COUNT(re.id) as paid_count
+      FROM users u
+      LEFT JOIN referral_earnings re ON u.id = re.user_id AND re.stage = 'bronze' AND re.status = 'completed'
+      WHERE u.mlm_level = 'bronze'
+      GROUP BY u.id
+      HAVING COUNT(re.id) >= 14
     `);
 
     for (const user of bronzeUsers.rows) {
@@ -42,9 +47,12 @@ const autoUpgradeStages = async (req, res) => {
 
     // Silver to Gold
     const silverUsers = await client.query(`
-      SELECT u.id FROM users u
-      JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = 'silver'
-      WHERE u.mlm_level = 'silver' AND sm.slots_filled >= 14
+      SELECT u.id, COUNT(re.id) as paid_count
+      FROM users u
+      LEFT JOIN referral_earnings re ON u.id = re.user_id AND re.stage = 'silver' AND re.status = 'completed'
+      WHERE u.mlm_level = 'silver'
+      GROUP BY u.id
+      HAVING COUNT(re.id) >= 14
     `);
 
     for (const user of silverUsers.rows) {
@@ -59,9 +67,12 @@ const autoUpgradeStages = async (req, res) => {
 
     // Gold to Diamond
     const goldUsers = await client.query(`
-      SELECT u.id FROM users u
-      JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = 'gold'
-      WHERE u.mlm_level = 'gold' AND sm.slots_filled >= 14
+      SELECT u.id, COUNT(re.id) as paid_count
+      FROM users u
+      LEFT JOIN referral_earnings re ON u.id = re.user_id AND re.stage = 'gold' AND re.status = 'completed'
+      WHERE u.mlm_level = 'gold'
+      GROUP BY u.id
+      HAVING COUNT(re.id) >= 14
     `);
 
     for (const user of goldUsers.rows) {
@@ -76,9 +87,12 @@ const autoUpgradeStages = async (req, res) => {
 
     // Diamond to Infinity
     const diamondUsers = await client.query(`
-      SELECT u.id FROM users u
-      JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = 'diamond'
-      WHERE u.mlm_level = 'diamond' AND sm.slots_filled >= 14
+      SELECT u.id, COUNT(re.id) as paid_count
+      FROM users u
+      LEFT JOIN referral_earnings re ON u.id = re.user_id AND re.stage = 'diamond' AND re.status = 'completed'
+      WHERE u.mlm_level = 'diamond'
+      GROUP BY u.id
+      HAVING COUNT(re.id) >= 14
     `);
 
     for (const user of diamondUsers.rows) {
