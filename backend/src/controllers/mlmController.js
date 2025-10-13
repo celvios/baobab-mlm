@@ -15,7 +15,32 @@ const getMatrix = async (req, res) => {
 const getBinaryTree = async (req, res) => {
   try {
     const userId = req.user.id;
-    const tree = await mlmService.getBinaryTree(userId);
+    
+    // Get user info
+    const userResult = await pool.query(
+      'SELECT id, full_name, email, mlm_level FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Get team members
+    const team = await mlmService.getTeamMembers(userId);
+    
+    // Build tree structure with team members
+    const tree = {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      mlm_level: user.mlm_level || 'feeder',
+      is_active: true,
+      team: team
+    };
+    
     res.json({ tree });
   } catch (error) {
     console.error(error);
