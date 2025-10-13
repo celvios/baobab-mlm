@@ -61,6 +61,10 @@ const register = async (req, res) => {
     // Create wallet
     await pool.query('INSERT INTO wallets (user_id) VALUES ($1)', [user.id]);
 
+    // Initialize MLM stage
+    await pool.query('UPDATE users SET mlm_level = $1 WHERE id = $2', ['feeder', user.id]);
+    await pool.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [user.id, 'feeder']);
+
     // Send OTP email
     console.log(`\n=== OTP SENT TO: ${email} ===`);
     console.log(`OTP Code: ${otpCode}`);
