@@ -153,7 +153,15 @@ const completeMatrix = async (req, res) => {
     }
 
     const user = userResult.rows[0];
-    const result = await mlmService.completeUserMatrix(user.id, user.mlm_level);
+    
+    // Ensure user has proper mlm_level
+    let userStage = user.mlm_level;
+    if (!userStage || userStage === 'no_stage' || userStage === '') {
+      await pool.query('UPDATE users SET mlm_level = $1 WHERE id = $2', ['feeder', user.id]);
+      userStage = 'feeder';
+    }
+    
+    const result = await mlmService.completeUserMatrix(user.id, userStage);
     
     res.json({
       message: 'Matrix completion process executed',
