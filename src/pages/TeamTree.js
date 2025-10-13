@@ -177,7 +177,7 @@ export default function TeamTree() {
             {isRoot || isCurrentUser ? 'You' : (node.full_name || node.email)}
           </p>
           <p className="text-xs text-gray-500">
-            {!node.mlm_level || node.mlm_level === 'no_stage' ? 'No Level' : node.mlm_level === 'feeder' ? 'Feeder' : node.mlm_level.charAt(0).toUpperCase() + node.mlm_level.slice(1)}
+            {isRoot ? (userProfile?.mlmLevel === 'feeder' ? 'Feeder' : (userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'Feeder')) : (!node.mlm_level || node.mlm_level === 'no_stage' ? 'No Level' : node.mlm_level === 'feeder' ? 'Feeder' : node.mlm_level.charAt(0).toUpperCase() + node.mlm_level.slice(1))}
           </p>
           {!isRoot && (
             node.has_deposited ? (
@@ -195,20 +195,25 @@ export default function TeamTree() {
           <div className="mt-6">
             {/* Connection line */}
             <div className="flex justify-center mb-4">
-              <div className="tree-connection w-px h-6 bg-gradient-to-b from-gray-300 to-gray-400"></div>
+              <div className="tree-connection w-1 h-8 bg-gray-400"></div>
             </div>
             
             {/* Children nodes */}
-            <div className="flex justify-center space-x-8">
+            <div className="flex justify-center space-x-16">
               {node.children.map((child, index) => (
                 <div key={child.id || index} className="relative">
-                  {/* Connection lines */}
-                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-6">
-                    <div className="tree-connection w-px h-6 bg-gradient-to-b from-gray-300 to-gray-400"></div>
+                  {/* Vertical connection line */}
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8">
+                    <div className="tree-connection w-1 h-8 bg-gray-400"></div>
                   </div>
-                  {index > 0 && (
-                    <div className="absolute top-0 left-0 transform -translate-y-6">
-                      <div className="tree-connection h-px bg-gradient-to-r from-gray-300 to-gray-400" style={{ width: `${8 * 4}rem` }}></div>
+                  {/* Horizontal connection line */}
+                  {node.children.length > 1 && (
+                    <div className="absolute top-0 transform -translate-y-8" style={{
+                      left: index === 0 ? '50%' : '-50%',
+                      width: index === 0 ? `calc(50% + 4rem)` : `calc(50% + 4rem)`,
+                      right: index === 0 ? 'auto' : '50%'
+                    }}>
+                      <div className="tree-connection h-1 bg-gray-400 w-full"></div>
                     </div>
                   )}
                   
