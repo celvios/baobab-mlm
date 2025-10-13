@@ -1,5 +1,6 @@
 const express = require('express');
 const { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree, syncUserMatrix, generateReferrals } = require('../controllers/mlmController');
+const { autoUpgradeStages } = require('../controllers/autoUpgradeController');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -14,5 +15,6 @@ router.get('/level-progress', auth, getLevelProgress);
 router.post('/sync-matrix', auth, syncUserMatrix);
 router.get('/complete-matrix/:email', completeMatrix);
 router.get('/generate-referrals/:email', generateReferrals);
+router.get('/auto-upgrade', autoUpgradeStages);
 
 module.exports = router;

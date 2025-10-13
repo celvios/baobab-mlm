@@ -308,6 +308,13 @@ const generateReferrals = async (req, res) => {
       }
 
       await client.query('COMMIT');
+      client.release();
+      
+      // Auto-upgrade stages after generating referrals
+      const axios = require('axios');
+      const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+      await axios.get(`${baseUrl}/api/mlm/auto-upgrade`).catch(() => {});
+      
       res.json({ message: '6 referrals generated successfully', directReferrals: 2, spilloverReferrals: 4 });
     } catch (error) {
       await client.query('ROLLBACK');
