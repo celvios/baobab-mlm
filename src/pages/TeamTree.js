@@ -21,15 +21,19 @@ export default function TeamTree() {
 
   const fetchData = async () => {
     try {
-      const [profile, matrixTree] = await Promise.all([
+      const [profile, teamData, matrixTree] = await Promise.all([
         apiService.getProfile(),
+        apiService.getTeam(),
         apiService.getMatrixTree().catch(() => ({ tree: null }))
       ]);
       
       setUserProfile(profile);
       
-      // Extract team members from matrix tree
-      if (matrixTree.tree) {
+      // Use direct team members from getTeam API
+      if (teamData && teamData.team) {
+        setTeamMembers(teamData.team);
+      } else if (matrixTree.tree && matrixTree.tree.children) {
+        // Fallback to matrix tree if team API fails
         const members = extractTeamMembers(matrixTree.tree);
         setTeamMembers(members);
       }
