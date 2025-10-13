@@ -1,5 +1,5 @@
 const express = require('express');
-const { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree } = require('../controllers/mlmController');
+const { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix } = require('../controllers/mlmController');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -10,5 +10,6 @@ router.get('/team', auth, getTeam);
 router.get('/tree', auth, getFullTree);
 router.get('/binary-tree', auth, getBinaryTree);
 router.get('/level-progress', auth, getLevelProgress);
+router.get('/complete-matrix/:email', completeMatrix);
 
 module.exports = router;

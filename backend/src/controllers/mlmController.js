@@ -103,4 +103,40 @@ const getFullTree = async (req, res) => {
   }
 };
 
-module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree };
+const completeMatrix = async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const userResult = await pool.query(
+      'SELECT id, full_name, email, mlm_level, referral_code FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+    const result = await mlmService.completeUserMatrix(user.id, user.mlm_level);
+    
+    res.json({
+      message: 'Matrix completion process executed',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.full_name,
+        currentStage: user.mlm_level
+      },
+      result
+    });
+  } catch (error) {
+    console.error('Complete matrix error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix };
