@@ -318,8 +318,8 @@ class MLMService {
         generatedUsers.push(newUser.rows[0]);
 
         await client.query(`
-          INSERT INTO deposit_requests (user_id, amount, status, approved_at)
-          VALUES ($1, 18000, 'approved', NOW())
+          INSERT INTO deposit_requests (user_id, amount, status)
+          VALUES ($1, 18000, 'approved')
         `, [newUser.rows[0].id]);
 
         await client.query(`
