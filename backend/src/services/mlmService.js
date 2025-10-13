@@ -346,21 +346,13 @@ class MLMService {
       SELECT u.mlm_level as current_stage,
              COALESCE(sm.slots_filled, 0) as slots_filled,
              COALESCE(sm.slots_required, 6) as slots_required,
-             COALESCE(sm.is_complete, false) as is_complete,
-             (SELECT COUNT(*) FROM users WHERE referred_by IN (SELECT referral_code FROM users WHERE id = $1)) as total_referrals
+             COALESCE(sm.is_complete, false) as is_complete
       FROM users u
       LEFT JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = u.mlm_level
       WHERE u.id = $1
     `, [userId]);
 
-    const progress = result.rows[0];
-    
-    // If stage_matrix shows 0 but user has referrals, use referral count as fallback
-    if (progress && progress.slots_filled === 0 && progress.total_referrals > 0) {
-      progress.slots_filled = progress.total_referrals;
-    }
-
-    return progress || null;
+    return result.rows[0] || null;
   }
 
   async getBinaryTree(userId) {
