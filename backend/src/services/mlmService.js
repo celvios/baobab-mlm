@@ -491,6 +491,11 @@ class MLMService {
         `, [newUser.rows[0].id]);
       }
 
+      // Process direct referrals first
+      for (const directRef of directReferrals) {
+        await this.processReferral(userId, directRef.id);
+      }
+
       // Generate 4 spillover referrals (2 for each direct referral)
       for (let i = 0; i < 2; i++) {
         const parentReferral = directReferrals[i];
@@ -525,12 +530,10 @@ class MLMService {
             INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
             VALUES ($1, 'feeder', 0, 6)
           `, [spilloverUser.rows[0].id]);
-        }
-      }
 
-      // Process all referrals through the spillover system
-      for (const user of generatedUsers) {
-        await this.processReferral(userId, user.id);
+          // Process spillover through parent's referral
+          await this.processReferral(parentReferral.id, spilloverUser.rows[0].id);
+        }
       }
 
       await client.query('COMMIT');
