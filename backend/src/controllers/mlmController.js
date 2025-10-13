@@ -190,4 +190,54 @@ const getMatrixTree = async (req, res) => {
   }
 };
 
-module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree };
+const syncUserMatrix = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get user's referral code
+    const userResult = await pool.query(
+      'SELECT referral_code, mlm_level FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const { referral_code, mlm_level } = userResult.rows[0];
+    const stage = mlm_level || 'feeder';
+    
+    // Count paid referrals
+    const paidReferrals = await pool.query(`
+      SELECT COUNT(*) as count
+      FROM users u
+      WHERE u.referred_by = $1
+      AND EXISTS (
+        SELECT 1 FROM deposit_requests dr 
+        WHERE dr.user_id = u.id AND dr.status = 'approved'
+      )
+    `, [referral_code]);
+    
+    const paidCount = parseInt(paidReferrals.rows[0].count);
+    
+    // Update stage_matrix
+    await pool.query(`
+      INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+      VALUES ($1, $2, $3, 6)
+      ON CONFLICT (user_id, stage) 
+      DO UPDATE SET slots_filled = $3, is_complete = ($3 >= stage_matrix.slots_required)
+    `, [userId, stage, paidCount]);
+    
+    res.json({ 
+      message: 'Matrix synced successfully',
+      stage,
+      slots_filled: paidCount,
+      slots_required: 6
+    });
+  } catch (error) {
+    console.error('Sync matrix error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree, syncUserMatrix };
