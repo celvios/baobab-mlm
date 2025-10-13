@@ -115,6 +115,10 @@ export default function TeamTree() {
     return count;
   };
 
+  const countDirectReferrals = (members) => {
+    return members.length;
+  };
+
   const toggleNode = (nodeId) => {
     const newExpanded = new Set(expandedNodes);
     if (newExpanded.has(nodeId)) {
@@ -298,8 +302,8 @@ export default function TeamTree() {
               <UsersIcon className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Team</p>
-              <p className="text-xl font-bold text-gray-900">{countAllMembers(teamMembers)}</p>
+              <p className="text-sm text-gray-600">Your Team</p>
+              <p className="text-xl font-bold text-gray-900">{countDirectReferrals(teamMembers)}</p>
             </div>
           </div>
         </div>
