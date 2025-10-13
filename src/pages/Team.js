@@ -11,30 +11,44 @@ export default function Team() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [profile, teamData, earningsData, progress] = await Promise.all([
-          apiService.getProfile(),
-          apiService.getTeam(),
-          apiService.getEarnings(),
-          apiService.getStageProgress()
-        ]);
-        
-        setUserProfile(profile);
-        setTeamMembers(teamData.team || []);
-        setStageProgress(progress);
-        
-        const totalEarnings = (earningsData.earnings || []).reduce((sum, earning) => sum + parseFloat(earning.total_earned || 0), 0);
-        setEarnings(totalEarnings);
-      } catch (error) {
-        console.error('Error fetching team data:', error);
-        setTeamMembers([]);
-        setEarnings(0);
-      }
-    };
-    
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const [profile, teamData, earningsData, progress] = await Promise.all([
+        apiService.getProfile(),
+        apiService.getTeam(),
+        apiService.getEarnings(),
+        apiService.getStageProgress()
+      ]);
+      
+      setUserProfile(profile);
+      setTeamMembers(teamData.team || []);
+      setStageProgress(progress);
+      
+      const totalEarnings = (earningsData.earnings || []).reduce((sum, earning) => sum + parseFloat(earning.total_earned || 0), 0);
+      setEarnings(totalEarnings);
+    } catch (error) {
+      console.error('Error fetching team data:', error);
+      setTeamMembers([]);
+      setEarnings(0);
+    }
+  };
+
+  const handleSyncMatrix = async () => {
+    try {
+      setLoading(true);
+      await apiService.syncMatrix();
+      await fetchData(); // Refresh data
+      alert('Matrix synced successfully!');
+    } catch (error) {
+      console.error('Sync error:', error);
+      alert('Failed to sync matrix');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getColorForIndex = (index) => {
     const colors = ['bg-yellow-400', 'bg-blue-400', 'bg-green-400', 'bg-orange-400', 'bg-purple-400'];
@@ -107,7 +121,16 @@ export default function Team() {
           <p className="text-gray-900 font-semibold mb-2">{userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1)} Stage</p>
           {stageProgress && (
             <>
-              <p className="text-gray-500 text-xs mb-1">{stageProgress.slots_filled || 0}/{stageProgress.slots_required || 6} slots filled</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-gray-500 text-xs">{stageProgress.slots_filled || 0}/{stageProgress.slots_required || 6} slots filled</p>
+                <button 
+                  onClick={handleSyncMatrix}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  title="Sync matrix with paid referrals"
+                >
+                  🔄 Sync
+                </button>
+              </div>
               <div className="w-full bg-gray-300 rounded-full h-2 mb-4">
                 <div 
                   className="bg-green-600 h-2 rounded-full transition-all duration-300" 

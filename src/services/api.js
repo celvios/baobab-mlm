@@ -205,6 +205,12 @@ class ApiService {
     return this.request('/mlm/matrix-tree');
   }
 
+  async syncMatrix() {
+    return this.request('/mlm/sync-matrix', {
+      method: 'POST'
+    });
+  }
+
   // Orders methods
   async createOrder(orderData) {
     return this.request('/orders', {
