@@ -31,15 +31,22 @@ const getBinaryTree = async (req, res) => {
     // Get team members
     const team = await mlmService.getTeamMembers(userId);
     
-    // Build tree structure with team members
+    // Build tree structure - add team members as left/right children for visualization
     const tree = {
       id: user.id,
       full_name: user.full_name,
       email: user.email,
       mlm_level: user.mlm_level || 'feeder',
-      is_active: true,
-      team: team
+      is_active: true
     };
+    
+    // Add team members as children
+    if (team.length > 0) {
+      tree.left = team[0];
+      if (team.length > 1) {
+        tree.right = team[1];
+      }
+    }
     
     res.json({ tree });
   } catch (error) {
