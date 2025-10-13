@@ -5,14 +5,16 @@ const autoUpgradeStages = async (req, res) => {
     const client = await pool.connect();
     let upgraded = 0;
 
-    // Feeder to Bronze (6+ paid referrals)
+    // Feeder to Bronze (6+ paid referrals from deposit_requests)
     const feederUsers = await client.query(`
-      SELECT u.id, u.email, COUNT(re.id) as paid_count
+      SELECT u.id, u.email, u.referral_code,
+             (SELECT COUNT(*) FROM users u2 
+              WHERE u2.referred_by = u.referral_code 
+              AND EXISTS (SELECT 1 FROM deposit_requests dr WHERE dr.user_id = u2.id AND dr.status = 'approved')
+             ) as paid_count
       FROM users u
-      LEFT JOIN referral_earnings re ON u.id = re.user_id AND re.stage = 'feeder' AND re.status = 'completed'
       WHERE u.mlm_level = 'feeder'
-      GROUP BY u.id, u.email
-      HAVING COUNT(re.id) >= 6
+      HAVING paid_count >= 6
     `);
 
     for (const user of feederUsers.rows) {
