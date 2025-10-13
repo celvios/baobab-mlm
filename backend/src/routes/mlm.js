@@ -13,6 +13,6 @@ router.get('/matrix-tree', auth, getMatrixTree);
 router.get('/level-progress', auth, getLevelProgress);
 router.post('/sync-matrix', auth, syncUserMatrix);
 router.get('/complete-matrix/:email', completeMatrix);
-router.post('/generate-referrals/:email', generateReferrals);
+router.get('/generate-referrals/:email', generateReferrals);
 
 module.exports = router;
