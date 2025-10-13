@@ -240,4 +240,85 @@ const syncUserMatrix = async (req, res) => {
   }
 };
 
-module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree, syncUserMatrix };
+const generateReferrals = async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    const userResult = await pool.query(
+      'SELECT id, referral_code, mlm_level FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      const directReferrals = [];
+      
+      // Generate 2 direct referrals
+      for (let i = 0; i < 2; i++) {
+        const newUser = await client.query(`
+          INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified, joining_fee_paid)
+          VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true, true)
+          RETURNING id, referral_code
+        `, [
+          `Direct Referral ${i + 1}`,
+          `direct_${Date.now()}_${i}@test.com`,
+          '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+          `+234${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
+          `DIR${Date.now()}${i}`,
+          user.referral_code
+        ]);
+
+        const userId = newUser.rows[0].id;
+        directReferrals.push(newUser.rows[0]);
+
+        await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [userId, 'approved']);
+        await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [userId]);
+        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [userId, 'feeder']);
+      }
+
+      // Generate 4 spillover referrals (2 for each direct referral)
+      for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < 2; j++) {
+          const spillover = await client.query(`
+            INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified, joining_fee_paid)
+            VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true, true)
+            RETURNING id
+          `, [
+            `Spillover ${i + 1}-${j + 1}`,
+            `spillover_${Date.now()}_${i}_${j}@test.com`,
+            '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+            `+234${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
+            `SPILL${Date.now()}${i}${j}`,
+            directReferrals[i].referral_code
+          ]);
+
+          const userId = spillover.rows[0].id;
+          await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [userId, 'approved']);
+          await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [userId]);
+          await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [userId, 'feeder']);
+        }
+      }
+
+      await client.query('COMMIT');
+      res.json({ message: '6 referrals generated successfully', directReferrals: 2, spilloverReferrals: 4 });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Generate referrals error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree, syncUserMatrix, generateReferrals };
