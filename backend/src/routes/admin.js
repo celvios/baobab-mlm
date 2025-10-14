@@ -603,6 +603,66 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
   }
 });
 
+// Phase 2: Approve deposit with dashboard unlock
+router.post('/deposits/:depositId/approve', adminAuth, async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const { depositId } = req.params;
+    const adminId = req.admin.id;
+    
+    await client.query('BEGIN');
+    
+    const deposit = await client.query(
+      'SELECT * FROM deposit_requests WHERE id = $1',
+      [depositId]
+    );
+    
+    if (deposit.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Deposit not found' });
+    }
+    
+    const userId = deposit.rows[0].user_id;
+    const amount = deposit.rows[0].amount;
+    
+    await client.query(
+      `UPDATE deposit_requests 
+       SET status = 'approved', confirmed_by = $1, confirmed_at = NOW()
+       WHERE id = $2`,
+      [adminId, depositId]
+    );
+    
+    await client.query(
+      `UPDATE users 
+       SET deposit_amount = deposit_amount + $1,
+           deposit_confirmed = TRUE,
+           deposit_confirmed_at = NOW(),
+           dashboard_unlocked = TRUE,
+           mlm_level = CASE WHEN mlm_level = 'no_stage' THEN 'feeder' ELSE mlm_level END
+       WHERE id = $2`,
+      [amount, userId]
+    );
+    
+    await client.query(
+      `INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+       VALUES ($1, 'feeder', 0, 6)
+       ON CONFLICT (user_id, stage) DO NOTHING`,
+      [userId]
+    );
+    
+    await client.query('COMMIT');
+    
+    res.json({ message: 'Deposit approved successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error approving deposit:', error);
+    res.status(500).json({ error: 'Failed to approve deposit' });
+  } finally {
+    client.release();
+  }
+});
+
 router.post('/reject-deposit', adminAuth, async (req, res) => {
   const { depositId } = req.body;
   

@@ -58,4 +58,28 @@ const submitDepositRequest = async (req, res) => {
   }
 };
 
-module.exports = { submitDepositRequest, upload };
+const getDepositStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const result = await pool.query(
+      `SELECT dr.*, u.dashboard_unlocked, u.deposit_confirmed, u.mlm_level
+       FROM deposit_requests dr
+       JOIN users u ON u.id = dr.user_id
+       WHERE dr.user_id = $1
+       ORDER BY dr.created_at DESC
+       LIMIT 1`,
+      [userId]
+    );
+    
+    res.json({
+      deposit: result.rows[0] || null,
+      dashboardUnlocked: result.rows[0]?.dashboard_unlocked || false
+    });
+  } catch (error) {
+    console.error('Error getting deposit status:', error);
+    res.status(500).json({ error: 'Failed to get deposit status' });
+  }
+};
+
+module.exports = { submitDepositRequest, getDepositStatus, upload };
