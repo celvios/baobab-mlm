@@ -88,16 +88,10 @@ const getProfile = async (req, res) => {
       console.log('Error getting MLM earnings');
     }
 
-    // Ensure user has mlm_level set
-    if (!user.mlm_level || user.mlm_level === 'no_stage' || user.mlm_level === '') {
-      await pool.query('UPDATE users SET mlm_level = $1 WHERE id = $2', ['feeder', userId]);
-      user.mlm_level = 'feeder';
-      
-      // Also create stage_matrix if missing
-      await pool.query(
-        'INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6) ON CONFLICT (user_id, stage) DO NOTHING',
-        [userId, 'feeder']
-      );
+    // Ensure user has mlm_level set - but don't auto-upgrade to feeder
+    if (!user.mlm_level || user.mlm_level === '') {
+      await pool.query('UPDATE users SET mlm_level = $1 WHERE id = $2', ['no_stage', userId]);
+      user.mlm_level = 'no_stage';
     }
 
     res.json({

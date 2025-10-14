@@ -38,6 +38,16 @@ const submitDepositRequest = async (req, res) => {
       RETURNING id
     `, [userId, parseFloat(amount), proofBase64, 'pending']);
 
+    // Mark that user has submitted a deposit (but not yet confirmed)
+    try {
+      await pool.query(
+        'UPDATE users SET dashboard_unlocked = FALSE WHERE id = $1',
+        [userId]
+      );
+    } catch (error) {
+      console.log('dashboard_unlocked column may not exist yet');
+    }
+
     // Send email notification
     try {
       const userResult = await pool.query('SELECT email, full_name FROM users WHERE id = $1', [userId]);
@@ -62,11 +72,20 @@ const getDepositStatus = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // Get user's dashboard status
-    const userResult = await pool.query(
-      'SELECT dashboard_unlocked, deposit_confirmed, mlm_level FROM users WHERE id = $1',
-      [userId]
-    );
+    // Get user's dashboard status with fallback for missing columns
+    let userResult;
+    try {
+      userResult = await pool.query(
+        'SELECT dashboard_unlocked, deposit_confirmed, mlm_level, joining_fee_paid FROM users WHERE id = $1',
+        [userId]
+      );
+    } catch (error) {
+      // Fallback if columns don't exist
+      userResult = await pool.query(
+        'SELECT mlm_level, joining_fee_paid FROM users WHERE id = $1',
+        [userId]
+      );
+    }
     
     // Get latest deposit request
     const depositResult = await pool.query(
@@ -74,11 +93,13 @@ const getDepositStatus = async (req, res) => {
       [userId]
     );
     
+    const user = userResult.rows[0];
+    
     res.json({
       deposit: depositResult.rows[0] || null,
-      dashboardUnlocked: userResult.rows[0]?.dashboard_unlocked || false,
-      depositConfirmed: userResult.rows[0]?.deposit_confirmed || false,
-      mlmLevel: userResult.rows[0]?.mlm_level || 'no_stage'
+      dashboardUnlocked: user?.dashboard_unlocked ?? user?.joining_fee_paid ?? false,
+      depositConfirmed: user?.deposit_confirmed ?? user?.joining_fee_paid ?? false,
+      mlmLevel: user?.mlm_level || 'no_stage'
     });
   } catch (error) {
     console.error('Error getting deposit status:', error);

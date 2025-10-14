@@ -62,7 +62,13 @@ const register = async (req, res) => {
     await pool.query('INSERT INTO wallets (user_id) VALUES ($1)', [user.id]);
 
     // Initialize MLM stage as no_stage (will be upgraded to feeder after deposit approval)
-    await pool.query('UPDATE users SET mlm_level = $1, dashboard_unlocked = $2 WHERE id = $3', ['no_stage', false, user.id]);
+    // Note: dashboard_unlocked column must exist in users table
+    try {
+      await pool.query('UPDATE users SET mlm_level = $1, dashboard_unlocked = $2 WHERE id = $3', ['no_stage', false, user.id]);
+    } catch (error) {
+      // Fallback if dashboard_unlocked column doesn't exist yet
+      await pool.query('UPDATE users SET mlm_level = $1 WHERE id = $2', ['no_stage', user.id]);
+    }
 
     // Send OTP email
     console.log(`\n=== OTP SENT TO: ${email} ===`);
