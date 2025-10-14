@@ -1321,19 +1321,19 @@ app.get('/api/complete-to-silver/:email', async (req, res) => {
     
     const user = userCheck.rows[0];
     const userId = user.id;
+    const hashedPassword = await bcrypt.hash('password123', 10);
     
-    // Complete bronze stage (14 users)
-    for (let i = 1; i <= 14; i++) {
-      const testEmail = `bronze_${Date.now()}_${i}@test.com`;
-      const hashedPassword = await bcrypt.hash('password123', 10);
-      
-      const newUserResult = await client.query(`
+    // Create 2 frontline referrals
+    const frontlineUsers = [];
+    for (let i = 1; i <= 2; i++) {
+      const result = await client.query(`
         INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
         VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
-        RETURNING id, email
-      `, [`Bronze User ${i}`, testEmail, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.referral_code]);
+        RETURNING id, email, referral_code
+      `, [`Frontline ${i}`, `front_${Date.now()}_${i}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.referral_code]);
       
-      const newUser = newUserResult.rows[0];
+      const newUser = result.rows[0];
+      frontlineUsers.push(newUser);
       
       await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUser.id]);
       await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUser.id, 'approved']);
@@ -1348,7 +1348,65 @@ app.get('/api/complete-to-silver/:email', async (req, res) => {
       await client.query(`
         INSERT INTO transactions (user_id, type, amount, description, status)
         VALUES ($1, 'referral_bonus', 4.8, $2, 'completed')
-      `, [userId, `Bronze referral bonus from ${newUser.email}`]);
+      `, [userId, `Bronze referral from ${newUser.email}`]);
+    }
+    
+    // Each frontline gets 2 referrals (4 total)
+    const secondLevelUsers = [];
+    for (let i = 0; i < frontlineUsers.length; i++) {
+      for (let j = 1; j <= 2; j++) {
+        const result = await client.query(`
+          INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+          VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
+          RETURNING id, email, referral_code
+        `, [`Level2 ${i+1}-${j}`, `level2_${Date.now()}_${i}_${j}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, frontlineUsers[i].referral_code]);
+        
+        const newUser = result.rows[0];
+        secondLevelUsers.push(newUser);
+        
+        await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUser.id]);
+        await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUser.id, 'approved']);
+        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [newUser.id, 'feeder']);
+        
+        await client.query(`
+          INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
+          VALUES ($1, $2, 'bronze', 4.8, 'completed')
+        `, [userId, newUser.id]);
+        
+        await client.query('UPDATE wallets SET total_earned = total_earned + 4.8 WHERE user_id = $1', [userId]);
+        await client.query(`
+          INSERT INTO transactions (user_id, type, amount, description, status)
+          VALUES ($1, 'referral_bonus', 4.8, $2, 'completed')
+        `, [userId, `Bronze referral from ${newUser.email}`]);
+      }
+    }
+    
+    // Each second level gets 2 referrals (8 total)
+    for (let i = 0; i < secondLevelUsers.length; i++) {
+      for (let j = 1; j <= 2; j++) {
+        const result = await client.query(`
+          INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+          VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
+          RETURNING id, email
+        `, [`Level3 ${i+1}-${j}`, `level3_${Date.now()}_${i}_${j}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, secondLevelUsers[i].referral_code]);
+        
+        const newUser = result.rows[0];
+        
+        await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUser.id]);
+        await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUser.id, 'approved']);
+        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [newUser.id, 'feeder']);
+        
+        await client.query(`
+          INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
+          VALUES ($1, $2, 'bronze', 4.8, 'completed')
+        `, [userId, newUser.id]);
+        
+        await client.query('UPDATE wallets SET total_earned = total_earned + 4.8 WHERE user_id = $1', [userId]);
+        await client.query(`
+          INSERT INTO transactions (user_id, type, amount, description, status)
+          VALUES ($1, 'referral_bonus', 4.8, $2, 'completed')
+        `, [userId, `Bronze referral from ${newUser.email}`]);
+      }
     }
     
     // Update bronze stage_matrix to complete
