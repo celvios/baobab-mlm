@@ -328,9 +328,12 @@ export default function TeamTree() {
             </div>
             <div>
               <p className="text-sm text-gray-600">Your Level</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900">
                 {userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : ((userProfile?.mlmLevel || 'no_stage').charAt(0).toUpperCase() + (userProfile?.mlmLevel || 'no_stage').slice(1))}
               </p>
+              {userProfile?.mlmLevel === 'no_stage' && (
+                <p className="text-xs text-gray-500">(Next: Feeder)</p>
+              )}
             </div>
           </div>
         </div>
@@ -352,7 +355,7 @@ export default function TeamTree() {
       <div className="bg-white rounded-2xl shadow-card p-8">
         <h2 className="text-xl font-bold text-gray-900 mb-6">Matrix Structure</h2>
         <PyramidTree 
-          userStage={userProfile?.mlmLevel || 'feeder'}
+          userStage={userProfile?.mlmLevel === 'no_stage' ? 'feeder' : (userProfile?.mlmLevel || 'feeder')}
           matrixData={teamMembers.map((m, i) => ({
             position: i,
             filled: m.has_deposited,
