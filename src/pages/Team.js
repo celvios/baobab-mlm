@@ -122,7 +122,7 @@ export default function Team() {
           {stageProgress && (
             <>
               <div className="flex items-center justify-between mb-1">
-                <p className="text-gray-500 text-xs">{stageProgress.slots_filled || 0}/{stageProgress.slots_required || 6} slots filled</p>
+                <p className="text-gray-500 text-xs">{stageProgress?.slots_filled || 0}/{stageProgress?.slots_required || 6} slots filled</p>
                 <button 
                   onClick={handleSyncMatrix}
                   className="text-xs text-blue-600 hover:text-blue-800 font-medium"
@@ -134,7 +134,7 @@ export default function Team() {
               <div className="w-full bg-gray-300 rounded-full h-2 mb-4">
                 <div 
                   className="bg-green-600 h-2 rounded-full transition-all duration-300" 
-                  style={{ width: `${((stageProgress.slots_filled || 0) / (stageProgress.slots_required || 6)) * 100}%` }}
+                  style={{ width: `${((stageProgress?.slots_filled || 0) / (stageProgress?.slots_required || 6)) * 100}%` }}
                 ></div>
               </div>
             </>
