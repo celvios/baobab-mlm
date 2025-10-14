@@ -371,6 +371,40 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Test route working' });
 });
 
+// Unlock dashboard for testing
+app.get('/api/unlock-dashboard/:email', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { email } = req.params;
+    const result = await pool.query(
+      `UPDATE users 
+       SET dashboard_unlocked = TRUE,
+           deposit_confirmed = TRUE,
+           deposit_confirmed_at = NOW()
+       WHERE email = $1
+       RETURNING id, email, dashboard_unlocked, deposit_confirmed, mlm_level`,
+      [email]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Dashboard unlocked',
+      user: result.rows[0]
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Quick OTP test endpoint
 app.get('/api/quick-otp-test/:email', async (req, res) => {
   const timeout = setTimeout(() => {
