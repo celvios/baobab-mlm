@@ -371,6 +371,73 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Test route working' });
 });
 
+// Generate paid referrals for testing
+app.post('/api/generate-referrals', async (req, res) => {
+  const { Pool } = require('pg');
+  const bcrypt = require('bcryptjs');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { email, count } = req.body;
+    
+    if (!email || !count) {
+      return res.status(400).json({ error: 'Email and count are required' });
+    }
+    
+    const client = await pool.connect();
+    
+    // Get user
+    const userResult = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    const hashedPassword = await bcrypt.hash('Test@123', 10);
+    const createdReferrals = [];
+    
+    for (let i = 1; i <= count; i++) {
+      const refEmail = `ref_${Date.now()}_${i}@test.com`;
+      
+      // Create referral user
+      const newUser = await client.query(
+        `INSERT INTO users (full_name, email, phone, password, referred_by, dashboard_unlocked, deposit_confirmed)
+         VALUES ($1, $2, $3, $4, $5, TRUE, TRUE)
+         RETURNING id, email`,
+        [`Referral ${i}`, refEmail, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.referral_code]
+      );
+      
+      const newUserId = newUser.rows[0].id;
+      
+      // Create wallet
+      await client.query('INSERT INTO wallets (user_id, balance) VALUES ($1, 0)', [newUserId]);
+      
+      // Create approved deposit
+      await client.query(
+        'INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)',
+        [newUserId, 'approved']
+      );
+      
+      createdReferrals.push(newUser.rows[0]);
+    }
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: `Created ${count} paid referrals for ${email}`,
+      referrals: createdReferrals
+    });
+  } catch (error) {
+    console.error('Generate referrals error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Unlock dashboard for testing
 app.get('/api/unlock-dashboard/:email', async (req, res) => {
   const { Pool } = require('pg');
