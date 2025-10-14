@@ -51,17 +51,9 @@ const approveDeposit = async (req, res) => {
        SET deposit_amount = deposit_amount + $1,
            deposit_confirmed = TRUE,
            deposit_confirmed_at = NOW(),
-           dashboard_unlocked = TRUE,
-           mlm_level = CASE WHEN mlm_level = 'no_stage' THEN 'feeder' ELSE mlm_level END
+           dashboard_unlocked = TRUE
        WHERE id = $2`,
       [amount, userId]
-    );
-    
-    await client.query(
-      `INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-       VALUES ($1, 'feeder', 0, 6)
-       ON CONFLICT (user_id, stage) DO NOTHING`,
-      [userId]
     );
     
     await client.query('COMMIT');

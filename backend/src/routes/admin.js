@@ -579,22 +579,13 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
       ['approved', depositId]
     );
     
-    // Unlock dashboard and set to feeder stage
+    // Unlock dashboard (stay at no_stage until 6 people)
     await client.query(
       `UPDATE users 
        SET dashboard_unlocked = TRUE,
            deposit_confirmed = TRUE,
-           deposit_confirmed_at = NOW(),
-           mlm_level = CASE WHEN mlm_level = 'no_stage' OR mlm_level IS NULL THEN 'feeder' ELSE mlm_level END
+           deposit_confirmed_at = NOW()
        WHERE id = $1`,
-      [deposit.user_id]
-    );
-    
-    // Create stage matrix entry
-    await client.query(
-      `INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-       VALUES ($1, 'feeder', 0, 6)
-       ON CONFLICT (user_id, stage) DO NOTHING`,
       [deposit.user_id]
     );
     
