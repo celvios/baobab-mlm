@@ -425,6 +425,16 @@ app.post('/api/generate-referrals', async (req, res) => {
       createdReferrals.push(newUser.rows[0]);
     }
     
+    // Process MLM for each referral
+    const mlmService = require('./services/mlmService');
+    for (const ref of createdReferrals) {
+      try {
+        await mlmService.processReferral(user.id, ref.id);
+      } catch (err) {
+        console.log('MLM processing error:', err.message);
+      }
+    }
+    
     client.release();
     
     res.json({
