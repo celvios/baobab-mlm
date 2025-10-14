@@ -17,6 +17,7 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../hooks/useAuth';
 import CartDropdown from '../components/CartDropdown';
 import PageLoader from '../components/PageLoader';
+import DashboardWrapper from './DashboardWrapper';
 
 const navigation = [
   { name: 'Dashboard', href: '/user/dashboard', icon: HomeIcon },
@@ -232,7 +233,9 @@ export default function DashboardLayout() {
 
         <main className="p-3 sm:p-4 lg:p-8">
           <PageLoader>
-            <Outlet />
+            <DashboardWrapper>
+              <Outlet />
+            </DashboardWrapper>
           </PageLoader>
         </main>
       </div>
