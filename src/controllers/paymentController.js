@@ -93,7 +93,9 @@ const getDepositRequests = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        dr.id, dr.user_id, dr.amount, dr.proof_url, dr.status, dr.created_at,
+        dr.id, dr.user_id, dr.amount, 
+        COALESCE(dr.payment_proof, dr.proof_url) as payment_proof,
+        dr.payment_method, dr.status, dr.created_at,
         u.full_name as user_name, u.email as user_email
       FROM deposit_requests dr
       JOIN users u ON dr.user_id = u.id

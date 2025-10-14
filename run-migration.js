@@ -1,43 +1,49 @@
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
+const { Client } = require('pg');
 
-// Database configuration
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'baobab_mlm',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'password',
+const client = new Client({
+  connectionString: 'postgresql://baobab_user:S5h2NLhhFOMHWTJGaISiyRNDkMCjkTmM@dpg-d329lo3ipnbc73d1996g-a.oregon-postgres.render.com/baobab_1khs',
+  ssl: { rejectUnauthorized: true }
 });
 
 async function runMigration() {
   try {
-    console.log('🔄 Running email system migration...');
+    await client.connect();
+    console.log('Connected to database!');
     
-    // Read the migration file
-    const migrationPath = path.join(__dirname, 'email_system_migration.sql');
-    const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+    await client.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS deposit_amount DECIMAL(10,2) DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS deposit_confirmed BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS deposit_confirmed_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS dashboard_unlocked BOOLEAN DEFAULT FALSE
+    `);
+    console.log('✓ Added columns');
     
-    // Execute the migration
-    await pool.query(migrationSQL);
+    await client.query(`ALTER TABLE users ALTER COLUMN mlm_level SET DEFAULT 'no_stage'`);
+    console.log('✓ Set default mlm_level');
     
-    console.log('✅ Email system migration completed successfully!');
+    await client.query(`
+      UPDATE users 
+      SET dashboard_unlocked = FALSE, 
+          deposit_confirmed = FALSE, 
+          mlm_level = 'no_stage'
+    `);
+    console.log('✓ Updated existing users');
     
-    // Verify tables exist
-    const result = await pool.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      AND table_name IN ('email_history', 'admin_activity_logs')
+    const result = await client.query(`
+      SELECT id, email, mlm_level, dashboard_unlocked 
+      FROM users 
+      ORDER BY created_at DESC 
+      LIMIT 5
     `);
     
-    console.log('📋 Tables found:', result.rows.map(r => r.table_name));
+    console.log('\n✅ Migration complete! Latest users:');
+    console.table(result.rows);
     
-    process.exit(0);
   } catch (error) {
-    console.error('❌ Migration failed:', error.message);
-    process.exit(1);
+    console.error('❌ Error:', error.message);
+  } finally {
+    await client.end();
   }
 }
 

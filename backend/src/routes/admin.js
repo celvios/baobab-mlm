@@ -507,7 +507,11 @@ router.get('/recent-activity', adminAuth, async (req, res) => {
 router.get('/deposit-requests', adminAuth, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT dr.*, u.full_name as user_name, u.email as user_email
+      SELECT 
+        dr.id, dr.user_id, dr.amount, dr.status, dr.created_at,
+        COALESCE(dr.payment_proof, dr.proof_url) as payment_proof,
+        dr.payment_method,
+        u.full_name as user_name, u.email as user_email
       FROM deposit_requests dr
       LEFT JOIN users u ON dr.user_id = u.id
       ORDER BY dr.created_at DESC

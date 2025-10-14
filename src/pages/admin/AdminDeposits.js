@@ -280,9 +280,9 @@ const AdminDeposits = () => {
                     <img 
                       src={selectedDeposit.payment_proof} 
                       alt="Payment Proof" 
-                      className="w-full rounded-lg border border-gray-200"
+                      className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
                       onError={(e) => {
-                        console.error('Image load error');
+                        console.error('Image load error:', selectedDeposit.payment_proof?.substring(0, 50));
                         e.target.onerror = null;
                         e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3EImage not available%3C/text%3E%3C/svg%3E';
                       }}
