@@ -18,7 +18,7 @@ export default function DashboardLock({ onDepositClick }) {
         </p>
         
         <p className="text-gray-700 font-medium mb-6">
-          To unlock all features, please deposit a minimum of <span className="text-green-600 font-bold">$18,000</span>
+          To unlock all features, please deposit a minimum of <span className="text-green-600 font-bold">₦18,000</span>
         </p>
         
         <div className="bg-gray-50 rounded-lg p-4 mb-6">

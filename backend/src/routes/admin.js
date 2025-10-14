@@ -557,6 +557,7 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
     const deposit = depositResult.rows[0];
     
     if (!deposit) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Deposit request not found' });
     }
     
@@ -576,6 +577,25 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
     await client.query(
       'UPDATE deposit_requests SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       ['approved', depositId]
+    );
+    
+    // Unlock dashboard and set to feeder stage
+    await client.query(
+      `UPDATE users 
+       SET dashboard_unlocked = TRUE,
+           deposit_confirmed = TRUE,
+           deposit_confirmed_at = NOW(),
+           mlm_level = CASE WHEN mlm_level = 'no_stage' OR mlm_level IS NULL THEN 'feeder' ELSE mlm_level END
+       WHERE id = $1`,
+      [deposit.user_id]
+    );
+    
+    // Create stage matrix entry
+    await client.query(
+      `INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+       VALUES ($1, 'feeder', 0, 6)
+       ON CONFLICT (user_id, stage) DO NOTHING`,
+      [deposit.user_id]
     );
     
     // Check if deposit meets minimum threshold (USD equivalent) and user was referred
