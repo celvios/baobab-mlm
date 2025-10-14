@@ -9,8 +9,8 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if admin exists
-    const result = await pool.query('SELECT * FROM users WHERE email = $1 AND role = $2', [email, 'admin']);
+    // Check if admin exists in admins table
+    const result = await pool.query('SELECT * FROM admins WHERE email = $1 AND is_active = true', [email]);
     
     if (result.rows.length === 0) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -26,7 +26,7 @@ router.post('/login', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: admin.id, email: admin.email, role: 'admin' },
+      { id: admin.id, email: admin.email, role: admin.role || 'admin' },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
@@ -37,7 +37,7 @@ router.post('/login', async (req, res) => {
       admin: {
         id: admin.id,
         email: admin.email,
-        fullName: admin.full_name
+        fullName: admin.name
       }
     });
   } catch (error) {

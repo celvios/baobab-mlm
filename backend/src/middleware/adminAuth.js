@@ -16,10 +16,10 @@ const adminAuth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Check if user is admin
+    // Check if admin exists and is active
     const result = await pool.query(
-      'SELECT id, email, role FROM users WHERE id = $1 AND role = $2',
-      [decoded.id, 'admin']
+      'SELECT id, email, name, role FROM admins WHERE id = $1 AND is_active = true',
+      [decoded.id]
     );
 
     if (result.rows.length === 0) {
@@ -27,7 +27,7 @@ const adminAuth = async (req, res, next) => {
     }
 
     req.user = result.rows[0];
-    req.admin = result.rows[0]; // Add for compatibility
+    req.admin = result.rows[0];
     next();
   } catch (error) {
     console.error('Admin auth error:', error.message);
