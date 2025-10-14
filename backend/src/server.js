@@ -12,6 +12,7 @@ const mlmRoutes = require('./routes/mlm');
 const ordersRoutes = require('./routes/orders');
 const depositRoutes = require('./routes/deposit');
 const migrateRoutes = require('./routes/migrate');
+const earningsRoutes = require('./routes/earnings');
 const { loginLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
@@ -70,6 +71,7 @@ app.use('/api/mlm', mlmRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/deposit', depositRoutes);
 app.use('/api/migrate', migrateRoutes);
+app.use('/api/earnings', earningsRoutes);
 app.use('/api/bank', require('./routes/bank'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/wallet', require('./routes/wallet'));

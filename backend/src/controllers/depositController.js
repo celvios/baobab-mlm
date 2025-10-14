@@ -62,19 +62,23 @@ const getDepositStatus = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    const result = await pool.query(
-      `SELECT dr.*, u.dashboard_unlocked, u.deposit_confirmed, u.mlm_level
-       FROM deposit_requests dr
-       JOIN users u ON u.id = dr.user_id
-       WHERE dr.user_id = $1
-       ORDER BY dr.created_at DESC
-       LIMIT 1`,
+    // Get user's dashboard status
+    const userResult = await pool.query(
+      'SELECT dashboard_unlocked, deposit_confirmed, mlm_level FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    // Get latest deposit request
+    const depositResult = await pool.query(
+      'SELECT * FROM deposit_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
       [userId]
     );
     
     res.json({
-      deposit: result.rows[0] || null,
-      dashboardUnlocked: result.rows[0]?.dashboard_unlocked || false
+      deposit: depositResult.rows[0] || null,
+      dashboardUnlocked: userResult.rows[0]?.dashboard_unlocked || false,
+      depositConfirmed: userResult.rows[0]?.deposit_confirmed || false,
+      mlmLevel: userResult.rows[0]?.mlm_level || 'no_stage'
     });
   } catch (error) {
     console.error('Error getting deposit status:', error);
