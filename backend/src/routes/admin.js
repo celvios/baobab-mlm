@@ -506,11 +506,33 @@ router.get('/recent-activity', adminAuth, async (req, res) => {
 // Deposit management routes
 router.get('/deposit-requests', adminAuth, async (req, res) => {
   try {
+    // First check which columns exist
+    const columnsCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'deposit_requests'
+    `);
+    const columns = columnsCheck.rows.map(r => r.column_name);
+    const hasPaymentProof = columns.includes('payment_proof');
+    const hasProofUrl = columns.includes('proof_url');
+    const hasPaymentMethod = columns.includes('payment_method');
+    
+    let paymentProofSelect = 'NULL as payment_proof';
+    if (hasPaymentProof && hasProofUrl) {
+      paymentProofSelect = 'COALESCE(dr.payment_proof, dr.proof_url) as payment_proof';
+    } else if (hasPaymentProof) {
+      paymentProofSelect = 'dr.payment_proof';
+    } else if (hasProofUrl) {
+      paymentProofSelect = 'dr.proof_url as payment_proof';
+    }
+    
+    const paymentMethodSelect = hasPaymentMethod ? 'dr.payment_method' : "'Bank Transfer' as payment_method";
+    
     const result = await pool.query(`
       SELECT 
         dr.id, dr.user_id, dr.amount, dr.status, dr.created_at,
-        COALESCE(dr.payment_proof, dr.proof_url) as payment_proof,
-        dr.payment_method,
+        ${paymentProofSelect},
+        ${paymentMethodSelect},
         u.full_name as user_name, u.email as user_email
       FROM deposit_requests dr
       LEFT JOIN users u ON dr.user_id = u.id
@@ -519,7 +541,7 @@ router.get('/deposit-requests', adminAuth, async (req, res) => {
     res.json({ deposits: result.rows });
   } catch (error) {
     console.error('Error fetching deposit requests:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
