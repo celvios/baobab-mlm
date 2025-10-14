@@ -1,7 +1,7 @@
 const pool = require('../config/database');
 
 const MLM_LEVELS = {
-  no_stage: { bonusUSD: 1.5, requiredReferrals: 2, matrixSize: '2x1' },
+  no_stage: { bonusUSD: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
   feeder: { bonusUSD: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
   bronze: { bonusUSD: 4.8, requiredReferrals: 14, matrixSize: '2x3' },
   silver: { bonusUSD: 30, requiredReferrals: 14, matrixSize: '2x3' },
@@ -80,6 +80,7 @@ class MLMService {
     if (!is_complete) return;
     
     const stageProgression = {
+      'no_stage': 'feeder',
       'feeder': 'bronze',
       'bronze': 'silver',
       'silver': 'gold',
@@ -127,7 +128,14 @@ class MLMService {
     }
 
     const referrer = referrerResult.rows[0];
-    const stage = referrer.mlm_level || 'feeder';
+    const stage = referrer.mlm_level || 'no_stage';
+    
+    // Ensure referrer has stage_matrix entry
+    await client.query(`
+      INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+      VALUES ($1, $2, 0, 6)
+      ON CONFLICT (user_id, stage) DO NOTHING
+    `, [referrerId, stage]);
     const stageConfig = MLM_LEVELS[stage];
 
     // Find placement position in referrer's matrix for this stage
