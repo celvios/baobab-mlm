@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
-router.post('/run-phase1', async (req, res) => {
+router.get('/run-phase1', async (req, res) => {
   const client = await pool.connect();
   
   try {
