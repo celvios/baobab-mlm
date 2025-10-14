@@ -23,7 +23,7 @@ New users were being incorrectly shown as "Feeder" stage when they should be at 
 
 | Stage     | Matrix Size | Slots Required | Bonus (USD) |
 |-----------|-------------|----------------|-------------|
-| no_stage  | 2x2         | 4              | $1.50       |
+| no_stage  | 2x2         | 6              | $1.50       |
 | feeder    | 2x2         | 6              | $1.50       |
 | bronze    | 2x3         | 14             | $4.80       |
 | silver    | 2x3         | 14             | $30.00      |
@@ -51,21 +51,11 @@ if ((user.joining_fee_paid || walletData.balance >= 18000) && teamSize >= 2 && u
 **Why:** Users should only advance stages through the proper matrix completion system in mlmService.js
 
 ### 2. MLM Service Fix (mlmService.js)
-**Updated:** MLM_LEVELS configuration to set correct slot requirements
-
-```javascript
-// BEFORE:
-no_stage: { bonusUSD: 1.5, requiredReferrals: 6, matrixSize: '2x2' }
-
-// AFTER:
-no_stage: { bonusUSD: 1.5, requiredReferrals: 4, matrixSize: '2x2' }
-```
-
 **Updated:** Stage matrix creation to use correct slot counts based on stage
 
 ```javascript
 // Now correctly assigns:
-// - no_stage: 4 slots
+// - no_stage: 6 slots
 // - feeder: 6 slots
 // - bronze/silver/gold/diamond: 14 slots
 ```
@@ -116,7 +106,7 @@ After applying the fix, verify:
    GROUP BY stage, slots_required;
    ```
    Expected:
-   - no_stage: 4 slots
+   - no_stage: 6 slots
    - feeder: 6 slots
    - bronze/silver/gold/diamond: 14 slots
 
@@ -129,10 +119,10 @@ After applying the fix, verify:
 1. **New User Registration:**
    - User registers → starts at `no_stage`
    - User pays joining fee → remains at `no_stage`
-   - Dashboard shows: "No Stage" with 0/4 slots filled
+   - Dashboard shows: "No Stage" with 0/6 slots filled
 
 2. **Matrix Progression:**
-   - User gets 4 paid referrals → matrix completes
+   - User gets 6 paid referrals → matrix completes
    - System automatically upgrades to `feeder`
    - Dashboard shows: "Feeder" with 0/6 slots filled
 
@@ -144,8 +134,8 @@ After applying the fix, verify:
 
 - [ ] New user registers and shows as "No Stage"
 - [ ] User with 2 referrals stays at "No Stage" (not auto-upgraded to Feeder)
-- [ ] User with 4 paid referrals gets upgraded to "Feeder"
-- [ ] Stage matrix shows correct slot counts (4 for no_stage, 6 for feeder)
+- [ ] User with 6 paid referrals gets upgraded to "Feeder"
+- [ ] Stage matrix shows correct slot counts (6 for both no_stage and feeder)
 - [ ] Existing users are corrected by migration script
 - [ ] Matrix completion triggers proper stage progression
 

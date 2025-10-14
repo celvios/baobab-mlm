@@ -1,10 +1,10 @@
 -- Fix users who were incorrectly auto-upgraded to feeder
 -- This script resets users back to no_stage if they haven't completed their matrix
 
--- Step 1: Update stage_matrix for no_stage users to have 4 slots instead of 6
+-- Step 1: Update stage_matrix for no_stage users to have 6 slots
 UPDATE stage_matrix 
-SET slots_required = 4
-WHERE stage = 'no_stage' AND slots_required = 6;
+SET slots_required = 6
+WHERE stage = 'no_stage' AND slots_required != 6;
 
 -- Step 2: Update stage_matrix for feeder users to ensure they have 6 slots
 UPDATE stage_matrix 
@@ -12,7 +12,7 @@ SET slots_required = 6
 WHERE stage = 'feeder' AND slots_required != 6;
 
 -- Step 3: Reset users who are at feeder but haven't completed their no_stage matrix
--- Only reset if they have less than 4 paid referrals
+-- Only reset if they have less than 6 paid referrals
 UPDATE users u
 SET mlm_level = 'no_stage'
 WHERE u.mlm_level = 'feeder'
@@ -24,14 +24,13 @@ AND (
     SELECT 1 FROM deposit_requests dr 
     WHERE dr.user_id = ref.id AND dr.status = 'approved'
   )
-) < 4;
+) < 6;
 
 -- Step 4: Create stage_matrix entries for users who don't have them
 INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
 SELECT u.id, u.mlm_level, 0, 
   CASE 
-    WHEN u.mlm_level = 'no_stage' THEN 4
-    WHEN u.mlm_level = 'feeder' THEN 6
+    WHEN u.mlm_level IN ('no_stage', 'feeder') THEN 6
     ELSE 14
   END
 FROM users u

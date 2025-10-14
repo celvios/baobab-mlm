@@ -1,11 +1,11 @@
 # Quick Fix Instructions - Matrix Stage Issue
 
 ## Problem
-New users with 4 matrix slots are showing as "Feeder" instead of "No Stage".
+New users with 6 matrix slots are showing as "Feeder" instead of "No Stage".
 
 ## Solution Applied
 ✅ Fixed backend code to prevent auto-upgrade to Feeder
-✅ Corrected matrix slot configuration (no_stage = 4 slots, feeder = 6 slots)
+✅ Corrected matrix slot configuration (no_stage = 6 slots, feeder = 6 slots)
 ✅ Created database migration to fix existing users
 
 ## How to Apply the Fix
@@ -39,21 +39,20 @@ npm run dev
 1. **Check a new user's stage:**
    - Register a new user
    - Login and check dashboard
-   - Should show "No Stage" with 0/4 slots
+   - Should show "No Stage" with 0/6 slots
 
 2. **Check existing users:**
-   - Users with less than 4 paid referrals should be at "No Stage"
-   - Users with 4+ paid referrals should be at "Feeder"
+   - Users with less than 6 paid referrals should be at "No Stage"
+   - Users with 6+ paid referrals should be at "Feeder"
 
 ## What Changed?
 
 ### Before (Incorrect):
 - New user registers → Auto-upgraded to "Feeder" after 2 referrals
-- Matrix showed 6 slots for no_stage (wrong)
 
 ### After (Correct):
-- New user registers → Stays at "No Stage" until 4 paid referrals
-- Matrix shows 4 slots for no_stage (correct 2x2 matrix)
+- New user registers → Stays at "No Stage" until 6 paid referrals
+- Matrix shows 6 slots for no_stage (correct 2x2 matrix)
 - Only advances to Feeder after completing no_stage matrix
 
 ## Need Help?
