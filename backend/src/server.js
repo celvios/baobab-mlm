@@ -78,6 +78,7 @@ app.use('/api/wallet', require('./routes/wallet'));
 app.use('/api/admin/auth', require('./routes/adminAuth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/products', require('./routes/products'));
+app.use('/api/setup', require('./routes/setup'));
 
 
 // Health check
