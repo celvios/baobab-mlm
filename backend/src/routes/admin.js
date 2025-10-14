@@ -547,6 +547,7 @@ router.get('/deposit-requests', adminAuth, async (req, res) => {
 
 router.post('/approve-deposit', adminAuth, async (req, res) => {
   const { depositId, amount } = req.body;
+  console.log('Approving deposit:', depositId, 'Amount:', amount);
   const client = await pool.connect();
   
   try {
@@ -580,14 +581,16 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
     );
     
     // Unlock dashboard (stay at no_stage until 6 people)
-    await client.query(
+    const unlockResult = await client.query(
       `UPDATE users 
        SET dashboard_unlocked = TRUE,
            deposit_confirmed = TRUE,
            deposit_confirmed_at = NOW()
-       WHERE id = $1`,
+       WHERE id = $1
+       RETURNING id, email, dashboard_unlocked, deposit_confirmed`,
       [deposit.user_id]
     );
+    console.log('Dashboard unlocked for user:', unlockResult.rows[0]);
     
     // Check if deposit meets minimum threshold (USD equivalent) and user was referred
     const { meetsMinimumDeposit } = require('../utils/currencyUtils');
