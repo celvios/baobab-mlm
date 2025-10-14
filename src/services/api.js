@@ -455,7 +455,11 @@ class ApiService {
   }
 
   async getDepositRequests() {
-    return this.request('/admin/deposit-requests');
+    console.log('getDepositRequests called');
+    console.log('Admin token:', localStorage.getItem('adminToken'));
+    const result = await this.request('/admin/deposit-requests');
+    console.log('getDepositRequests result:', result);
+    return result;
   }
 
   async approveDeposit(depositId, data) {

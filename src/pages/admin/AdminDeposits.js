@@ -16,7 +16,9 @@ const AdminDeposits = () => {
   const fetchDeposits = async () => {
     try {
       setLoading(true);
+      console.log('Fetching deposits...');
       const response = await apiService.getDepositRequests();
+      console.log('Deposits response:', response);
       setDeposits(response.deposits || []);
       
       // Calculate stats
@@ -26,8 +28,10 @@ const AdminDeposits = () => {
       const rejected = response.deposits?.filter(d => d.status === 'rejected').length || 0;
       
       setStats({ total, pending, approved, rejected });
+      console.log('Stats:', { total, pending, approved, rejected });
     } catch (error) {
       console.error('Error fetching deposits:', error);
+      alert('Error: ' + error.message);
     } finally {
       setLoading(false);
     }
