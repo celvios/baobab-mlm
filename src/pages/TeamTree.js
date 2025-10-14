@@ -4,6 +4,7 @@ import { LinkIcon, ClipboardDocumentIcon, UserIcon, UsersIcon } from '@heroicons
 import Toast from '../components/Toast';
 import apiService from '../services/api';
 import MarketUpdates from '../components/MarketUpdates';
+import PyramidTree from '../components/PyramidTree';
 
 export default function TeamTree() {
   console.log('TeamTree component mounted');
@@ -347,10 +348,24 @@ export default function TeamTree() {
         </div>
       </div>
 
+      {/* Pyramid Matrix View */}
+      <div className="bg-white rounded-2xl shadow-card p-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">Matrix Structure</h2>
+        <PyramidTree 
+          userStage={userProfile?.mlmLevel || 'feeder'}
+          matrixData={teamMembers.map((m, i) => ({
+            position: i,
+            filled: m.has_deposited,
+            name: m.full_name || m.email,
+            earning: m.earning_from_user || '1.5'
+          }))}
+        />
+      </div>
+
       {/* Team Tree Visualization */}
       <div className="bg-white rounded-2xl shadow-card p-8 overflow-x-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Network Structure</h2>
+          <h2 className="text-xl font-bold text-gray-900">Network Tree</h2>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setExpandedNodes(new Set())}
