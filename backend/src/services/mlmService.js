@@ -1,7 +1,7 @@
 const pool = require('../config/database');
 
 const MLM_LEVELS = {
-  no_stage: { bonusUSD: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
+  no_stage: { bonusUSD: 1.5, requiredReferrals: 4, matrixSize: '2x2' },
   feeder: { bonusUSD: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
   bronze: { bonusUSD: 4.8, requiredReferrals: 14, matrixSize: '2x3' },
   silver: { bonusUSD: 30, requiredReferrals: 14, matrixSize: '2x3' },
@@ -95,7 +95,7 @@ class MLMService {
       await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [newStage, userId]);
 
       // Create new stage_matrix entry for next stage
-      const nextStageSlots = newStage === 'infinity' ? 0 : (newStage === 'feeder' ? 6 : 14);
+      const nextStageSlots = newStage === 'infinity' ? 0 : (newStage === 'no_stage' ? 4 : (newStage === 'feeder' ? 6 : 14));
       await client.query(`
         INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
         VALUES ($1, $2, 0, $3)
@@ -131,11 +131,12 @@ class MLMService {
     const stage = referrer.mlm_level || 'no_stage';
     
     // Ensure referrer has stage_matrix entry
+    const stageSlots = stage === 'no_stage' ? 4 : (stage === 'feeder' ? 6 : 14);
     await client.query(`
       INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-      VALUES ($1, $2, 0, 6)
+      VALUES ($1, $2, 0, $3)
       ON CONFLICT (user_id, stage) DO NOTHING
-    `, [referrerId, stage]);
+    `, [referrerId, stage, stageSlots]);
     const stageConfig = MLM_LEVELS[stage];
 
     // Find placement position in referrer's matrix for this stage

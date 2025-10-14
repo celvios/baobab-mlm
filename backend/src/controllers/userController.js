@@ -67,15 +67,6 @@ const getProfile = async (req, res) => {
       console.log('Error getting team size');
     }
     
-    // Auto-advance to Feeder stage if registered + 2 referrals
-    if ((user.joining_fee_paid || walletData.balance >= 18000) && teamSize >= 2 && user.mlm_level === 'no_stage') {
-      await pool.query(
-        'UPDATE users SET mlm_level = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-        ['feeder', userId]
-      );
-      user.mlm_level = 'feeder';
-    }
-    
     // Get actual MLM earnings from referral_earnings table
     let mlmEarnings = 0;
     try {
