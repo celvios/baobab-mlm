@@ -1454,6 +1454,42 @@ app.get('/api/complete-to-silver/:email', async (req, res) => {
   }
 });
 
+// Add dashboard_unlocked column if missing
+app.get('/api/add-dashboard-columns', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    await client.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS deposit_amount DECIMAL(10,2) DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS deposit_confirmed BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS deposit_confirmed_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS dashboard_unlocked BOOLEAN DEFAULT FALSE
+    `);
+    
+    await client.query(`ALTER TABLE users ALTER COLUMN mlm_level SET DEFAULT 'no_stage'`);
+    
+    // Update existing users without these columns
+    await client.query(`
+      UPDATE users 
+      SET dashboard_unlocked = FALSE, deposit_confirmed = FALSE
+      WHERE dashboard_unlocked IS NULL OR deposit_confirmed IS NULL
+    `);
+    
+    client.release();
+    res.json({ success: true, message: 'Dashboard columns added successfully!' });
+  } catch (error) {
+    console.error('Add columns error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Reset user to no_stage (for testing dashboard lock)
 app.get('/api/reset-user-to-no-stage/:email', async (req, res) => {
   const { Pool } = require('pg');
