@@ -11,7 +11,7 @@ export const useDashboardAccess = () => {
 
   const checkAccess = async () => {
     try {
-      const response = await apiService.get('/deposit/status');
+      const response = await apiService.getDepositStatus();
       setDashboardLocked(!response.dashboardUnlocked);
     } catch (error) {
       console.error('Error checking dashboard access:', error);

@@ -450,6 +450,10 @@ class ApiService {
     return response.json();
   }
 
+  async getDepositStatus() {
+    return this.request('/deposit/status');
+  }
+
   async getDepositRequests() {
     return this.request('/admin/deposit-requests');
   }
