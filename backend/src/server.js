@@ -1300,6 +1300,100 @@ app.get('/api/fix-stage-matrix', async (req, res) => {
   }
 });
 
+// Complete matrix to reach silver level
+app.get('/api/complete-to-silver/:email', async (req, res) => {
+  const { Pool } = require('pg');
+  const bcrypt = require('bcryptjs');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { email } = req.params;
+    const client = await pool.connect();
+    
+    const userCheck = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (userCheck.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userCheck.rows[0];
+    const userId = user.id;
+    
+    // Complete bronze stage (14 users)
+    for (let i = 1; i <= 14; i++) {
+      const testEmail = `bronze_${Date.now()}_${i}@test.com`;
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      
+      const newUserResult = await client.query(`
+        INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+        VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
+        RETURNING id, email
+      `, [`Bronze User ${i}`, testEmail, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.referral_code]);
+      
+      const newUser = newUserResult.rows[0];
+      
+      await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUser.id]);
+      await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUser.id, 'approved']);
+      await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [newUser.id, 'feeder']);
+      
+      await client.query(`
+        INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status)
+        VALUES ($1, $2, 'bronze', 4.8, 'completed')
+      `, [userId, newUser.id]);
+      
+      await client.query('UPDATE wallets SET total_earned = total_earned + 4.8 WHERE user_id = $1', [userId]);
+      await client.query(`
+        INSERT INTO transactions (user_id, type, amount, description, status)
+        VALUES ($1, 'referral_bonus', 4.8, $2, 'completed')
+      `, [userId, `Bronze referral bonus from ${newUser.email}`]);
+    }
+    
+    // Update bronze stage_matrix to complete
+    await client.query(`
+      UPDATE stage_matrix SET slots_filled = 14, is_complete = true, completed_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1 AND stage = 'bronze'
+    `, [userId]);
+    
+    // Progress to silver
+    await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', ['silver', userId]);
+    await client.query(`
+      INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
+      VALUES ($1, 'silver', 0, 14)
+      ON CONFLICT (user_id, stage) DO NOTHING
+    `, [userId]);
+    
+    await client.query(`
+      INSERT INTO level_progressions (user_id, from_stage, to_stage, matrix_count)
+      VALUES ($1, 'bronze', 'silver', 14)
+    `, [userId]);
+    
+    await client.query(`
+      INSERT INTO market_updates (user_id, title, message, type)
+      VALUES ($1, 'Stage Upgrade!', 'Congratulations! You have been promoted to SILVER stage!', 'success')
+    `, [userId]);
+    
+    const updatedUser = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const wallet = await client.query('SELECT * FROM wallets WHERE user_id = $1', [userId]);
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: 'Completed bronze stage and progressed to silver!',
+      user: updatedUser.rows[0],
+      wallet: wallet.rows[0],
+      bronzeEarnings: 14 * 4.8,
+      totalEarnings: parseFloat(wallet.rows[0].total_earned)
+    });
+  } catch (error) {
+    console.error('Complete to silver error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test endpoint: Generate full matrix for a user
 app.get('/api/test-generate-matrix/:email', async (req, res) => {
   const { Pool } = require('pg');
