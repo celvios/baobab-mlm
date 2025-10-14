@@ -1454,6 +1454,43 @@ app.get('/api/complete-to-silver/:email', async (req, res) => {
   }
 });
 
+// Reset user to no_stage (for testing dashboard lock)
+app.get('/api/reset-user-to-no-stage/:email', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { email } = req.params;
+    const client = await pool.connect();
+    
+    const result = await client.query(
+      `UPDATE users 
+       SET mlm_level = 'no_stage', dashboard_unlocked = FALSE, deposit_confirmed = FALSE 
+       WHERE email = $1 
+       RETURNING id, email, mlm_level, dashboard_unlocked`,
+      [email]
+    );
+    
+    if (result.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    client.release();
+    res.json({
+      success: true,
+      message: 'User reset to no_stage with locked dashboard',
+      user: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Reset user error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test endpoint: Generate full matrix for a user
 app.get('/api/test-generate-matrix/:email', async (req, res) => {
   const { Pool } = require('pg');
