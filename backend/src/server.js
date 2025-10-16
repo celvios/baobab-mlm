@@ -456,7 +456,7 @@ async function generateReferralsLogic(req, res, email, count) {
     console.error('Generate referrals error:', error);
     res.status(500).json({ error: error.message });
   }
-});
+}
 
 // Unlock dashboard for testing
 app.get('/api/unlock-dashboard/:email', async (req, res) => {
