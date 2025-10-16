@@ -1,7 +1,7 @@
 // STEP 1: Change these values
-const USER_EMAIL = 'your-email@example.com';  // ← Change this to your email
-const REFERRAL_COUNT = 6;                      // ← Change this to number of referrals
-const API_URL = 'http://localhost:5000';       // ← Change if using different URL
+const USER_EMAIL = 'your-email@example.com';           // ← Change this to your email
+const REFERRAL_COUNT = 6;                               // ← Change this to number of referrals
+const API_URL = 'https://baobab-backend.onrender.com'; // ← Change if using different URL
 
 // STEP 2: Copy everything below and paste in console
 (async function() {
