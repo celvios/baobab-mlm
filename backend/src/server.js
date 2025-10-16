@@ -371,8 +371,19 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Test route working' });
 });
 
-// Generate paid referrals for testing
+// Generate paid referrals for testing (GET version for console)
+app.get('/api/generate-referrals/:email/:count', async (req, res) => {
+  const { email, count } = req.params;
+  return generateReferralsLogic(req, res, email, parseInt(count));
+});
+
+// Generate paid referrals for testing (POST version)
 app.post('/api/generate-referrals', async (req, res) => {
+  const { email, count } = req.body;
+  return generateReferralsLogic(req, res, email, count);
+});
+
+async function generateReferralsLogic(req, res, email, count) {
   const { Pool } = require('pg');
   const bcrypt = require('bcryptjs');
   const pool = new Pool({
@@ -381,7 +392,6 @@ app.post('/api/generate-referrals', async (req, res) => {
   });
   
   try {
-    const { email, count } = req.body;
     
     if (!email || !count) {
       return res.status(400).json({ error: 'Email and count are required' });
