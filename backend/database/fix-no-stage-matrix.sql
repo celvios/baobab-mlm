@@ -1,15 +1,13 @@
 -- Fix users who were incorrectly auto-upgraded to feeder
 -- This script resets users back to no_stage if they haven't completed their matrix
 
--- Step 1: Update stage_matrix for no_stage users to have 6 slots
-UPDATE stage_matrix 
-SET slots_required = 6
-WHERE stage = 'no_stage' AND slots_required != 6;
-
--- Step 2: Update stage_matrix for feeder users to ensure they have 6 slots
-UPDATE stage_matrix 
-SET slots_required = 6
-WHERE stage = 'feeder' AND slots_required != 6;
+-- Step 1: Update stage_matrix with correct multiplicative slot requirements
+UPDATE stage_matrix SET slots_required = 6 WHERE stage = 'no_stage';
+UPDATE stage_matrix SET slots_required = 6 WHERE stage = 'feeder';
+UPDATE stage_matrix SET slots_required = 84 WHERE stage = 'bronze';      -- 6 × 14
+UPDATE stage_matrix SET slots_required = 1176 WHERE stage = 'silver';    -- 84 × 14
+UPDATE stage_matrix SET slots_required = 16464 WHERE stage = 'gold';     -- 1176 × 14
+UPDATE stage_matrix SET slots_required = 230496 WHERE stage = 'diamond'; -- 16464 × 14
 
 -- Step 3: Reset users who are at feeder but haven't completed their no_stage matrix
 -- Only reset if they have less than 6 paid referrals
@@ -31,7 +29,11 @@ INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
 SELECT u.id, u.mlm_level, 0, 
   CASE 
     WHEN u.mlm_level IN ('no_stage', 'feeder') THEN 6
-    ELSE 14
+    WHEN u.mlm_level = 'bronze' THEN 84
+    WHEN u.mlm_level = 'silver' THEN 1176
+    WHEN u.mlm_level = 'gold' THEN 16464
+    WHEN u.mlm_level = 'diamond' THEN 230496
+    ELSE 0
   END
 FROM users u
 WHERE NOT EXISTS (

@@ -66,7 +66,8 @@ class MLMService {
   async checkLevelProgression(client, userId) {
     // Get current stage and check if matrix is complete
     const stageResult = await client.query(`
-      SELECT u.mlm_level as current_stage, sm.is_complete, sm.slots_filled, sm.slots_required
+      SELECT u.mlm_level as current_stage, sm.slots_filled, sm.slots_required,
+             COALESCE(sm.qualified_slots_filled, sm.slots_filled) as qualified_slots_filled
       FROM users u
       LEFT JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = u.mlm_level
       WHERE u.id = $1
@@ -74,10 +75,11 @@ class MLMService {
     
     if (stageResult.rows.length === 0) return;
     
-    const { current_stage, is_complete, slots_filled } = stageResult.rows[0];
+    const { current_stage, qualified_slots_filled, slots_required } = stageResult.rows[0];
     
-    // Only progress if current stage matrix is complete
-    if (!is_complete) return;
+    // Only progress if qualified slots are filled
+    const isComplete = qualified_slots_filled >= slots_required;
+    if (!isComplete) return;
     
     const stageProgression = {
       'no_stage': 'feeder',
@@ -91,14 +93,16 @@ class MLMService {
     const newStage = stageProgression[current_stage];
     
     if (newStage) {
+      const oldStage = current_stage;
+      
       // Update user stage
       await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [newStage, userId]);
 
       // Create new stage_matrix entry for next stage
       const nextStageSlots = newStage === 'infinity' ? 0 : ((newStage === 'no_stage' || newStage === 'feeder') ? 6 : 14);
       await client.query(`
-        INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-        VALUES ($1, $2, 0, $3)
+        INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, qualified_slots_filled)
+        VALUES ($1, $2, 0, $3, 0)
         ON CONFLICT (user_id, stage) DO NOTHING
       `, [userId, newStage, nextStageSlots]);
 
@@ -106,7 +110,15 @@ class MLMService {
       await client.query(`
         INSERT INTO level_progressions (user_id, from_stage, to_stage, matrix_count)
         VALUES ($1, $2, $3, $4)
-      `, [userId, current_stage, newStage, slots_filled]);
+      `, [userId, current_stage, newStage, qualified_slots_filled]);
+
+      // Release held earnings when user reaches Feeder
+      if (newStage === 'feeder' && oldStage === 'no_stage') {
+        await this.releaseHeldEarnings(client, userId);
+      }
+
+      // Trigger retroactive updates for uplines
+      await this.onUserStageUpgrade(client, userId, oldStage, newStage);
 
       // Send notification
       await client.query(`
@@ -184,8 +196,12 @@ class MLMService {
       [userId, stage, placementParentId]
     );
 
-    // Credit all uplines in the matrix path
-    await this.creditUplineChain(client, placementParentId, userId, stage);
+    // Get new user's current stage
+    const newUserResult = await client.query('SELECT mlm_level FROM users WHERE id = $1', [userId]);
+    const newUserStage = newUserResult.rows[0]?.mlm_level || 'no_stage';
+
+    // Credit only the direct matrix owner (no upline chain)
+    await this.creditDirectMatrixOwner(client, placementParentId, userId, stage, newUserStage);
 
     return { placementParentId, stage };
   }
@@ -223,66 +239,67 @@ class MLMService {
     return null;
   }
 
-  async creditUplineChain(client, startUserId, newUserId, stage) {
-    // Walk up the matrix tree and credit everyone
-    let currentUserId = startUserId;
-    const creditedUsers = [];
+  async creditDirectMatrixOwner(client, matrixOwnerId, newUserId, stage, newUserStage) {
+    // Only credit the direct matrix owner (no upline chain)
+    const userResult = await client.query(
+      'SELECT id, mlm_level FROM users WHERE id = $1',
+      [matrixOwnerId]
+    );
 
-    while (currentUserId) {
-      // Get user's current stage
-      const userResult = await client.query(
-        'SELECT id, mlm_level FROM users WHERE id = $1',
-        [currentUserId]
+    if (userResult.rows.length === 0) return [];
+
+    const user = userResult.rows[0];
+    const userStage = user.mlm_level || 'no_stage';
+    const stageConfig = MLM_LEVELS[userStage] || MLM_LEVELS['feeder'];
+
+    // Determine earning status based on user stage
+    const earningStatus = (userStage === 'no_stage') ? 'held' : 'completed';
+    
+    // Add referral earning
+    await client.query(
+      'INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, $4, $5)',
+      [matrixOwnerId, newUserId, userStage, stageConfig.bonusUSD, earningStatus]
+    );
+
+    // Only update wallet and add transaction if user is Feeder or higher
+    if (userStage !== 'no_stage') {
+      await client.query(
+        'UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2',
+        [stageConfig.bonusUSD, matrixOwnerId]
       );
 
-      if (userResult.rows.length === 0) break;
-
-      const user = userResult.rows[0];
-      const userStage = user.mlm_level || 'feeder';
-      const stageConfig = MLM_LEVELS[userStage];
-
-      // Only credit if user is at same or higher stage
-      if (this.isStageEqualOrHigher(userStage, stage)) {
-        // Add referral earning
-        await client.query(
-          'INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, $4, $5)',
-          [currentUserId, newUserId, userStage, stageConfig.bonusUSD, 'completed']
-        );
-
-        // Update wallet
-        await client.query(
-          'UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2',
-          [stageConfig.bonusUSD, currentUserId]
-        );
-
-        // Add transaction
-        await client.query(
-          'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
-          [currentUserId, 'matrix_bonus', stageConfig.bonusUSD, `Matrix bonus from spillover at ${userStage} stage`, 'completed']
-        );
-
-        // Update stage matrix slots
-        await client.query(
-          'UPDATE stage_matrix SET slots_filled = slots_filled + 1, is_complete = (slots_filled + 1 >= slots_required), completed_at = CASE WHEN (slots_filled + 1 >= slots_required) THEN CURRENT_TIMESTAMP ELSE completed_at END WHERE user_id = $1 AND stage = $2',
-          [currentUserId, userStage]
-        );
-
-        // Check for level progression
-        await this.checkLevelProgression(client, currentUserId);
-
-        creditedUsers.push(currentUserId);
-      }
-
-      // Move to parent in matrix
-      const parentResult = await client.query(
-        'SELECT parent_id FROM mlm_matrix WHERE user_id = $1 AND stage = $2',
-        [currentUserId, stage]
+      await client.query(
+        'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+        [matrixOwnerId, 'matrix_bonus', stageConfig.bonusUSD, `Matrix bonus at ${userStage} stage`, 'completed']
       );
-
-      currentUserId = parentResult.rows[0]?.parent_id || null;
     }
 
-    return creditedUsers;
+    // Update stage matrix slots
+    await client.query(
+      'UPDATE stage_matrix SET slots_filled = slots_filled + 1 WHERE user_id = $1 AND stage = $2',
+      [matrixOwnerId, userStage]
+    );
+
+    // Track member in matrix
+    const isQualified = (userStage === 'no_stage') || (newUserStage === userStage);
+    await client.query(`
+      INSERT INTO stage_matrix_members (matrix_owner_id, matrix_stage, member_id, member_stage_at_placement, is_qualified, qualified_at)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (matrix_owner_id, matrix_stage, member_id) DO NOTHING
+    `, [matrixOwnerId, userStage, newUserId, newUserStage, isQualified, isQualified ? new Date() : null]);
+
+    // Update qualified slots if member is at required stage
+    if (isQualified) {
+      await client.query(
+        'UPDATE stage_matrix SET qualified_slots_filled = COALESCE(qualified_slots_filled, 0) + 1 WHERE user_id = $1 AND stage = $2',
+        [matrixOwnerId, userStage]
+      );
+    }
+
+    // Check for level progression
+    await this.checkLevelProgression(client, matrixOwnerId);
+
+    return [matrixOwnerId];
   }
 
   isStageEqualOrHigher(userStage, requiredStage) {
@@ -314,12 +331,14 @@ class MLMService {
       SELECT 
         stage,
         COUNT(*) as referrals_count,
-        SUM(amount) as total_earned
+        SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END) as total_earned,
+        SUM(CASE WHEN status = 'held' THEN amount ELSE 0 END) as held_earnings
       FROM referral_earnings 
-      WHERE user_id = $1 AND status = 'completed'
+      WHERE user_id = $1
       GROUP BY stage
       ORDER BY 
         CASE stage
+          WHEN 'no_stage' THEN 0
           WHEN 'feeder' THEN 1
           WHEN 'bronze' THEN 2
           WHEN 'silver' THEN 3
@@ -386,14 +405,45 @@ class MLMService {
     const result = await pool.query(`
       SELECT u.mlm_level as current_stage,
              COALESCE(sm.slots_filled, 0) as slots_filled,
+             COALESCE(sm.qualified_slots_filled, sm.slots_filled) as qualified_slots_filled,
              COALESCE(sm.slots_required, 6) as slots_required,
-             COALESCE(sm.is_complete, false) as is_complete
+             COALESCE(sm.qualified_slots_filled >= sm.slots_required, false) as is_complete
       FROM users u
       LEFT JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = u.mlm_level
       WHERE u.id = $1
     `, [userId]);
 
     return result.rows[0] || null;
+  }
+
+  async onUserStageUpgrade(client, userId, fromStage, toStage) {
+    // Find all upline matrices that have this user as unqualified member
+    const uplineMatrices = await client.query(`
+      SELECT DISTINCT smm.matrix_owner_id, smm.matrix_stage
+      FROM stage_matrix_members smm
+      WHERE smm.member_id = $1 
+        AND smm.is_qualified = false
+        AND smm.matrix_stage = $2
+    `, [userId, toStage]);
+
+    for (const matrix of uplineMatrices.rows) {
+      // Mark as qualified
+      await client.query(`
+        UPDATE stage_matrix_members 
+        SET is_qualified = true, qualified_at = CURRENT_TIMESTAMP
+        WHERE matrix_owner_id = $1 AND matrix_stage = $2 AND member_id = $3
+      `, [matrix.matrix_owner_id, matrix.matrix_stage, userId]);
+
+      // Increment qualified slots
+      await client.query(`
+        UPDATE stage_matrix 
+        SET qualified_slots_filled = COALESCE(qualified_slots_filled, 0) + 1
+        WHERE user_id = $1 AND stage = $2
+      `, [matrix.matrix_owner_id, matrix.matrix_stage]);
+
+      // Check if upline can now progress
+      await this.checkLevelProgression(client, matrix.matrix_owner_id);
+    }
   }
 
   async getBinaryTree(userId) {
@@ -477,6 +527,48 @@ class MLMService {
     }
 
     return node;
+  }
+
+  async releaseHeldEarnings(client, userId) {
+    // Get all held earnings for this user
+    const heldEarnings = await client.query(
+      'SELECT * FROM referral_earnings WHERE user_id = $1 AND status = $2',
+      [userId, 'held']
+    );
+
+    if (heldEarnings.rows.length === 0) return;
+
+    let totalAmount = 0;
+    
+    // Update all held earnings to completed
+    for (const earning of heldEarnings.rows) {
+      await client.query(
+        'UPDATE referral_earnings SET status = $1 WHERE id = $2',
+        ['completed', earning.id]
+      );
+      
+      totalAmount += parseFloat(earning.amount);
+      
+      // Add transaction for each released earning
+      await client.query(
+        'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+        [userId, 'matrix_bonus', earning.amount, `Released held earning from ${earning.stage} stage`, 'completed']
+      );
+    }
+
+    // Update wallet with total released amount
+    if (totalAmount > 0) {
+      await client.query(
+        'UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2',
+        [totalAmount, userId]
+      );
+
+      // Send notification
+      await client.query(`
+        INSERT INTO market_updates (user_id, title, message, type)
+        VALUES ($1, $2, $3, 'success')
+      `, [userId, 'Earnings Released!', `Your held earnings of $${totalAmount.toFixed(2)} have been released to your wallet!`]);
+    }
   }
 
   async completeUserMatrix(userId, currentStage) {
