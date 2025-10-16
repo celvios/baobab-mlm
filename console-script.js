@@ -1,21 +1,23 @@
-// CONSOLE SCRIPT - Copy and paste this entire script into your browser console
+// STEP 1: Change these values
+const USER_EMAIL = 'your-email@example.com';  // ← Change this to your email
+const REFERRAL_COUNT = 6;                      // ← Change this to number of referrals
+const API_URL = 'http://localhost:5000';       // ← Change if using different URL
 
-async function generateReferrals(email, count) {
-  const API = 'http://localhost:5000';
+// STEP 2: Copy everything below and paste in console
+(async function() {
+  console.log(`🚀 Generating ${REFERRAL_COUNT} referrals for ${USER_EMAIL}...`);
   
-  console.log(`🚀 Generating ${count} referrals for ${email}...`);
-  
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < REFERRAL_COUNT; i++) {
     const refData = {
       email: `ref_${Date.now()}_${i}@test.com`,
       password: 'password123',
       fullName: `Referral ${i + 1}`,
       phone: `+234${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
-      referredBy: email
+      referredBy: USER_EMAIL
     };
     
     try {
-      const res = await fetch(`${API}/api/auth/register`, {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(refData)
@@ -35,7 +37,5 @@ async function generateReferrals(email, count) {
     await new Promise(r => setTimeout(r, 500));
   }
   
-  console.log(`✅ Done! Generated ${count} referrals for ${email}`);
-}
-
-// USAGE: generateReferrals('your-email@example.com', 6)
+  console.log(`✅ Done! Generated ${REFERRAL_COUNT} referrals for ${USER_EMAIL}`);
+})();
