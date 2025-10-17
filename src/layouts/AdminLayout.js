@@ -28,6 +28,7 @@ const AdminLayout = () => {
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: FiHome },
     { name: 'Users Management', href: '/admin/users', icon: FiUsers },
+    { name: 'Matrix Generator', href: '/admin/matrix-generator', icon: FiAward },
     { name: 'Orders Management', href: '/admin/orders', icon: FiShoppingBag },
     { name: 'Product Management', href: '/admin/products', icon: FiPackage },
     { name: 'Deposit Requests', href: '/admin/deposits', icon: FiDollarSign },
