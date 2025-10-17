@@ -1856,6 +1856,77 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
   }
 });
 
+// Auto-correct all user stages based on completed matrices
+app.get('/api/auto-correct-stages', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    const corrections = [];
+    
+    // Get all users
+    const users = await client.query('SELECT id, email, mlm_level FROM users');
+    
+    for (const user of users.rows) {
+      const userId = user.id;
+      let correctStage = 'no_stage';
+      
+      // Check feeder completion (6 paid members)
+      const feederCount = await client.query(`
+        SELECT COUNT(*) as count FROM referral_earnings 
+        WHERE user_id = $1 AND stage = 'no_stage' AND status IN ('completed', 'held')
+      `, [userId]);
+      
+      if (parseInt(feederCount.rows[0].count) >= 6) {
+        correctStage = 'feeder';
+        
+        // Check bronze completion (14 feeder-completed members)
+        const bronzeMembers = await client.query(`
+          SELECT COUNT(*) as count FROM referral_earnings re
+          WHERE re.user_id = $1 AND re.stage = 'feeder'
+          AND EXISTS (
+            SELECT 1 FROM stage_matrix sm 
+            WHERE sm.user_id = re.referred_user_id AND sm.stage = 'feeder' AND sm.is_complete = true
+          )
+        `, [userId]);
+        
+        if (parseInt(bronzeMembers.rows[0].count) >= 14) {
+          correctStage = 'bronze';
+          
+          // Check silver completion (14 bronze-completed members)
+          const silverMembers = await client.query(`
+            SELECT COUNT(*) as count FROM referral_earnings re
+            WHERE re.user_id = $1 AND re.stage = 'bronze'
+            AND EXISTS (
+              SELECT 1 FROM stage_matrix sm 
+              WHERE sm.user_id = re.referred_user_id AND sm.stage = 'bronze' AND sm.is_complete = true
+            )
+          `, [userId]);
+          
+          if (parseInt(silverMembers.rows[0].count) >= 14) {
+            correctStage = 'silver';
+          }
+        }
+      }
+      
+      // Update if different
+      if (user.mlm_level !== correctStage) {
+        await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [correctStage, userId]);
+        corrections.push({ email: user.email, from: user.mlm_level, to: correctStage });
+      }
+    }
+    
+    client.release();
+    res.json({ success: true, corrected: corrections.length, corrections });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Reset user to feeder stage
 app.get('/api/reset-to-feeder/:email', async (req, res) => {
   const { Pool } = require('pg');
