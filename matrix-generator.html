@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLM Matrix Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 32px; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 16px; }
+        .content { padding: 30px; }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .stage-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        .result h3 { margin-bottom: 15px; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .matrix-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .matrix-item {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .matrix-item:last-child { border-bottom: none; }
+        .matrix-item .name { font-weight: 600; color: #333; }
+        .matrix-item .email { font-size: 14px; color: #666; }
+        .matrix-item .stage {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌳 MLM Matrix Generator</h1>
+            <p>Generate complete matrices for any user at any stage</p>
+        </div>
+        
+        <div class="content">
+            <div class="form-group">
+                <label for="email">User Email</label>
+                <input type="email" id="email" placeholder="user@example.com" value="forquant002@gmail.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="stage">Matrix Stage to Complete</label>
+                <select id="stage">
+                    <option value="feeder">Feeder (2x2 = 6 people)</option>
+                    <option value="bronze">Bronze (2x3 = 14 feeder-completed accounts = 84 people)</option>
+                    <option value="silver">Silver (2x3 = 14 bronze-completed accounts = 1,176 people)</option>
+                    <option value="gold">Gold (2x3 = 14 silver-completed accounts = 16,464 people)</option>
+                    <option value="diamond">Diamond (2x3 = 14 gold-completed accounts = 230,496 people)</option>
+                </select>
+                <div class="stage-info" id="stageInfo">
+                    Select a stage to see details
+                </div>
+            </div>
+            
+            <button class="btn" id="generateBtn" onclick="generateMatrix()">
+                Generate Matrix
+            </button>
+            
+            <div class="result" id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://baobab-mlm.onrender.com';
+        
+        const stageInfo = {
+            feeder: {
+                slots: 6,
+                totalPeople: 6,
+                bonus: 1.5,
+                description: 'Creates 6 paid referrals directly under the user'
+            },
+            bronze: {
+                slots: 14,
+                totalPeople: 84,
+                bonus: 4.8,
+                description: 'Creates 14 accounts, each with completed feeder matrix (6 people each)'
+            },
+            silver: {
+                slots: 14,
+                totalPeople: 1176,
+                bonus: 30,
+                description: 'Creates 14 accounts, each with completed bronze matrix (84 people each)'
+            },
+            gold: {
+                slots: 14,
+                totalPeople: 16464,
+                bonus: 150,
+                description: 'Creates 14 accounts, each with completed silver matrix (1,176 people each)'
+            },
+            diamond: {
+                slots: 14,
+                totalPeople: 230496,
+                bonus: 750,
+                description: 'Creates 14 accounts, each with completed gold matrix (16,464 people each)'
+            }
+        };
+
+        document.getElementById('stage').addEventListener('change', function() {
+            const stage = this.value;
+            const info = stageInfo[stage];
+            document.getElementById('stageInfo').innerHTML = `
+                <strong>${info.description}</strong><br>
+                📊 Matrix Slots: ${info.slots}<br>
+                👥 Total People Generated: ${info.totalPeople.toLocaleString()}<br>
+                💰 Bonus per slot: $${info.bonus}
+            `;
+        });
+
+        // Trigger initial info display
+        document.getElementById('stage').dispatchEvent(new Event('change'));
+
+        async function generateMatrix() {
+            const email = document.getElementById('email').value;
+            const stage = document.getElementById('stage').value;
+            const btn = document.getElementById('generateBtn');
+            const result = document.getElementById('result');
+
+            if (!email) {
+                showResult('error', 'Please enter a user email');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            result.style.display = 'block';
+            result.className = 'result';
+            result.innerHTML = '<div class="spinner"></div><div class="loading">Generating matrix... This may take a while for larger matrices.</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/generate-complete-matrix/${email}/${stage}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult('success', `
+                        <h3>✅ Matrix Generated Successfully!</h3>
+                        <div class="stats">
+                            <div class="stat-card">
+                                <div class="stat-label">Stage Completed</div>
+                                <div class="stat-value">${stage.toUpperCase()}</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Accounts Created</div>
+                                <div class="stat-value">${data.totalCreated || 0}</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Total Earnings</div>
+                                <div class="stat-value">$${data.totalEarnings || 0}</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">New Stage</div>
+                                <div class="stat-value">${data.newStage || stage}</div>
+                            </div>
+                        </div>
+                        ${data.accounts && data.accounts.length > 0 ? `
+                            <h4 style="margin-top: 20px;">Generated Accounts:</h4>
+                            <div class="matrix-list">
+                                ${data.accounts.map(acc => `
+                                    <div class="matrix-item">
+                                        <div>
+                                            <div class="name">${acc.name || acc.full_name}</div>
+                                            <div class="email">${acc.email}</div>
+                                        </div>
+                                        <div class="stage">${acc.stage || 'feeder'}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    `);
+                } else {
+                    showResult('error', `<h3>❌ Error</h3><p>${data.error || data.message}</p>`);
+                }
+            } catch (error) {
+                showResult('error', `<h3>❌ Error</h3><p>${error.message}</p>`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Matrix';
+            }
+        }
+
+        function showResult(type, content) {
+            const result = document.getElementById('result');
+            result.className = `result ${type}`;
+            result.innerHTML = content;
+            result.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

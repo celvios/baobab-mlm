@@ -1937,6 +1937,89 @@ app.get('/api/auto-correct-stages', async (req, res) => {
   }
 });
 
+// Generate complete matrix for any stage
+app.get('/api/generate-complete-matrix/:email/:stage', cors({ origin: '*' }), async (req, res) => {
+  const { Pool } = require('pg');
+  const bcrypt = require('bcryptjs');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { email, stage } = req.params;
+    const client = await pool.connect();
+    
+    const user = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const userId = user.rows[0].id;
+    const hashedPassword = await bcrypt.hash('Test@123', 10);
+    const accounts = [];
+    
+    const stageConfig = {
+      feeder: { slots: 6, bonus: 1.5, nextStage: 'bronze' },
+      bronze: { slots: 14, bonus: 4.8, nextStage: 'silver', requiresFeeder: true },
+      silver: { slots: 14, bonus: 30, nextStage: 'gold', requiresBronze: true },
+      gold: { slots: 14, bonus: 150, nextStage: 'diamond', requiresSilver: true },
+      diamond: { slots: 14, bonus: 750, nextStage: 'infinity', requiresGold: true }
+    };
+    
+    const config = stageConfig[stage];
+    if (!config) {
+      client.release();
+      return res.status(400).json({ error: 'Invalid stage' });
+    }
+    
+    // Generate accounts based on stage requirements
+    for (let i = 1; i <= config.slots; i++) {
+      const newUser = await client.query(`
+        INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+        VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
+        RETURNING id, email, full_name
+      `, [`${stage} Account ${i}`, `${stage}_${Date.now()}_${i}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.rows[0].referral_code]);
+      
+      const newUserId = newUser.rows[0].id;
+      await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUserId]);
+      await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUserId, 'approved']);
+      await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, 6, 6, true)', [newUserId, 'feeder']);
+      
+      // If bronze+, complete their previous stage matrix
+      if (config.requiresFeeder || config.requiresBronze || config.requiresSilver || config.requiresGold) {
+        const prevStage = stage === 'bronze' ? 'feeder' : (stage === 'silver' ? 'bronze' : (stage === 'gold' ? 'silver' : 'gold'));
+        await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [prevStage, newUserId]);
+        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, 14, 14, true) ON CONFLICT (user_id, stage) DO UPDATE SET is_complete = true', [newUserId, prevStage]);
+      }
+      
+      accounts.push(newUser.rows[0]);
+    }
+    
+    // Process MLM for each account
+    const mlmService = require('./services/mlmService');
+    for (const acc of accounts) {
+      try {
+        await mlmService.processReferral(userId, acc.id);
+      } catch (err) {
+        console.log('MLM error:', err.message);
+      }
+    }
+    
+    client.release();
+    res.json({
+      success: true,
+      totalCreated: accounts.length,
+      totalEarnings: config.slots * config.bonus,
+      newStage: config.nextStage,
+      accounts
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Reset user to feeder stage
 app.get('/api/reset-to-feeder/:email', async (req, res) => {
   const { Pool } = require('pg');
