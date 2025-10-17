@@ -372,7 +372,7 @@ app.get('/api/test', (req, res) => {
 });
 
 // Generate paid referrals for testing (GET version for console)
-app.get('/api/generate-referrals/:email/:count', cors(), async (req, res) => {
+app.get('/api/generate-referrals/:email/:count', cors({ origin: '*' }), async (req, res) => {
   const { email, count } = req.params;
   return generateReferralsLogic(req, res, email, parseInt(count));
 });
