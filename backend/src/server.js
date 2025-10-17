@@ -1856,6 +1856,33 @@ app.get('/api/test-generate-matrix/:email', async (req, res) => {
   }
 });
 
+// Reset user to feeder stage
+app.get('/api/reset-to-feeder/:email', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { email } = req.params;
+    const client = await pool.connect();
+    const user = await client.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const userId = user.rows[0].id;
+    await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', ['feeder', userId]);
+    await client.query('UPDATE stage_matrix SET is_complete = true WHERE user_id = $1 AND stage = $2', [userId, 'feeder']);
+    await client.query('UPDATE stage_matrix SET slots_filled = 0, is_complete = false WHERE user_id = $1 AND stage = $2', [userId, 'bronze']);
+    client.release();
+    res.json({ success: true, message: 'User reset to Feeder stage' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
