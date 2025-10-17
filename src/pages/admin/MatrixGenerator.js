@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 
 const MatrixGenerator = () => {
   const [email, setEmail] = useState('');
@@ -25,10 +24,11 @@ const MatrixGenerator = () => {
     setResult(null);
 
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/generate-complete-matrix/${email}/${stage}`);
-      setResult(response.data);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/generate-complete-matrix/${email}/${stage}`);
+      const data = await response.json();
+      setResult(data);
     } catch (error) {
-      setResult({ success: false, error: error.response?.data?.error || error.message });
+      setResult({ success: false, error: error.message });
     } finally {
       setLoading(false);
     }
