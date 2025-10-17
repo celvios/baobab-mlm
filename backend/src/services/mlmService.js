@@ -282,17 +282,27 @@ class MLMService {
 
     // Track member in matrix
     // At no_stage/feeder: everyone counts
-    // At bronze+: only members who COMPLETED feeder (6/6) count
+    // At bronze+: only members who completed the PREVIOUS stage count
     let isQualified = false;
     
     if (userStage === 'no_stage' || userStage === 'feeder') {
       isQualified = true;
     } else {
-      // Check if member completed their feeder matrix
-      const memberMatrixCheck = await client.query(`
-        SELECT is_complete FROM stage_matrix WHERE user_id = $1 AND stage = 'feeder'
-      `, [newUserId]);
-      isQualified = memberMatrixCheck.rows.length > 0 && memberMatrixCheck.rows[0].is_complete === true;
+      // Get the required stage for this matrix
+      const stageHierarchy = {
+        'bronze': 'feeder',   // Bronze needs feeder-completed accounts
+        'silver': 'bronze',   // Silver needs bronze-completed accounts
+        'gold': 'silver',     // Gold needs silver-completed accounts
+        'diamond': 'gold'     // Diamond needs gold-completed accounts
+      };
+      
+      const requiredStage = stageHierarchy[userStage];
+      if (requiredStage) {
+        const memberMatrixCheck = await client.query(`
+          SELECT is_complete FROM stage_matrix WHERE user_id = $1 AND stage = $2
+        `, [newUserId, requiredStage]);
+        isQualified = memberMatrixCheck.rows.length > 0 && memberMatrixCheck.rows[0].is_complete === true;
+      }
     }
     await client.query(`
       INSERT INTO stage_matrix_members (matrix_owner_id, matrix_stage, member_id, member_stage_at_placement, is_qualified, qualified_at)
