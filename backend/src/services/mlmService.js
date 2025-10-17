@@ -280,21 +280,19 @@ class MLMService {
       [matrixOwnerId, userStage]
     );
 
-    // Track member in matrix
-    const isQualified = (userStage === 'no_stage') || (newUserStage === userStage);
+    // Track member in matrix - all members are qualified at no_stage
+    const isQualified = true; // Everyone counts at no_stage
     await client.query(`
       INSERT INTO stage_matrix_members (matrix_owner_id, matrix_stage, member_id, member_stage_at_placement, is_qualified, qualified_at)
       VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (matrix_owner_id, matrix_stage, member_id) DO NOTHING
-    `, [matrixOwnerId, userStage, newUserId, newUserStage, isQualified, isQualified ? new Date() : null]);
+    `, [matrixOwnerId, userStage, newUserId, newUserStage, isQualified, new Date()]);
 
-    // Update qualified slots if member is at required stage
-    if (isQualified) {
-      await client.query(
-        'UPDATE stage_matrix SET qualified_slots_filled = COALESCE(qualified_slots_filled, 0) + 1 WHERE user_id = $1 AND stage = $2',
-        [matrixOwnerId, userStage]
-      );
-    }
+    // Update qualified slots
+    await client.query(
+      'UPDATE stage_matrix SET qualified_slots_filled = COALESCE(qualified_slots_filled, 0) + 1 WHERE user_id = $1 AND stage = $2',
+      [matrixOwnerId, userStage]
+    );
 
     // Check for level progression
     await this.checkLevelProgression(client, matrixOwnerId);
