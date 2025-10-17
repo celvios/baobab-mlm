@@ -1875,11 +1875,21 @@ app.get('/api/auto-correct-stages', async (req, res) => {
       const userId = user.id;
       let correctStage = 'no_stage';
       
-      // Check feeder completion (6 paid members)
+      // Check feeder completion (6 paid members at no_stage)
       const feederCount = await client.query(`
-        SELECT COUNT(*) as count FROM referral_earnings 
-        WHERE user_id = $1 AND stage = 'no_stage' AND status IN ('completed', 'held')
+        SELECT COUNT(*) as count FROM stage_matrix 
+        WHERE user_id = $1 AND stage = 'no_stage' AND slots_filled >= 6
       `, [userId]);
+      
+      // If no no_stage matrix, check if they have any referrals
+      if (parseInt(feederCount.rows[0].count) === 0) {
+        const anyReferrals = await client.query(`
+          SELECT COUNT(*) as count FROM referral_earnings WHERE user_id = $1
+        `, [userId]);
+        if (parseInt(anyReferrals.rows[0].count) >= 6) {
+          correctStage = 'feeder';
+        }
+      }
       
       if (parseInt(feederCount.rows[0].count) >= 6) {
         correctStage = 'feeder';
