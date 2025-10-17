@@ -34,6 +34,7 @@ import {
 } from './pages/admin';
 import AdminDeposits from './pages/admin/AdminDeposits';
 import AdminSetup from './pages/admin/AdminSetup';
+import MatrixGenerator from './pages/admin/MatrixGenerator';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -118,6 +119,7 @@ function AppContent() {
             <Route path="emailer" element={<AdminEmailer />} />
             <Route path="blog" element={<AdminBlogManagement />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="matrix-generator" element={<MatrixGenerator />} />
           </Route>
           
           <Route path="/user" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
