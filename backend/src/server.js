@@ -1974,46 +1974,58 @@ app.get('/api/generate-complete-matrix/:email/:stage', cors({ origin: '*' }), as
       return res.status(400).json({ error: 'Invalid stage' });
     }
     
-    // Generate accounts based on stage requirements
-    for (let i = 1; i <= config.slots; i++) {
-      const newUser = await client.query(`
-        INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
-        VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
-        RETURNING id, email, full_name
-      `, [`${stage} Account ${i}`, `${stage}_${Date.now()}_${i}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.rows[0].referral_code]);
+    // Recursive function to create downline
+    async function createDownline(parentCode, targetStage, depth = 0) {
+      if (depth > 10) return 0; // Safety limit
       
-      const newUserId = newUser.rows[0].id;
-      await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUserId]);
-      await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUserId, 'approved']);
-      await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, 6, 6, true)', [newUserId, 'feeder']);
+      const slotsNeeded = targetStage === 'feeder' ? 6 : 14;
+      let totalCreated = 0;
       
-      // If bronze+, complete their previous stage matrix
-      if (config.requiresFeeder || config.requiresBronze || config.requiresSilver || config.requiresGold) {
-        const prevStage = stage === 'bronze' ? 'feeder' : (stage === 'silver' ? 'bronze' : (stage === 'gold' ? 'silver' : 'gold'));
-        await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [prevStage, newUserId]);
-        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, 14, 14, true) ON CONFLICT (user_id, stage) DO UPDATE SET is_complete = true', [newUserId, prevStage]);
+      for (let i = 1; i <= slotsNeeded; i++) {
+        const newUser = await client.query(`
+          INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+          VALUES ($1, $2, $3, $4, $5, $6, true, true)
+          RETURNING id, email, full_name, referral_code
+        `, [`${targetStage} L${depth} #${i}`, `${targetStage}_${Date.now()}_${depth}_${i}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, parentCode, targetStage]);
+        
+        const newUserId = newUser.rows[0].id;
+        await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUserId]);
+        await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUserId, 'approved']);
+        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, $3, $3, true)', [newUserId, targetStage, slotsNeeded]);
+        
+        accounts.push(newUser.rows[0]);
+        totalCreated++;
+        
+        // Create their downline if needed
+        if (targetStage === 'bronze') {
+          totalCreated += await createDownline(newUser.rows[0].referral_code, 'feeder', depth + 1);
+        } else if (targetStage === 'silver') {
+          totalCreated += await createDownline(newUser.rows[0].referral_code, 'bronze', depth + 1);
+          // Each bronze needs feeder downline
+        } else if (targetStage === 'gold') {
+          totalCreated += await createDownline(newUser.rows[0].referral_code, 'silver', depth + 1);
+        } else if (targetStage === 'diamond') {
+          totalCreated += await createDownline(newUser.rows[0].referral_code, 'gold', depth + 1);
+        }
       }
       
-      accounts.push(newUser.rows[0]);
+      return totalCreated;
     }
     
-    // Process MLM for each account
-    const mlmService = require('./services/mlmService');
-    for (const acc of accounts) {
-      try {
-        await mlmService.processReferral(userId, acc.id);
-      } catch (err) {
-        console.log('MLM error:', err.message);
-      }
-    }
+    // Generate the complete structure
+    const totalCreated = await createDownline(user.rows[0].referral_code, stage, 0);
+    
+    // Update user to next stage
+    await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [config.nextStage, userId]);
+    await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, $3, $3, true)', [userId, stage, config.slots]);
     
     client.release();
     res.json({
       success: true,
-      totalCreated: accounts.length,
+      totalCreated,
       totalEarnings: config.slots * config.bonus,
       newStage: config.nextStage,
-      accounts
+      accounts: accounts.slice(0, 50) // Only return first 50 for display
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
