@@ -14,7 +14,7 @@ export default function TeamTree() {
   const [referrer, setReferrer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState(1);
-  const [expandedNodes, setExpandedNodes] = useState(new Set());
+  const [expandedNodes, setExpandedNodes] = useState(new Set(['root']));
 
   useEffect(() => {
     fetchData();
@@ -135,122 +135,75 @@ export default function TeamTree() {
     const isExpanded = expandedNodes.has(node.id) || isRoot;
     const isCurrentUser = node.id === 'current-user';
     
-    // Calculate dynamic spacing based on number of children
-    const getSpacing = (childCount) => {
-      if (childCount <= 2) return 'gap-32';
-      if (childCount <= 4) return 'gap-16';
-      if (childCount <= 6) return 'gap-8';
-      return 'gap-4';
-    };
-    
     return (
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-start w-full">
         {/* Node */}
-        <div className="relative animate-tree-grow">
-          {/* Pulse ring for root */}
-          {isRoot && (
-            <div className="absolute inset-0 w-16 h-16 rounded-full bg-yellow-400 opacity-20 pulse-ring"></div>
+        <div className="flex items-center w-full py-2 px-4 hover:bg-gray-50 rounded-lg transition-colors" style={{ paddingLeft: `${level * 2}rem` }}>
+          <div className="relative">
+            {isRoot && (
+              <div className="absolute inset-0 w-12 h-12 rounded-full bg-yellow-400 opacity-20 pulse-ring"></div>
+            )}
+            
+            <div className={`tree-node w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shadow-lg ${
+              isRoot ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : getColorForIndex(node.id || 0)
+            }`}>
+              {isRoot ? (
+                <UserIcon className="w-6 h-6" />
+              ) : (
+                <span className="text-sm">
+                  {node.full_name?.charAt(0) || node.email?.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            
+            {/* Level badge */}
+            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+              getLevelColor(node.mlm_level || 'feeder')
+            }`}>
+              {(node.mlm_level || 'feeder').charAt(0).toUpperCase()}
+            </div>
+          </div>
+          
+          {/* Node info */}
+          <div className="ml-4 flex-1">
+            <p className="text-sm font-semibold text-gray-900">
+              {isRoot || isCurrentUser ? 'You' : (node.full_name || node.email)}
+            </p>
+            <p className="text-xs text-gray-500">
+              {isRoot ? (userProfile?.mlmLevel === 'feeder' ? 'Feeder' : (userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'Feeder')) : (!node.mlm_level || node.mlm_level === 'no_stage' ? 'No Level' : node.mlm_level === 'feeder' ? 'Feeder' : node.mlm_level.charAt(0).toUpperCase() + node.mlm_level.slice(1))}
+            </p>
+          </div>
+          
+          {/* Earning badge */}
+          {!isRoot && (
+            <div className="ml-auto">
+              {node.has_deposited ? (
+                <p className="text-sm text-green-600 font-semibold">
+                  +${node.earning_from_user || '1.5'}
+                </p>
+              ) : (
+                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+              )}
+            </div>
           )}
           
-          <div className={`tree-node w-16 h-16 rounded-full flex items-center justify-center text-white font-bold shadow-lg cursor-pointer ${
-            isRoot ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : getColorForIndex(node.id || 0)
-          }`}>
-            {isRoot ? (
-              <UserIcon className="w-8 h-8" />
-            ) : (
-              <span className="text-lg">
-                {node.full_name?.charAt(0) || node.email?.charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
-          
-          {/* Level badge */}
-          <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-            getLevelColor(node.mlm_level || 'feeder')
-          }`}>
-            {(node.mlm_level || 'feeder').charAt(0).toUpperCase()}
-          </div>
-          
           {/* Expand/Collapse button */}
-          {hasChildren && !isRoot && (
+          {hasChildren && (
             <button
               onClick={() => toggleNode(node.id)}
-              className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-white border-2 border-gray-400 rounded-full flex items-center justify-center text-sm font-bold hover:bg-gray-100 shadow-md z-10"
+              className="ml-4 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold hover:bg-gray-300 transition-colors"
             >
               {isExpanded ? '−' : '+'}
             </button>
           )}
         </div>
         
-        {/* Node info */}
-        <div className="mt-2 text-center">
-          <p className="text-sm font-semibold text-gray-900">
-            {isRoot || isCurrentUser ? 'You' : (node.full_name || node.email)}
-          </p>
-          <p className="text-xs text-gray-500">
-            {isRoot ? (userProfile?.mlmLevel === 'feeder' ? 'Feeder' : (userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'Feeder')) : (!node.mlm_level || node.mlm_level === 'no_stage' ? 'No Level' : node.mlm_level === 'feeder' ? 'Feeder' : node.mlm_level.charAt(0).toUpperCase() + node.mlm_level.slice(1))}
-          </p>
-          {!isRoot && (
-            node.has_deposited ? (
-              <p className="text-xs text-green-600 font-semibold">
-                +${node.earning_from_user || '1.5'}
-              </p>
-            ) : (
-              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
-            )
-          )}
-        </div>
-        
         {/* Children */}
         {hasChildren && isExpanded && (
-          <div className="mt-6">
-            {/* Connection lines */}
-            <div className="relative mt-12">
-              {/* Vertical line from parent down */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-6 bg-gray-400" style={{ top: '-1.5rem' }}></div>
-              
-              {/* Children container */}
-              <div className={`flex justify-center ${getSpacing(node.children.length)}`}>
-                {node.children.map((child, index) => (
-                  <div key={child.id || index} className="relative flex flex-col items-center">
-                    {/* Vertical line down to this child */}
-                    <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-6 bg-gray-400" style={{ top: '-1.5rem' }}></div>
-                    
-                    {/* Horizontal line segment */}
-                    {node.children.length > 1 && (
-                      <>
-                        {/* Left side of T */}
-                        {index === 0 && (
-                          <div className="absolute h-1 bg-gray-400" style={{ 
-                            top: '-1.5rem',
-                            left: '50%',
-                            right: `-${getSpacing(node.children.length).includes('32') ? '8rem' : getSpacing(node.children.length).includes('16') ? '4rem' : '2rem'}`
-                          }}></div>
-                        )}
-                        {/* Right side of T */}
-                        {index === node.children.length - 1 && index > 0 && (
-                          <div className="absolute h-1 bg-gray-400" style={{ 
-                            top: '-1.5rem',
-                            right: '50%',
-                            left: `-${getSpacing(node.children.length).includes('32') ? '8rem' : getSpacing(node.children.length).includes('16') ? '4rem' : '2rem'}`
-                          }}></div>
-                        )}
-                        {/* Middle segments */}
-                        {index > 0 && index < node.children.length - 1 && (
-                          <div className="absolute h-1 bg-gray-400" style={{ 
-                            top: '-1.5rem',
-                            left: `-${getSpacing(node.children.length).includes('32') ? '8rem' : getSpacing(node.children.length).includes('16') ? '4rem' : '2rem'}`,
-                            right: `-${getSpacing(node.children.length).includes('32') ? '8rem' : getSpacing(node.children.length).includes('16') ? '4rem' : '2rem'}`
-                          }}></div>
-                        )}
-                      </>
-                    )}
-                    
-                    <TreeNode node={child} level={level + 1} />
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="w-full">
+            {node.children.map((child, index) => (
+              <TreeNode key={child.id || index} node={child} level={level + 1} />
+            ))}
           </div>
         )}
       </div>
@@ -371,13 +324,25 @@ export default function TeamTree() {
           <h2 className="text-xl font-bold text-gray-900">Network Tree</h2>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setExpandedNodes(new Set())}
+              onClick={() => setExpandedNodes(new Set(['root']))}
               className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Collapse All
             </button>
             <button
-              onClick={() => setExpandedNodes(new Set(teamMembers.map(m => m.id)))}
+              onClick={() => {
+                const allIds = new Set(['root']);
+                const collectIds = (members) => {
+                  members.forEach(m => {
+                    allIds.add(m.id);
+                    if (m.children && m.children.length > 0) {
+                      collectIds(m.children);
+                    }
+                  });
+                };
+                collectIds(teamMembers);
+                setExpandedNodes(allIds);
+              }}
               className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
             >
               Expand All
@@ -385,7 +350,7 @@ export default function TeamTree() {
           </div>
         </div>
         
-        <div className="min-w-full">
+        <div className="w-full">
           {referrer ? (
             <TreeNode 
               node={{

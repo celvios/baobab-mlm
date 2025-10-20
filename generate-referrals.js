@@ -1,9 +1,7 @@
-// STEP 1: Change these values
-const USER_EMAIL = 'forquant002@gmail.com';  // ← Change this
-const REFERRAL_COUNT = 6;                     // ← Change this
+// Run this with: node generate-referrals.js
 
-// STEP 2: Open your deployed frontend (https://baobab-mlm.vercel.app)
-//         Then open browser console and paste this:
+const USER_EMAIL = 'forquant002@gmail.com';
+const REFERRAL_COUNT = 6;
 
 fetch(`https://baobab-mlm.onrender.com/api/generate-referrals/${USER_EMAIL}/${REFERRAL_COUNT}`)
   .then(r => r.json())
@@ -17,5 +15,3 @@ fetch(`https://baobab-mlm.onrender.com/api/generate-referrals/${USER_EMAIL}/${RE
     }
   })
   .catch(e => console.error('❌ FETCH ERROR:', e.message));
-
-// ALTERNATIVE: Open generate-referrals.html in your browser for a UI
