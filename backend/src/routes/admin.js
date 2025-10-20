@@ -1310,22 +1310,77 @@ router.get('/convert-prices-to-usd', async (req, res) => {
   }
 });
 
-// DANGER: Clear all database data
+// Clear all data except admin
 router.get('/clear-all-data', async (req, res) => {
+  const client = await pool.connect();
   try {
-    await pool.query('TRUNCATE TABLE market_updates CASCADE');
-    await pool.query('TRUNCATE TABLE referral_earnings CASCADE');
-    await pool.query('TRUNCATE TABLE level_progressions CASCADE');
-    await pool.query('TRUNCATE TABLE transactions CASCADE');
-    await pool.query('TRUNCATE TABLE withdrawal_requests CASCADE');
-    await pool.query('TRUNCATE TABLE deposit_requests CASCADE');
-    await pool.query('TRUNCATE TABLE orders CASCADE');
-    await pool.query('TRUNCATE TABLE user_profiles CASCADE');
-    await pool.query('TRUNCATE TABLE wallets CASCADE');
-    await pool.query('TRUNCATE TABLE users CASCADE');
-    res.json({ message: 'All data cleared! Database is empty.' });
+    await client.query('BEGIN');
+    
+    // Get admin user IDs
+    const adminResult = await client.query("SELECT id FROM users WHERE role = 'admin'");
+    const adminIds = adminResult.rows.map(r => r.id);
+    
+    // Delete all non-admin data
+    await client.query('DELETE FROM market_updates WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM referral_earnings WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM level_progressions WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM transactions WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM withdrawal_requests WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM deposit_requests WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM orders WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM user_profiles WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM wallets WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM mlm_matrix WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM stage_matrix WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM stage_matrix_members WHERE matrix_owner_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query("DELETE FROM users WHERE role != 'admin' OR role IS NULL");
+    
+    await client.query('COMMIT');
+    res.json({ message: 'All data cleared except admin accounts', adminCount: adminIds.length });
   } catch (error) {
+    await client.query('ROLLBACK');
     res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Clear all data except admin (POST with confirmation)
+router.post('/clear-all-data', adminAuth, async (req, res) => {
+  const { confirm } = req.body;
+  
+  if (confirm !== 'DELETE_ALL_DATA') {
+    return res.status(400).json({ error: 'Confirmation required' });
+  }
+  
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    const adminResult = await client.query("SELECT id FROM users WHERE role = 'admin'");
+    const adminIds = adminResult.rows.map(r => r.id);
+    
+    await client.query('DELETE FROM market_updates WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM referral_earnings WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM level_progressions WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM transactions WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM withdrawal_requests WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM deposit_requests WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM orders WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM user_profiles WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM wallets WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM mlm_matrix WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM stage_matrix WHERE user_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query('DELETE FROM stage_matrix_members WHERE matrix_owner_id NOT IN (SELECT id FROM users WHERE role = \'admin\')');
+    await client.query("DELETE FROM users WHERE role != 'admin' OR role IS NULL");
+    
+    await client.query('COMMIT');
+    res.json({ message: 'All data cleared except admin accounts', adminCount: adminIds.length });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
   }
 });
 
