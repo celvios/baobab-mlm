@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiDollarSign, FiCheck, FiX, FiEye } from 'react-icons/fi';
+import { FiDollarSign, FiCheck, FiX, FiEye, FiSearch } from 'react-icons/fi';
 import apiService from '../../services/api';
 
 const AdminDeposits = () => {
@@ -8,6 +8,8 @@ const AdminDeposits = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDeposit, setSelectedDeposit] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     fetchDeposits();
@@ -139,7 +141,35 @@ const AdminDeposits = () => {
       {/* Deposits Table */}
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Deposit Requests</h2>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 className="text-lg font-semibold text-gray-900">Deposit Requests</h2>
+            
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search */}
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-64"
+                />
+              </div>
+              
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
         </div>
         
         <div className="overflow-x-auto">
@@ -155,7 +185,23 @@ const AdminDeposits = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {deposits.length > 0 ? deposits.map((deposit) => (
+              {deposits.length > 0 ? deposits
+                .filter(deposit => {
+                  // Status filter
+                  if (statusFilter !== 'all' && deposit.status !== statusFilter) return false;
+                  
+                  // Search filter
+                  if (searchTerm) {
+                    const search = searchTerm.toLowerCase();
+                    return (
+                      deposit.user_name?.toLowerCase().includes(search) ||
+                      deposit.user_email?.toLowerCase().includes(search)
+                    );
+                  }
+                  
+                  return true;
+                })
+                .map((deposit) => (
                 <tr key={deposit.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
