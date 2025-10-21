@@ -309,12 +309,30 @@ export default function TeamTree() {
         <h2 className="text-xl font-bold text-gray-900 mb-6">Matrix Structure</h2>
         <PyramidTree 
           userStage={userProfile?.mlmLevel === 'no_stage' ? 'feeder' : (userProfile?.mlmLevel || 'feeder')}
-          matrixData={teamMembers.map((m, i) => ({
-            position: i,
-            filled: m.has_deposited,
-            name: m.full_name || m.email,
-            earning: m.earning_from_user || '1.5'
-          }))}
+          matrixData={(() => {
+            // Flatten team structure to get all members in order
+            const flattenMembers = (members) => {
+              let result = [];
+              members.forEach(member => {
+                result.push(member);
+                if (member.children && member.children.length > 0) {
+                  result = result.concat(flattenMembers(member.children));
+                }
+              });
+              return result;
+            };
+            
+            const allMembers = flattenMembers(teamMembers);
+            const maxSlots = (userProfile?.mlmLevel === 'no_stage' || userProfile?.mlmLevel === 'feeder') ? 6 : 14;
+            
+            // Only take the first maxSlots members for the current matrix
+            return allMembers.slice(0, maxSlots).map((m, i) => ({
+              position: i,
+              filled: m.has_deposited,
+              name: m.full_name || m.email,
+              earning: m.earning_from_user || '1.5'
+            }));
+          })()}
         />
       </div>
 

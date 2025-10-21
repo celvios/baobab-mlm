@@ -4,6 +4,9 @@ export default function PyramidTree({ userStage, matrixData }) {
   const isFeeder = userStage === 'feeder';
   const totalSlots = isFeeder ? 6 : 14;
   
+  // Count only filled slots in the matrix (not all team members)
+  const filledSlotsCount = matrixData?.filter(m => m.filled && m.position < totalSlots).length || 0;
+  
   const getSlotStatus = (index) => {
     const slot = matrixData?.find(m => m.position === index);
     if (slot?.filled) return 'filled';
@@ -36,7 +39,7 @@ export default function PyramidTree({ userStage, matrixData }) {
       <div className="flex flex-col items-center space-y-8 py-8">
         <div className="text-center mb-4">
           <h3 className="text-lg font-bold text-gray-900">Feeder Stage (2x2)</h3>
-          <p className="text-sm text-gray-600">{matrixData?.length || 0}/6 slots filled</p>
+          <p className="text-sm text-gray-600">{filledSlotsCount}/6 slots filled</p>
         </div>
         
         <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
@@ -62,7 +65,7 @@ export default function PyramidTree({ userStage, matrixData }) {
     <div className="flex flex-col items-center space-y-6 py-8">
       <div className="text-center mb-4">
         <h3 className="text-lg font-bold text-gray-900">{userStage?.toUpperCase()} Stage (2x3)</h3>
-        <p className="text-sm text-gray-600">{matrixData?.length || 0}/14 slots filled</p>
+        <p className="text-sm text-gray-600">{filledSlotsCount}/14 slots filled</p>
       </div>
       
       <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
