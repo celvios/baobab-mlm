@@ -13,6 +13,7 @@ const ordersRoutes = require('./routes/orders');
 const depositRoutes = require('./routes/deposit');
 const migrateRoutes = require('./routes/migrate');
 const earningsRoutes = require('./routes/earnings');
+const cleanupRoutes = require('./routes/cleanup');
 const { loginLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();

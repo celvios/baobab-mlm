@@ -97,6 +97,7 @@ const getProfile = async (req, res) => {
       isActive: user.is_active,
       joiningFeePaid: user.joining_fee_paid || false,
       joiningFeeAmount: parseFloat(user.joining_fee_amount || 0),
+      depositAmount: parseFloat(user.deposit_amount || 0),
       deliveryAddress: profileData.delivery_address,
       bankDetails: {
         bankName: profileData.bank_name,
