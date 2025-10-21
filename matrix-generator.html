@@ -180,13 +180,13 @@
             </div>
             
             <div class="form-group">
-                <label for="stage">Matrix Stage to Complete</label>
+                <label for="stage">Upgrade User To Stage</label>
                 <select id="stage">
-                    <option value="feeder">Feeder (2x2 = 6 people)</option>
-                    <option value="bronze">Bronze (2x3 = 14 feeder-completed accounts = 84 people)</option>
-                    <option value="silver">Silver (2x3 = 14 bronze-completed accounts = 1,176 people)</option>
-                    <option value="gold">Gold (2x3 = 14 silver-completed accounts = 16,464 people)</option>
-                    <option value="diamond">Diamond (2x3 = 14 gold-completed accounts = 230,496 people)</option>
+                    <option value="feeder">No Stage → Feeder (6 people)</option>
+                    <option value="bronze">Feeder → Bronze (14 feeder accounts = 84 people)</option>
+                    <option value="silver">Bronze → Silver (14 bronze accounts = 1,176 people)</option>
+                    <option value="gold">Silver → Gold (14 silver accounts = 16,464 people)</option>
+                    <option value="diamond">Gold → Diamond (14 diamond accounts = 230,496 people)</option>
                 </select>
                 <div class="stage-info" id="stageInfo">
                     Select a stage to see details
@@ -209,13 +209,13 @@
                 slots: 6,
                 totalPeople: 6,
                 bonus: 1.5,
-                description: 'Creates 6 paid referrals directly under the user'
+                description: 'Creates 6 paid referrals to upgrade from No Stage to Feeder'
             },
             bronze: {
                 slots: 14,
                 totalPeople: 84,
-                bonus: 4.8,
-                description: 'Creates 14 accounts, each with completed feeder matrix (6 people each)'
+                bonus: 1.5,
+                description: 'Creates 14 feeder accounts (each with 6 people) to upgrade from Feeder to Bronze'
             },
             silver: {
                 slots: 14,

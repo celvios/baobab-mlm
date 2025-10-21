@@ -1959,13 +1959,14 @@ app.get('/api/generate-complete-matrix/:email/:stage', cors({ origin: '*' }), as
     const userId = user.rows[0].id;
     const hashedPassword = await bcrypt.hash('Test@123', 10);
     const accounts = [];
+    let totalEarnings = 0;
     
     const stageConfig = {
-      feeder: { slots: 6, bonus: 1.5, nextStage: 'bronze' },
-      bronze: { slots: 14, bonus: 4.8, nextStage: 'silver', requiresFeeder: true },
-      silver: { slots: 14, bonus: 30, nextStage: 'gold', requiresBronze: true },
-      gold: { slots: 14, bonus: 150, nextStage: 'diamond', requiresSilver: true },
-      diamond: { slots: 14, bonus: 750, nextStage: 'infinity', requiresGold: true }
+      feeder: { slots: 6, bonus: 1.5, nextStage: 'feeder', currentStage: 'no_stage' },
+      bronze: { slots: 14, bonus: 1.5, nextStage: 'bronze', currentStage: 'feeder' },
+      silver: { slots: 14, bonus: 4.8, nextStage: 'silver', currentStage: 'bronze' },
+      gold: { slots: 14, bonus: 30, nextStage: 'gold', currentStage: 'silver' },
+      diamond: { slots: 14, bonus: 150, nextStage: 'diamond', currentStage: 'gold' }
     };
     
     const config = stageConfig[stage];
@@ -1974,9 +1975,9 @@ app.get('/api/generate-complete-matrix/:email/:stage', cors({ origin: '*' }), as
       return res.status(400).json({ error: 'Invalid stage' });
     }
     
-    // Recursive function to create downline
-    async function createDownline(parentCode, targetStage, depth = 0) {
-      if (depth > 10) return 0; // Safety limit
+    // Recursive function to create complete downline with all sub-levels
+    async function createCompleteDownline(parentCode, parentId, targetStage, depth = 0) {
+      if (depth > 5) return 0;
       
       const slotsNeeded = targetStage === 'feeder' ? 6 : 14;
       let totalCreated = 0;
@@ -1986,26 +1987,60 @@ app.get('/api/generate-complete-matrix/:email/:stage', cors({ origin: '*' }), as
           INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
           VALUES ($1, $2, $3, $4, $5, $6, true, true)
           RETURNING id, email, full_name, referral_code
-        `, [`${targetStage} L${depth} #${i}`, `${targetStage}_${Date.now()}_${depth}_${i}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, parentCode, targetStage]);
+        `, [`${targetStage} D${depth} #${i}`, `${targetStage}_${Date.now()}_${depth}_${i}_${Math.random().toString(36).substr(2, 5)}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, parentCode, targetStage]);
         
         const newUserId = newUser.rows[0].id;
         await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUserId]);
         await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUserId, 'approved']);
-        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, $3, $3, true)', [newUserId, targetStage, slotsNeeded]);
+        
+        // Mark their stage as complete
+        const subSlots = targetStage === 'feeder' ? 6 : 14;
+        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, $3, $3, true) ON CONFLICT (user_id, stage) DO UPDATE SET is_complete = true, slots_filled = $3', [newUserId, targetStage, subSlots]);
+        
+        // Add earnings to parent
+        const bonusAmount = targetStage === 'feeder' ? 1.5 : 4.8;
+        await client.query('INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, $4, $5)', [parentId, newUserId, targetStage, bonusAmount, 'completed']);
+        await client.query('UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2', [bonusAmount, parentId]);
         
         accounts.push(newUser.rows[0]);
         totalCreated++;
         
-        // Create their downline if needed
+        // Create their complete downline recursively
         if (targetStage === 'bronze') {
-          totalCreated += await createDownline(newUser.rows[0].referral_code, 'feeder', depth + 1);
-        } else if (targetStage === 'silver') {
-          totalCreated += await createDownline(newUser.rows[0].referral_code, 'bronze', depth + 1);
-          // Each bronze needs feeder downline
-        } else if (targetStage === 'gold') {
-          totalCreated += await createDownline(newUser.rows[0].referral_code, 'silver', depth + 1);
-        } else if (targetStage === 'diamond') {
-          totalCreated += await createDownline(newUser.rows[0].referral_code, 'gold', depth + 1);
+          // Each bronze account needs 14 completed feeder accounts
+          for (let j = 1; j <= 14; j++) {
+            const feederUser = await client.query(`
+              INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+              VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
+              RETURNING id, email, full_name, referral_code
+            `, [`Feeder for Bronze D${depth} #${i}-${j}`, `feeder_${Date.now()}_${depth}_${i}_${j}_${Math.random().toString(36).substr(2, 5)}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, newUser.rows[0].referral_code]);
+            
+            const feederId = feederUser.rows[0].id;
+            await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [feederId]);
+            await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [feederId, 'approved']);
+            await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, 6, 6, true) ON CONFLICT (user_id, stage) DO UPDATE SET is_complete = true, slots_filled = 6', [feederId, 'feeder']);
+            
+            // Each feeder needs 6 people
+            for (let k = 1; k <= 6; k++) {
+              const baseUser = await client.query(`
+                INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+                VALUES ($1, $2, $3, $4, $5, 'no_stage', true, true)
+                RETURNING id, email, full_name
+              `, [`Base for Feeder D${depth} #${i}-${j}-${k}`, `base_${Date.now()}_${depth}_${i}_${j}_${k}_${Math.random().toString(36).substr(2, 5)}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, feederUser.rows[0].referral_code]);
+              
+              await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [baseUser.rows[0].id]);
+              await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [baseUser.rows[0].id, 'approved']);
+              await client.query('INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, 1.5, $4)', [feederId, baseUser.rows[0].id, 'feeder', 'completed']);
+              await client.query('UPDATE wallets SET total_earned = total_earned + 1.5 WHERE user_id = $1', [feederId]);
+              totalCreated++;
+              accounts.push(baseUser.rows[0]);
+            }
+            
+            await client.query('INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, 1.5, $4)', [newUserId, feederId, 'feeder', 'completed']);
+            await client.query('UPDATE wallets SET total_earned = total_earned + 1.5 WHERE user_id = $1', [newUserId]);
+            totalCreated++;
+            accounts.push(feederUser.rows[0]);
+          }
         }
       }
       
@@ -2013,19 +2048,76 @@ app.get('/api/generate-complete-matrix/:email/:stage', cors({ origin: '*' }), as
     }
     
     // Generate the complete structure
-    const totalCreated = await createDownline(user.rows[0].referral_code, stage, 0);
+    let totalCreated = 0;
+    
+    if (stage === 'feeder') {
+      // Simple: create 6 people
+      for (let i = 1; i <= 6; i++) {
+        const newUser = await client.query(`
+          INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+          VALUES ($1, $2, $3, $4, $5, 'no_stage', true, true)
+          RETURNING id, email, full_name
+        `, [`Feeder Member ${i}`, `feeder_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.rows[0].referral_code]);
+        
+        await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [newUser.rows[0].id]);
+        await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [newUser.rows[0].id, 'approved']);
+        await client.query('INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, 1.5, $4)', [userId, newUser.rows[0].id, 'feeder', 'completed']);
+        await client.query('UPDATE wallets SET total_earned = total_earned + 1.5 WHERE user_id = $1', [userId]);
+        totalEarnings += 1.5;
+        totalCreated++;
+        accounts.push(newUser.rows[0]);
+      }
+    } else if (stage === 'bronze') {
+      // Create 14 feeder accounts, each with 6 people (84 total)
+      for (let i = 1; i <= 14; i++) {
+        const feederUser = await client.query(`
+          INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+          VALUES ($1, $2, $3, $4, $5, 'feeder', true, true)
+          RETURNING id, email, full_name, referral_code
+        `, [`Feeder ${i}`, `feeder_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, user.rows[0].referral_code]);
+        
+        const feederId = feederUser.rows[0].id;
+        await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [feederId]);
+        await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [feederId, 'approved']);
+        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, 6, 6, true) ON CONFLICT (user_id, stage) DO UPDATE SET is_complete = true, slots_filled = 6', [feederId, 'feeder']);
+        await client.query('INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, 1.5, $4)', [userId, feederId, 'feeder', 'completed']);
+        await client.query('UPDATE wallets SET total_earned = total_earned + 1.5 WHERE user_id = $1', [userId]);
+        totalEarnings += 1.5;
+        totalCreated++;
+        accounts.push(feederUser.rows[0]);
+        
+        // Each feeder needs 6 people
+        for (let j = 1; j <= 6; j++) {
+          const baseUser = await client.query(`
+            INSERT INTO users (full_name, email, phone, password, referred_by, mlm_level, joining_fee_paid, is_active)
+            VALUES ($1, $2, $3, $4, $5, 'no_stage', true, true)
+            RETURNING id, email, full_name
+          `, [`Member ${i}-${j}`, `member_${Date.now()}_${i}_${j}_${Math.random().toString(36).substr(2, 5)}@test.com`, `+234${Math.floor(Math.random() * 1000000000)}`, hashedPassword, feederUser.rows[0].referral_code]);
+          
+          await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [baseUser.rows[0].id]);
+          await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [baseUser.rows[0].id, 'approved']);
+          await client.query('INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status) VALUES ($1, $2, $3, 1.5, $4)', [feederId, baseUser.rows[0].id, 'feeder', 'completed']);
+          await client.query('UPDATE wallets SET total_earned = total_earned + 1.5 WHERE user_id = $1', [feederId]);
+          totalCreated++;
+          accounts.push(baseUser.rows[0]);
+        }
+      }
+    } else {
+      totalCreated = await createCompleteDownline(user.rows[0].referral_code, userId, stage, 0);
+      totalEarnings = config.slots * config.bonus;
+    }
     
     // Update user to next stage
     await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [config.nextStage, userId]);
-    await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, $3, $3, true)', [userId, stage, config.slots]);
+    await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, is_complete) VALUES ($1, $2, $3, $3, true) ON CONFLICT (user_id, stage) DO UPDATE SET is_complete = true, slots_filled = $3', [userId, config.currentStage, config.slots]);
     
     client.release();
     res.json({
       success: true,
       totalCreated,
-      totalEarnings: config.slots * config.bonus,
+      totalEarnings,
       newStage: config.nextStage,
-      accounts: accounts.slice(0, 50) // Only return first 50 for display
+      accounts: accounts.slice(0, 100)
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
