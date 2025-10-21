@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LinkIcon, ClipboardDocumentIcon, UserIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { LinkIcon, ClipboardDocumentIcon, UserIcon, UsersIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import Toast from '../components/Toast';
 import apiService from '../services/api';
 import MarketUpdates from '../components/MarketUpdates';
-import PyramidTree from '../components/PyramidTree';
 
 export default function TeamTree() {
-  console.log('TeamTree component mounted');
   const [showToast, setShowToast] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
-  const [referrer, setReferrer] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedLevel, setSelectedLevel] = useState(1);
   const [expandedNodes, setExpandedNodes] = useState(new Set(['root']));
 
   useEffect(() => {
@@ -22,21 +18,14 @@ export default function TeamTree() {
 
   const fetchData = async () => {
     try {
-      const [profile, teamData, matrixTree] = await Promise.all([
+      const [profile, teamData] = await Promise.all([
         apiService.getProfile(),
-        apiService.getTeam(),
-        apiService.getMatrixTree().catch(() => ({ tree: null }))
+        apiService.getTeam()
       ]);
       
       setUserProfile(profile);
-      
-      // Use direct team members from getTeam API
       if (teamData && teamData.team) {
         setTeamMembers(teamData.team);
-      } else if (matrixTree.tree && matrixTree.tree.children) {
-        // Fallback to matrix tree if team API fails
-        const members = extractTeamMembers(matrixTree.tree);
-        setTeamMembers(members);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -44,22 +33,8 @@ export default function TeamTree() {
       setLoading(false);
     }
   };
-  
-  const extractTeamMembers = (node) => {
-    if (!node) return [];
-    const members = [];
-    if (node.left) {
-      members.push(node.left);
-      members.push(...extractTeamMembers(node.left));
-    }
-    if (node.right) {
-      members.push(node.right);
-      members.push(...extractTeamMembers(node.right));
-    }
-    return members;
-  };
 
-  const referralLink = userProfile?.referralCode ? `${process.env.REACT_APP_FRONTEND_URL || 'https://baobab-frontend.vercel.app'}/register?ref=${userProfile.referralCode}` : 'Loading...';
+  const referralLink = userProfile?.referralCode ? `${process.env.REACT_APP_FRONTEND_URL || window.location.origin}/register?ref=${userProfile.referralCode}` : 'Loading...';
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -67,7 +42,7 @@ export default function TeamTree() {
   };
 
   const getColorForIndex = (index) => {
-    const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-cyan-500', 'bg-orange-500', 'bg-red-500'];
+    const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-cyan-500'];
     return colors[index % colors.length];
   };
 
@@ -81,11 +56,6 @@ export default function TeamTree() {
       'diamond': 'bg-blue-600'
     };
     return levelColors[level] || 'bg-red-500';
-  };
-
-  const buildTreeStructure = (members) => {
-    // Members already come with nested children from backend
-    return { children: members };
   };
 
   const countAllMembers = (members) => {
@@ -116,10 +86,6 @@ export default function TeamTree() {
     return count;
   };
 
-  const countDirectReferrals = (members) => {
-    return members.length;
-  };
-
   const toggleNode = (nodeId) => {
     const newExpanded = new Set(expandedNodes);
     if (newExpanded.has(nodeId)) {
@@ -130,79 +96,109 @@ export default function TeamTree() {
     setExpandedNodes(newExpanded);
   };
 
-  const TreeNode = ({ node, level = 0, isRoot = false }) => {
+  const TreeNode = ({ node, level = 0, isRoot = false, index = 0 }) => {
     const hasChildren = node.children && node.children.length > 0;
-    const isExpanded = expandedNodes.has(node.id) || isRoot;
-    const isCurrentUser = node.id === 'current-user';
+    const isExpanded = expandedNodes.has(node.id?.toString() || `node-${index}`) || isRoot;
+    const nodeId = node.id?.toString() || `node-${index}`;
     
     return (
-      <div className="flex flex-col items-start w-full">
-        {/* Node */}
-        <div className="flex items-center w-full py-2 px-4 hover:bg-gray-50 rounded-lg transition-colors" style={{ paddingLeft: `${level * 2}rem` }}>
+      <div className="relative">
+        {/* Node Container */}
+        <div 
+          className={`flex items-center py-3 px-4 rounded-lg transition-all duration-300 hover:shadow-md ${
+            isRoot ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400' : 'bg-white hover:bg-gray-50'
+          }`}
+          style={{ 
+            marginLeft: `${level * 2.5}rem`,
+            animation: `slideIn 0.3s ease-out ${level * 0.1}s both`
+          }}
+        >
+          {/* Expand/Collapse Button */}
+          {hasChildren && (
+            <button
+              onClick={() => toggleNode(nodeId)}
+              className="mr-3 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-all duration-200 hover:scale-110"
+            >
+              {isExpanded ? (
+                <ChevronDownIcon className="w-4 h-4 text-gray-600" />
+              ) : (
+                <ChevronRightIcon className="w-4 h-4 text-gray-600" />
+              )}
+            </button>
+          )}
+          
+          {/* Avatar */}
           <div className="relative">
             {isRoot && (
-              <div className="absolute inset-0 w-12 h-12 rounded-full bg-yellow-400 opacity-20 pulse-ring"></div>
+              <div className="absolute inset-0 w-14 h-14 rounded-full bg-yellow-400 opacity-30 animate-ping"></div>
             )}
             
-            <div className={`tree-node w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shadow-lg ${
-              isRoot ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : getColorForIndex(node.id || 0)
+            <div className={`relative w-14 h-14 rounded-full flex items-center justify-center text-white font-bold shadow-lg transition-transform duration-300 hover:scale-110 ${
+              isRoot ? 'bg-gradient-to-br from-yellow-400 to-orange-500' : getColorForIndex(index)
             }`}>
               {isRoot ? (
-                <UserIcon className="w-6 h-6" />
+                <UserIcon className="w-7 h-7" />
               ) : (
-                <span className="text-sm">
+                <span className="text-lg">
                   {node.full_name?.charAt(0) || node.email?.charAt(0).toUpperCase()}
                 </span>
               )}
             </div>
             
-            {/* Level badge */}
-            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-              getLevelColor(node.mlm_level || 'feeder')
+            {/* Level Badge */}
+            <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-md ${
+              getLevelColor(node.mlm_level || 'no_stage')
             }`}>
-              {(node.mlm_level || 'feeder').charAt(0).toUpperCase()}
+              {(node.mlm_level || 'no_stage').charAt(0).toUpperCase()}
             </div>
           </div>
           
-          {/* Node info */}
+          {/* Node Info */}
           <div className="ml-4 flex-1">
-            <p className="text-sm font-semibold text-gray-900">
-              {isRoot || isCurrentUser ? 'You' : (node.full_name || node.email)}
+            <p className={`font-semibold ${isRoot ? 'text-lg text-gray-900' : 'text-sm text-gray-800'}`}>
+              {isRoot ? 'You' : (node.full_name || node.email)}
             </p>
-            <p className="text-xs text-gray-500">
-              {isRoot ? (userProfile?.mlmLevel === 'feeder' ? 'Feeder' : (userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1) || 'Feeder')) : (!node.mlm_level || node.mlm_level === 'no_stage' ? 'No Level' : node.mlm_level === 'feeder' ? 'Feeder' : node.mlm_level.charAt(0).toUpperCase() + node.mlm_level.slice(1))}
+            <p className="text-xs text-gray-500 mt-0.5">
+              {isRoot 
+                ? (userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1))
+                : (node.mlm_level === 'no_stage' ? 'No Stage' : node.mlm_level?.charAt(0).toUpperCase() + node.mlm_level?.slice(1))
+              }
             </p>
+            {hasChildren && (
+              <p className="text-xs text-blue-600 mt-1 font-medium">
+                {node.children.length} direct referral{node.children.length !== 1 ? 's' : ''}
+              </p>
+            )}
           </div>
           
-          {/* Earning badge */}
+          {/* Earning Badge */}
           {!isRoot && (
             <div className="ml-auto">
               {node.has_deposited ? (
-                <p className="text-sm text-green-600 font-semibold">
-                  +${node.earning_from_user || '1.5'}
-                </p>
+                <div className="bg-green-100 px-3 py-1.5 rounded-full">
+                  <p className="text-sm text-green-700 font-bold">
+                    +${node.earning_from_user || '1.5'}
+                  </p>
+                </div>
               ) : (
-                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+                <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                  Pending
+                </span>
               )}
             </div>
-          )}
-          
-          {/* Expand/Collapse button */}
-          {hasChildren && (
-            <button
-              onClick={() => toggleNode(node.id)}
-              className="ml-4 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold hover:bg-gray-300 transition-colors"
-            >
-              {isExpanded ? '−' : '+'}
-            </button>
           )}
         </div>
         
         {/* Children */}
         {hasChildren && isExpanded && (
-          <div className="w-full">
-            {node.children.map((child, index) => (
-              <TreeNode key={child.id || index} node={child} level={level + 1} />
+          <div className="mt-2 space-y-2" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+            {node.children.map((child, idx) => (
+              <TreeNode 
+                key={child.id || idx} 
+                node={child} 
+                level={level + 1} 
+                index={idx}
+              />
             ))}
           </div>
         )}
@@ -210,16 +206,11 @@ export default function TeamTree() {
     );
   };
 
-  const treeData = buildTreeStructure(teamMembers);
-
-  console.log('TeamTree render - loading:', loading, 'teamMembers:', teamMembers.length);
-
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-20 bg-gray-200 rounded animate-pulse"></div>
         <div className="h-24 bg-gray-200 rounded-2xl animate-pulse"></div>
-        <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse"></div>
@@ -232,10 +223,32 @@ export default function TeamTree() {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      `}</style>
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Team Tree</h1>
-        <p className="text-gray-600">Visualize your MLM network structure</p>
+        <p className="text-gray-600">Visualize your complete MLM network structure</p>
       </div>
 
       <MarketUpdates />
@@ -245,98 +258,95 @@ export default function TeamTree() {
         <Link to="/user/team" className="bg-green-600 text-white px-3 py-1 rounded-lg flex items-center hover:bg-green-700 transition-colors">
           ← Back to Team
         </Link>
-        <span className="text-gray-500">→ Team Tree</span>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl shadow-card">
+        <div className="bg-white p-4 rounded-xl shadow-card hover:shadow-lg transition-shadow">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
               <UsersIcon className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Your Team</p>
-              <p className="text-xl font-bold text-gray-900">{countDirectReferrals(teamMembers)}</p>
+              <p className="text-sm text-gray-600">Direct Referrals</p>
+              <p className="text-2xl font-bold text-gray-900">{teamMembers.length}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-xl shadow-card">
+        <div className="bg-white p-4 rounded-xl shadow-card hover:shadow-lg transition-shadow">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-3">
               <div className="w-6 h-6 bg-green-600 rounded-full"></div>
             </div>
             <div>
               <p className="text-sm text-gray-600">Active Members</p>
-              <p className="text-xl font-bold text-gray-900">{countActiveMembers(teamMembers)}</p>
+              <p className="text-2xl font-bold text-gray-900">{countActiveMembers(teamMembers)}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-4 rounded-xl shadow-card">
+        <div className="bg-white p-4 rounded-xl shadow-card hover:shadow-lg transition-shadow">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-              <div className={`w-6 h-6 rounded-full ${getLevelColor(userProfile?.mlmLevel || 'feeder')}`}></div>
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-purple-600 font-bold text-xl">∑</span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Total Network</p>
+              <p className="text-2xl font-bold text-gray-900">{countAllMembers(teamMembers)}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 rounded-xl shadow-card hover:shadow-lg transition-shadow">
+          <div className="flex items-center">
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-3 ${getLevelColor(userProfile?.mlmLevel || 'no_stage')} bg-opacity-20`}>
+              <div className={`w-6 h-6 rounded-full ${getLevelColor(userProfile?.mlmLevel || 'no_stage')}`}></div>
             </div>
             <div>
               <p className="text-sm text-gray-600">Your Level</p>
               <p className="text-lg font-bold text-gray-900">
-                {userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : ((userProfile?.mlmLevel || 'no_stage').charAt(0).toUpperCase() + (userProfile?.mlmLevel || 'no_stage').slice(1))}
+                {userProfile?.mlmLevel === 'no_stage' ? 'No Stage' : (userProfile?.mlmLevel?.charAt(0).toUpperCase() + userProfile?.mlmLevel?.slice(1))}
               </p>
-              {userProfile?.mlmLevel === 'no_stage' && (
-                <p className="text-xs text-gray-500">(Next: Feeder)</p>
-              )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Tree Structure */}
+      <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Network Structure</h2>
+          <button
+            onClick={() => setExpandedNodes(new Set(['root', ...teamMembers.map((m, i) => m.id?.toString() || `node-${i}`)]))}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Expand All
+          </button>
         </div>
         
-        <div className="bg-white p-4 rounded-xl shadow-card">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-              <span className="text-purple-600 font-bold">$</span>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Matrix Members</p>
-              <p className="text-xl font-bold text-gray-900">{countAllMembers(teamMembers)}</p>
-            </div>
-          </div>
+        <div className="space-y-3">
+          {/* Root Node (You) */}
+          <TreeNode 
+            node={{ 
+              id: 'root',
+              full_name: userProfile?.fullName,
+              email: userProfile?.email,
+              mlm_level: userProfile?.mlmLevel,
+              children: teamMembers
+            }} 
+            isRoot={true}
+          />
         </div>
+        
+        {teamMembers.length === 0 && (
+          <div className="text-center py-12">
+            <UsersIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg">No team members yet</p>
+            <p className="text-gray-400 text-sm mt-2">Share your referral link to start building your network</p>
+          </div>
+        )}
       </div>
-
-      {/* Pyramid Matrix View */}
-      <div className="bg-white rounded-2xl shadow-card p-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Matrix Structure</h2>
-        <PyramidTree 
-          userStage={userProfile?.mlmLevel === 'no_stage' ? 'feeder' : (userProfile?.mlmLevel || 'feeder')}
-          matrixData={(() => {
-            // Flatten team structure to get all members in order
-            const flattenMembers = (members) => {
-              let result = [];
-              members.forEach(member => {
-                result.push(member);
-                if (member.children && member.children.length > 0) {
-                  result = result.concat(flattenMembers(member.children));
-                }
-              });
-              return result;
-            };
-            
-            const allMembers = flattenMembers(teamMembers);
-            const maxSlots = (userProfile?.mlmLevel === 'no_stage' || userProfile?.mlmLevel === 'feeder') ? 6 : 14;
-            
-            // Only take the first maxSlots members for the current matrix
-            return allMembers.slice(0, maxSlots).map((m, i) => ({
-              position: i,
-              filled: m.has_deposited,
-              name: m.full_name || m.email,
-              earning: m.earning_from_user || '1.5'
-            }));
-          })()}
-        />
-      </div>
-
-
 
       {/* Legend */}
       <div className="bg-white rounded-xl shadow-card p-6">
@@ -358,7 +368,7 @@ export default function TeamTree() {
         </div>
       </div>
 
-      {/* Referral Link Section */}
+      {/* Referral Link */}
       <div className="bg-white rounded-xl shadow-card p-6">
         <div className="flex items-center mb-4">
           <LinkIcon className="h-5 w-5 text-gray-600 mr-2" />
@@ -372,18 +382,15 @@ export default function TeamTree() {
               className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center"
             >
               <ClipboardDocumentIcon className="h-4 w-4 mr-2" />
-              Copy Link
+              Copy
             </button>
           </div>
         </div>
-        <p className="text-sm text-gray-600">
-          Share this link with others to invite them to join your team and start earning commissions.
-        </p>
       </div>
 
       {showToast && (
         <Toast 
-          message="Referral link copied to clipboard!"
+          message="Referral link copied!"
           type="success"
           onClose={() => setShowToast(false)}
         />
