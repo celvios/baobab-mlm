@@ -431,7 +431,7 @@ class MLMService {
              END as has_deposited
       FROM users u
       LEFT JOIN referral_earnings re ON u.id = re.referred_user_id AND re.user_id = $1
-      WHERE u.referred_by IN (SELECT referral_code FROM users WHERE id = $1)
+      WHERE u.referred_by = (SELECT referral_code FROM users WHERE id = $1)
       ORDER BY u.created_at DESC
     `, [userId]);
 
@@ -455,7 +455,7 @@ class MLMService {
                ELSE false 
              END as has_deposited
       FROM users u
-      WHERE u.referred_by IN (SELECT referral_code FROM users WHERE id = $1)
+      WHERE u.referred_by = (SELECT referral_code FROM users WHERE id = $1)
       ORDER BY u.created_at DESC
     `, [userId]);
 

@@ -63,27 +63,12 @@ class MLMService {
 
   async getTeamMembers(userId) {
     const result = await pool.query(`
-      WITH RECURSIVE downline AS (
-        -- Direct referrals
-        SELECT u.id, u.full_name, u.email, u.mlm_level, u.created_at, u.referred_by,
-               1 as level
-        FROM users u
-        WHERE u.referred_by = (SELECT referral_code FROM users WHERE id = $1)
-        
-        UNION ALL
-        
-        -- Indirect referrals (recursive)
-        SELECT u.id, u.full_name, u.email, u.mlm_level, u.created_at, u.referred_by,
-               d.level + 1
-        FROM users u
-        INNER JOIN downline d ON u.referred_by = (SELECT referral_code FROM users WHERE id = d.id)
-      )
-      SELECT d.id, d.full_name, d.email, d.mlm_level, d.created_at, d.level,
-             re.amount as earning_from_user,
-             CASE WHEN re.id IS NOT NULL THEN true ELSE false END as has_deposited
-      FROM downline d
-      LEFT JOIN referral_earnings re ON d.id = re.referred_user_id AND re.user_id = $1
-      ORDER BY d.level, d.created_at DESC
+      SELECT u.id, u.full_name, u.email, u.mlm_level, u.created_at,
+             re.amount as earning_from_user
+      FROM users u
+      LEFT JOIN referral_earnings re ON u.id = re.referred_user_id AND re.user_id = $1
+      WHERE u.referred_by = (SELECT referral_code FROM users WHERE id = $1)
+      ORDER BY u.created_at DESC
     `, [userId]);
 
     return result.rows;
