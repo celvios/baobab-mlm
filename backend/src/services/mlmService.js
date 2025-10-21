@@ -125,6 +125,16 @@ class MLMService {
       if (newStage === 'feeder' && oldStage === 'no_stage') {
         await this.releaseHeldEarnings(client, userId);
       }
+
+      // Get incentives for the new stage
+      const incentives = {
+        bronze: ['Lentoc water flask', 'Food voucher worth ₦100,000'],
+        silver: ['Food voucher worth $150', 'Android Phone'],
+        gold: ['Food voucher worth $750', 'International Trip worth ₦5m', 'Smartphone + Refrigerator/Generator/TV'],
+        diamond: ['Food voucher worth $1,500', 'International trip worth $7,000', 'Brand new car worth $20,000', 'Chairman Award worth $10,000']
+      };
+      
+      const stageIncentives = incentives[newStage] || [];
       
       // Store incentive record
       if (stageIncentives.length > 0) {
@@ -136,16 +146,6 @@ class MLMService {
 
       // Trigger retroactive updates for uplines
       await this.onUserStageUpgrade(client, userId, oldStage, newStage);
-
-      // Get incentives for the new stage
-      const incentives = {
-        bronze: ['Lentoc water flask', 'Food voucher worth ₦100,000'],
-        silver: ['Food voucher worth $150', 'Android Phone'],
-        gold: ['Food voucher worth $750', 'International Trip worth ₦5m', 'Smartphone + Refrigerator/Generator/TV'],
-        diamond: ['Food voucher worth $1,500', 'International trip worth $7,000', 'Brand new car worth $20,000', 'Chairman Award worth $10,000']
-      };
-      
-      const stageIncentives = incentives[newStage] || [];
       const incentiveText = stageIncentives.length > 0 ? `\n\nYour incentives:\n${stageIncentives.map(i => `• ${i}`).join('\n')}` : '';
       
       // Send notification
@@ -185,8 +185,8 @@ class MLMService {
     // Ensure referrer has stage_matrix entry
     const stageSlots = (stage === 'no_stage' || stage === 'feeder') ? 6 : 14;
     await client.query(`
-      INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-      VALUES ($1, $2, 0, $3)
+      INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, qualified_slots_filled)
+      VALUES ($1, $2, 0, $3, 0)
       ON CONFLICT (user_id, stage) DO NOTHING
     `, [referrerId, stage, stageSlots]);
     const stageConfig = MLM_LEVELS[stage];

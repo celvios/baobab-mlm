@@ -61,13 +61,20 @@ const approveDeposit = async (req, res) => {
            deposit_confirmed_at = NOW(),
            dashboard_unlocked = $2,
            joining_fee_paid = $2,
-           mlm_level = CASE WHEN $2 THEN 'feeder' ELSE mlm_level END
+           mlm_level = CASE WHEN $2 THEN 'no_stage' ELSE mlm_level END
        WHERE id = $3`,
       [amount, shouldUnlock, userId]
     );
     
-    // If unlocking dashboard, process MLM referral
+    // If unlocking dashboard, process MLM referral and create stage_matrix
     if (shouldUnlock) {
+      // Create stage_matrix entry for new user at no_stage
+      await client.query(`
+        INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, qualified_slots_filled)
+        VALUES ($1, 'no_stage', 0, 6, 0)
+        ON CONFLICT (user_id, stage) DO NOTHING
+      `, [userId]);
+      
       const mlmService = require('../services/mlmService');
       
       // Get referrer
