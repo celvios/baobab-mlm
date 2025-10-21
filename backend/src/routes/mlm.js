@@ -2,6 +2,7 @@ const express = require('express');
 const { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree, syncUserMatrix, generateReferrals, getUserIncentives } = require('../controllers/mlmController');
 const { autoUpgradeStages } = require('../controllers/autoUpgradeController');
 const { diagnoseBronze } = require('../controllers/diagnosticController');
+const { fixBronzeEarnings } = require('../controllers/fixEarningsController');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.get('/complete-matrix/:email', completeMatrix);
 router.get('/generate-referrals/:email', generateReferrals);
 router.get('/auto-upgrade', autoUpgradeStages);
 router.get('/diagnose-bronze', diagnoseBronze);
+router.get('/fix-bronze-earnings', fixBronzeEarnings);
 
 module.exports = router;
