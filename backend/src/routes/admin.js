@@ -1345,6 +1345,10 @@ router.get('/clear-all-data', async (req, res) => {
   }
 });
 
+// Fix stuck stages
+const { fixStuckStages } = require('../controllers/adminFixController');
+router.get('/fix-stuck-stages', adminAuth, fixStuckStages);
+
 // Clear all data except admin (POST with confirmation)
 router.post('/clear-all-data', adminAuth, async (req, res) => {
   const { confirm } = req.body;
