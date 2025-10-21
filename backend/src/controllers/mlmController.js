@@ -328,4 +328,18 @@ const generateReferrals = async (req, res) => {
   }
 };
 
-module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree, syncUserMatrix, generateReferrals };
+const getUserIncentives = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await pool.query(
+      'SELECT * FROM user_incentives WHERE user_id = $1 ORDER BY awarded_at DESC',
+      [userId]
+    );
+    res.json({ incentives: result.rows });
+  } catch (error) {
+    console.error('Get incentives error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { getMatrix, getEarnings, getTeam, getLevelProgress, getFullTree, getBinaryTree, completeMatrix, getMatrixTree, syncUserMatrix, generateReferrals, getUserIncentives };

@@ -85,4 +85,40 @@ const sendWelcomeEmail = async (email, fullName, referralCode) => {
   await sgMail.send(msg);
 };
 
-module.exports = { sendOTPEmail, sendVerificationEmail, sendWelcomeEmail };
+const sendIncentiveEmail = async (email, fullName, stage, incentives) => {
+  const msg = {
+    to: email,
+    from: process.env.SENDGRID_FROM_EMAIL || 'noreply@baobabmlm.com',
+    subject: `Congratulations! You've Reached ${stage.toUpperCase()} Stage!`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4a5d23;">Congratulations, ${fullName}!</h2>
+        <p>You've successfully reached the <strong>${stage.toUpperCase()}</strong> stage in your Baobab journey!</p>
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #4a5d23;">Your Incentives:</h3>
+          <ul style="list-style: none; padding: 0;">
+            ${incentives.map(i => `<li style="padding: 8px 0; border-bottom: 1px solid #eee;">✓ ${i}</li>`).join('')}
+          </ul>
+        </div>
+        <p>Our team will contact you shortly to arrange delivery of your incentives.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/user/incentives" style="background-color: #4a5d23; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            View My Incentives
+          </a>
+        </div>
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <p style="color: #999; font-size: 10px;">Keep growing your team to unlock even more rewards!</p>
+      </div>
+    `
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`Incentive email sent to ${email} for ${stage} stage`);
+  } catch (error) {
+    console.error('SendGrid incentive email error:', error);
+    throw error;
+  }
+};
+
+module.exports = { sendOTPEmail, sendVerificationEmail, sendWelcomeEmail, sendIncentiveEmail };

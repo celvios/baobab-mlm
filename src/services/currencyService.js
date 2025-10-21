@@ -96,7 +96,9 @@ class CurrencyService {
       throw new Error('Failed to fetch exchange rates');
     } catch (error) {
       console.error('Exchange rate fetch error:', error);
-      return this.rates; // Return cached rates
+      // Fallback to 1500 NGN per USD if API fails
+      this.rates = { NGN: 1500, USD: 1, ...this.rates };
+      return this.rates;
     }
   }
 
@@ -111,7 +113,7 @@ class CurrencyService {
       await this.getExchangeRates();
     }
 
-    const rate = this.rates[currency] || 1;
+    const rate = this.rates[currency] || (currency === 'NGN' ? 1500 : 1);
     return usdPrice * rate;
   }
 

@@ -10,6 +10,7 @@ export default function Incentives() {
   const [teamMembers, setTeamMembers] = useState([]);
   const [stageProgress, setStageProgress] = useState(null);
   const [earnings, setEarnings] = useState(0);
+  const [earnedIncentives, setEarnedIncentives] = useState([]);
   const referralCode = localStorage.getItem('userReferralCode') || 'USER123';
   const referralLink = `${process.env.REACT_APP_FRONTEND_URL || 'https://baobab-frontend.vercel.app'}/register?ref=${referralCode}`;
   
@@ -28,15 +29,17 @@ export default function Incentives() {
   
   const fetchData = async () => {
     try {
-      const [profile, team, progress, earningsData] = await Promise.all([
+      const [profile, team, progress, earningsData, incentivesData] = await Promise.all([
         apiService.getProfile(),
         apiService.getTeam(),
         apiService.getStageProgress(),
-        apiService.getEarnings()
+        apiService.getEarnings(),
+        apiService.getUserIncentives().catch(() => ({ incentives: [] }))
       ]);
       setUserProfile(profile);
       setTeamMembers(team.team || []);
       setStageProgress(progress);
+      setEarnedIncentives(incentivesData.incentives || []);
       
       const totalEarnings = earningsData.earnings?.reduce((sum, e) => sum + parseFloat(e.total_earned || 0), 0) || 0;
       setEarnings(totalEarnings);
@@ -44,6 +47,7 @@ export default function Incentives() {
       console.error('Error fetching data:', error);
       setTeamMembers([]);
       setEarnings(0);
+      setEarnedIncentives([]);
     }
   };
 
@@ -126,6 +130,34 @@ export default function Incentives() {
           <p className="text-gray-600">Per Person</p>
         </div>
       </div>
+
+      {/* Earned Incentives */}
+      {earnedIncentives.length > 0 && (
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-500 p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <span className="text-2xl mr-2">🎉</span>
+            Your Earned Incentives
+          </h3>
+          <div className="space-y-4">
+            {earnedIncentives.map((item, idx) => (
+              <div key={idx} className="bg-white rounded-lg p-4 shadow">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-lg text-gray-900">{item.stage.toUpperCase()} Stage</h4>
+                  <span className="text-sm text-gray-500">{new Date(item.awarded_at).toLocaleDateString()}</span>
+                </div>
+                <ul className="space-y-1">
+                  {JSON.parse(item.incentives).map((incentive, i) => (
+                    <li key={i} className="text-sm text-gray-700 flex items-center">
+                      <span className="text-green-600 mr-2">✓</span>
+                      {incentive}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* MLM Stages */}
       <div className="space-y-6">

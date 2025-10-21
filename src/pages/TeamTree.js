@@ -318,74 +318,7 @@ export default function TeamTree() {
         />
       </div>
 
-      {/* Team Tree Visualization */}
-      <div className="bg-white rounded-2xl shadow-card p-8 overflow-x-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Network Tree</h2>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setExpandedNodes(new Set(['root']))}
-              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Collapse All
-            </button>
-            <button
-              onClick={() => {
-                const allIds = new Set(['root']);
-                const collectIds = (members) => {
-                  members.forEach(m => {
-                    allIds.add(m.id);
-                    if (m.children && m.children.length > 0) {
-                      collectIds(m.children);
-                    }
-                  });
-                };
-                collectIds(teamMembers);
-                setExpandedNodes(allIds);
-              }}
-              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-            >
-              Expand All
-            </button>
-          </div>
-        </div>
-        
-        <div className="w-full">
-          {referrer ? (
-            <TreeNode 
-              node={{
-                ...referrer,
-                children: [{
-                  ...userProfile,
-                  children: treeData.children,
-                  id: 'current-user'
-                }],
-                id: 'referrer'
-              }} 
-              isRoot={false}
-            />
-          ) : (
-            <TreeNode 
-              node={{
-                ...userProfile,
-                children: treeData.children,
-                id: 'root'
-              }} 
-              isRoot={true} 
-            />
-          )}
-        </div>
-        
-        {teamMembers.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <UsersIcon className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Team Members Yet</h3>
-            <p className="text-gray-500 mb-4">Start building your network by sharing your referral link</p>
-          </div>
-        )}
-      </div>
+
 
       {/* Legend */}
       <div className="bg-white rounded-xl shadow-card p-6">

@@ -211,6 +211,10 @@ class ApiService {
     });
   }
 
+  async getUserIncentives() {
+    return this.request('/mlm/incentives');
+  }
+
   // Orders methods
   async createOrder(orderData) {
     return this.request('/orders', {

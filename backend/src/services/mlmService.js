@@ -125,15 +125,46 @@ class MLMService {
       if (newStage === 'feeder' && oldStage === 'no_stage') {
         await this.releaseHeldEarnings(client, userId);
       }
+      
+      // Store incentive record
+      if (stageIncentives.length > 0) {
+        await client.query(`
+          INSERT INTO user_incentives (user_id, stage, incentives, awarded_at)
+          VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+        `, [userId, newStage, JSON.stringify(stageIncentives)]);
+      }
 
       // Trigger retroactive updates for uplines
       await this.onUserStageUpgrade(client, userId, oldStage, newStage);
 
+      // Get incentives for the new stage
+      const incentives = {
+        bronze: ['Lentoc water flask', 'Food voucher worth ₦100,000'],
+        silver: ['Food voucher worth $150', 'Android Phone'],
+        gold: ['Food voucher worth $750', 'International Trip worth ₦5m', 'Smartphone + Refrigerator/Generator/TV'],
+        diamond: ['Food voucher worth $1,500', 'International trip worth $7,000', 'Brand new car worth $20,000', 'Chairman Award worth $10,000']
+      };
+      
+      const stageIncentives = incentives[newStage] || [];
+      const incentiveText = stageIncentives.length > 0 ? `\n\nYour incentives:\n${stageIncentives.map(i => `• ${i}`).join('\n')}` : '';
+      
       // Send notification
       await client.query(`
         INSERT INTO market_updates (user_id, title, message, type)
         VALUES ($1, $2, $3, 'success')
-      `, [userId, 'Stage Upgrade!', `Congratulations! You've been promoted to ${newStage.toUpperCase()} stage!`]);
+      `, [userId, 'Stage Upgrade!', `Congratulations! You've been promoted to ${newStage.toUpperCase()} stage!${incentiveText}`]);
+      
+      // Send email notification
+      try {
+        const userEmail = await client.query('SELECT email, full_name FROM users WHERE id = $1', [userId]);
+        if (userEmail.rows.length > 0) {
+          const { email, full_name } = userEmail.rows[0];
+          const sendgridService = require('../utils/sendgridService');
+          await sendgridService.sendIncentiveEmail(email, full_name, newStage, stageIncentives);
+        }
+      } catch (emailError) {
+        console.error('Failed to send incentive email:', emailError);
+      }
     }
   }
 
