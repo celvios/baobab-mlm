@@ -26,13 +26,24 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
     
     return (
       <div className="flex flex-col items-center relative">
-        <div 
-          className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-all duration-300 hover:scale-110 ${
-            slot?.filled ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-gray-300 border-2 border-dashed border-gray-400'
-          }`}
-          style={{ animation: slot?.filled ? `popIn 0.4s ease-out ${level * 0.1}s both` : 'none' }}
-        >
-          {slot?.filled ? (member?.name?.charAt(0) || slot?.name?.charAt(0) || 'U') : '?'}
+        <div className="relative">
+          <div 
+            className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-all duration-300 hover:scale-110 ${
+              slot?.filled ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-gray-300 border-2 border-dashed border-gray-400'
+            }`}
+            style={{ animation: slot?.filled ? `popIn 0.4s ease-out ${level * 0.1}s both` : 'none' }}
+          >
+            {slot?.filled ? (member?.name?.charAt(0) || slot?.name?.charAt(0) || 'U') : '?'}
+          </div>
+          
+          {slot?.filled && hasChildren && (
+            <button
+              onClick={() => toggleNode(member.id || index)}
+              className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-md hover:bg-blue-600 transition-all hover:scale-110"
+            >
+              {isExpanded ? '−' : '+'}
+            </button>
+          )}
         </div>
         
         {slot?.filled && (
@@ -41,30 +52,11 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
               {member?.name || slot?.name || 'User'}
             </p>
             <p className="text-xs text-green-600 font-bold">+${slot?.earning || '1.5'}</p>
-            
-            {hasChildren && (
-              <button
-                onClick={() => toggleNode(member.id || index)}
-                className="mt-1 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors flex items-center mx-auto"
-              >
-                {isExpanded ? (
-                  <>
-                    <ChevronDownIcon className="w-3 h-3 mr-1" />
-                    Hide ({member.children.length})
-                  </>
-                ) : (
-                  <>
-                    <ChevronRightIcon className="w-3 h-3 mr-1" />
-                    Show ({member.children.length})
-                  </>
-                )}
-              </button>
-            )}
           </div>
         )}
         
         {hasChildren && isExpanded && (
-          <div className="mt-4 flex space-x-4" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+          <div className="mt-4 flex flex-wrap justify-center gap-3 max-w-[200px]" style={{ animation: 'fadeIn 0.3s ease-out' }}>
             {member.children.map((child, idx) => (
               <div key={child.id || idx} className="flex flex-col items-center">
                 <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shadow">
