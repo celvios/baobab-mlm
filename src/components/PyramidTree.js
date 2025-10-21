@@ -1,33 +1,83 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
-export default function PyramidTree({ userStage, matrixData }) {
-  const isFeeder = userStage === 'feeder';
+export default function PyramidTree({ userStage, matrixData, teamMembers = [] }) {
+  const [expandedNodes, setExpandedNodes] = useState(new Set());
+  
+  const isFeeder = userStage === 'feeder' || userStage === 'no_stage';
   const totalSlots = isFeeder ? 6 : 14;
   
-  // Count only filled slots in the matrix (not all team members)
   const filledSlotsCount = matrixData?.filter(m => m.filled && m.position < totalSlots).length || 0;
   
-  const getSlotStatus = (index) => {
-    const slot = matrixData?.find(m => m.position === index);
-    if (slot?.filled) return 'filled';
-    return 'empty';
+  const toggleNode = (id) => {
+    const newExpanded = new Set(expandedNodes);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedNodes(newExpanded);
   };
   
-  const SlotNode = ({ index, position }) => {
-    const status = getSlotStatus(index);
-    const member = matrixData?.find(m => m.position === index);
+  const SlotNode = ({ index, member, level = 0 }) => {
+    const slot = matrixData?.find(m => m.position === index);
+    const hasChildren = member?.children && member.children.length > 0;
+    const isExpanded = expandedNodes.has(member?.id || index);
     
     return (
-      <div className="flex flex-col items-center">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-          status === 'filled' ? 'bg-green-500' : 'bg-gray-300 border-2 border-dashed border-gray-400'
-        }`}>
-          {status === 'filled' ? (member?.name?.charAt(0) || 'U') : '?'}
+      <div className="flex flex-col items-center relative">
+        <div 
+          className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-all duration-300 hover:scale-110 ${
+            slot?.filled ? 'bg-gradient-to-br from-green-400 to-green-600' : 'bg-gray-300 border-2 border-dashed border-gray-400'
+          }`}
+          style={{ animation: slot?.filled ? `popIn 0.4s ease-out ${level * 0.1}s both` : 'none' }}
+        >
+          {slot?.filled ? (member?.name?.charAt(0) || slot?.name?.charAt(0) || 'U') : '?'}
         </div>
-        {status === 'filled' && (
-          <div className="mt-1 text-center">
-            <p className="text-xs font-medium text-gray-900">{member?.name || 'User'}</p>
-            <p className="text-xs text-green-600 font-semibold">+${member?.earning || '1.5'}</p>
+        
+        {slot?.filled && (
+          <div className="mt-2 text-center">
+            <p className="text-xs font-semibold text-gray-900 max-w-[80px] truncate">
+              {member?.name || slot?.name || 'User'}
+            </p>
+            <p className="text-xs text-green-600 font-bold">+${slot?.earning || '1.5'}</p>
+            
+            {hasChildren && (
+              <button
+                onClick={() => toggleNode(member.id || index)}
+                className="mt-1 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors flex items-center mx-auto"
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronDownIcon className="w-3 h-3 mr-1" />
+                    Hide ({member.children.length})
+                  </>
+                ) : (
+                  <>
+                    <ChevronRightIcon className="w-3 h-3 mr-1" />
+                    Show ({member.children.length})
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+        
+        {hasChildren && isExpanded && (
+          <div className="mt-4 flex space-x-4" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+            {member.children.map((child, idx) => (
+              <div key={child.id || idx} className="flex flex-col items-center">
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shadow">
+                  {child.full_name?.charAt(0) || child.email?.charAt(0).toUpperCase()}
+                </div>
+                <p className="text-xs mt-1 text-gray-700 max-w-[60px] truncate">
+                  {child.full_name || child.email}
+                </p>
+                {child.has_deposited && (
+                  <p className="text-xs text-green-600 font-bold">+$1.5</p>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -37,25 +87,37 @@ export default function PyramidTree({ userStage, matrixData }) {
   if (isFeeder) {
     return (
       <div className="flex flex-col items-center space-y-8 py-8">
+        <style>{`
+          @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+        `}</style>
+        
         <div className="text-center mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Feeder Stage (2x2)</h3>
+          <h3 className="text-lg font-bold text-gray-900">Matrix Structure (2x2)</h3>
           <p className="text-sm text-gray-600">{filledSlotsCount}/6 slots filled</p>
         </div>
         
-        <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
+        <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-xl">
           YOU
         </div>
         
-        <div className="flex space-x-24">
-          <SlotNode index={0} position="L" />
-          <SlotNode index={1} position="R" />
+        <div className="flex space-x-32">
+          <SlotNode index={0} member={teamMembers[0]} level={1} />
+          <SlotNode index={1} member={teamMembers[1]} level={1} />
         </div>
         
-        <div className="flex space-x-12">
-          <SlotNode index={2} position="LL" />
-          <SlotNode index={3} position="LR" />
-          <SlotNode index={4} position="RL" />
-          <SlotNode index={5} position="RR" />
+        <div className="flex space-x-16">
+          <SlotNode index={2} member={teamMembers[2]} level={2} />
+          <SlotNode index={3} member={teamMembers[3]} level={2} />
+          <SlotNode index={4} member={teamMembers[4]} level={2} />
+          <SlotNode index={5} member={teamMembers[5]} level={2} />
         </div>
       </div>
     );
@@ -63,36 +125,48 @@ export default function PyramidTree({ userStage, matrixData }) {
   
   return (
     <div className="flex flex-col items-center space-y-6 py-8">
+      <style>{`
+        @keyframes popIn {
+          0% { transform: scale(0); opacity: 0; }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
+      
       <div className="text-center mb-4">
-        <h3 className="text-lg font-bold text-gray-900">{userStage?.toUpperCase()} Stage (2x3)</h3>
+        <h3 className="text-lg font-bold text-gray-900">{userStage?.toUpperCase()} Matrix (2x3)</h3>
         <p className="text-sm text-gray-600">{filledSlotsCount}/14 slots filled</p>
       </div>
       
-      <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
+      <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-xl">
         YOU
       </div>
       
-      <div className="flex space-x-24">
-        <SlotNode index={0} position="L" />
-        <SlotNode index={1} position="R" />
+      <div className="flex space-x-32">
+        <SlotNode index={0} member={teamMembers[0]} level={1} />
+        <SlotNode index={1} member={teamMembers[1]} level={1} />
       </div>
       
-      <div className="flex space-x-12">
-        <SlotNode index={2} position="LL" />
-        <SlotNode index={3} position="LR" />
-        <SlotNode index={4} position="RL" />
-        <SlotNode index={5} position="RR" />
+      <div className="flex space-x-16">
+        <SlotNode index={2} member={teamMembers[2]} level={2} />
+        <SlotNode index={3} member={teamMembers[3]} level={2} />
+        <SlotNode index={4} member={teamMembers[4]} level={2} />
+        <SlotNode index={5} member={teamMembers[5]} level={2} />
       </div>
       
-      <div className="flex space-x-6">
-        <SlotNode index={6} position="LLL" />
-        <SlotNode index={7} position="LLR" />
-        <SlotNode index={8} position="LRL" />
-        <SlotNode index={9} position="LRR" />
-        <SlotNode index={10} position="RLL" />
-        <SlotNode index={11} position="RLR" />
-        <SlotNode index={12} position="RRL" />
-        <SlotNode index={13} position="RRR" />
+      <div className="flex space-x-8">
+        <SlotNode index={6} member={teamMembers[6]} level={3} />
+        <SlotNode index={7} member={teamMembers[7]} level={3} />
+        <SlotNode index={8} member={teamMembers[8]} level={3} />
+        <SlotNode index={9} member={teamMembers[9]} level={3} />
+        <SlotNode index={10} member={teamMembers[10]} level={3} />
+        <SlotNode index={11} member={teamMembers[11]} level={3} />
+        <SlotNode index={12} member={teamMembers[12]} level={3} />
+        <SlotNode index={13} member={teamMembers[13]} level={3} />
       </div>
     </div>
   );
