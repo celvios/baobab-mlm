@@ -94,13 +94,12 @@ export default function Dashboard() {
   useEffect(() => {
     const convertBalances = async () => {
       if (userProfile?.wallet && !currencyLoading) {
-        console.log('Converting MLM earnings:', userProfile.wallet.mlmEarnings);
-        const convertedBalance = await convertPrice(userProfile.wallet.balance || 0);
+        // Balance is already in NGN, don't convert
+        // MLM earnings are in USD, convert to NGN
         const convertedEarnings = await convertPrice(userProfile.wallet.mlmEarnings || 0);
-        console.log('Converted MLM earnings:', convertedEarnings);
         
         setConvertedBalances({
-          balance: convertedBalance,
+          balance: userProfile.wallet.balance || 0,
           mlmEarnings: convertedEarnings
         });
       }
@@ -366,7 +365,7 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <p className="text-white/70 text-sm mb-1">Wallet Balance</p>
-                      <p className="text-3xl font-bold mb-1">{currencyLoading ? '...' : formatPrice(convertedBalances.balance)}</p>
+                      <p className="text-3xl font-bold mb-1">₦{formatCurrency(convertedBalances.balance)}</p>
                       <p className="text-white/60 text-xs">${(convertedBalances.balance / 1500).toFixed(2)} USD</p>
                     </div>
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
