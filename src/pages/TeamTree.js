@@ -193,10 +193,11 @@ export default function TeamTree() {
       <div className="bg-white rounded-2xl shadow-card p-8">
         <h2 className="text-xl font-bold text-gray-900 mb-6">Pyramid Matrix Structure</h2>
         <PyramidTree 
-          userStage={userProfile?.mlmLevel || 'no_stage'}
+          userStage={userProfile?.mlmLevel}
           teamMembers={matrixTree?.children || teamMembers}
           matrixData={(() => {
-            const maxSlots = (userProfile?.mlmLevel === 'no_stage' || userProfile?.mlmLevel === 'feeder') ? 6 : 14;
+            const currentStage = userProfile?.mlmLevel || 'no_stage';
+            const maxSlots = (currentStage === 'no_stage' || currentStage === 'feeder') ? 6 : 14;
             return teamMembers.slice(0, maxSlots).map((m, i) => ({
               position: i,
               filled: m.has_deposited,
