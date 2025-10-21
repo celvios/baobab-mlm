@@ -9,6 +9,7 @@ export default function Team() {
   const [earnings, setEarnings] = useState(0);
   const [stageProgress, setStageProgress] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState(new Set());
 
   useEffect(() => {
     fetchData();
@@ -44,6 +45,60 @@ export default function Team() {
   const getColorForIndex = (index) => {
     const colors = ['bg-yellow-400', 'bg-blue-400', 'bg-green-400', 'bg-orange-400', 'bg-purple-400'];
     return colors[index % colors.length];
+  };
+
+  const toggleRow = (memberId) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(memberId)) {
+        newSet.delete(memberId);
+      } else {
+        newSet.add(memberId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderMemberRow = (member, index, level = 0) => {
+    const hasChildren = member.children && member.children.length > 0;
+    const isExpanded = expandedRows.has(member.id);
+    
+    return (
+      <React.Fragment key={member.id}>
+        <tr className="border-b border-gray-100">
+          <td className="py-4 px-6 text-sm">{index + 1}</td>
+          <td className="py-4 px-6 text-sm">{new Date(member.created_at).toLocaleDateString()}</td>
+          <td className="py-4 px-6">
+            <div className="flex items-center" style={{ paddingLeft: `${level * 20}px` }}>
+              {hasChildren && (
+                <button
+                  onClick={() => toggleRow(member.id)}
+                  className="mr-2 w-5 h-5 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded"
+                >
+                  {isExpanded ? '−' : '+'}
+                </button>
+              )}
+              <div className={`w-6 h-6 ${getColorForIndex(index)} rounded-full flex items-center justify-center text-white font-bold text-xs mr-3`}>
+                {member.full_name?.charAt(0) || member.email?.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm">{member.email}</span>
+            </div>
+          </td>
+          <td className="py-4 px-6 text-sm">{member.mlm_level === 'no_stage' ? 'No Stage' : (member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'No Stage')}</td>
+          <td className="py-4 px-6 text-sm">{member.mlm_level === 'no_stage' ? 'No Stage' : (member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'No Stage')}</td>
+          <td className="py-4 px-6 text-sm">
+            {member.has_deposited ? (
+              <span className="font-semibold text-green-600">+ ${member.earning_from_user || '1.5'}</span>
+            ) : (
+              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
+            )}
+          </td>
+        </tr>
+        {isExpanded && hasChildren && member.children.map((child, childIndex) => 
+          renderMemberRow(child, childIndex, level + 1)
+        )}
+      </React.Fragment>
+    );
   };
 
   const incentivesCount = Math.floor(earnings / 1000); // 1 incentive per $1000 earned
@@ -166,29 +221,9 @@ export default function Team() {
               </tr>
             </thead>
             <tbody>
-              {teamMembers.length > 0 ? teamMembers.map((member, index) => (
-                <tr key={member.id} className="border-b border-gray-100">
-                  <td className="py-4 px-6 text-sm">{index + 1}</td>
-                  <td className="py-4 px-6 text-sm">{new Date(member.created_at).toLocaleDateString()}</td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center">
-                      <div className={`w-6 h-6 ${getColorForIndex(index)} rounded-full flex items-center justify-center text-white font-bold text-xs mr-3`}>
-                        {member.full_name?.charAt(0) || member.email?.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-sm">{member.email}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-sm">{member.mlm_level === 'no_stage' ? 'No Stage' : (member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'No Stage')}</td>
-                  <td className="py-4 px-6 text-sm">{member.mlm_level === 'no_stage' ? 'No Stage' : (member.mlm_level?.charAt(0).toUpperCase() + member.mlm_level?.slice(1) || 'No Stage')}</td>
-                  <td className="py-4 px-6 text-sm">
-                    {member.has_deposited ? (
-                      <span className="font-semibold text-green-600">+ ${member.earning_from_user || '1.5'}</span>
-                    ) : (
-                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">Pending</span>
-                    )}
-                  </td>
-                </tr>
-              )) : (
+              {teamMembers.length > 0 ? teamMembers.map((member, index) => 
+                renderMemberRow(member, index, 0)
+              ) : (
                 <tr>
                   <td colSpan="6" className="py-8 px-6 text-center text-gray-500">
                     No team members yet. Start referring people to build your team!
