@@ -7,6 +7,17 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
   const isFeeder = userStage === 'feeder' || userStage === 'no_stage';
   const totalSlots = isFeeder ? 6 : 14;
   
+  const stageBonus = {
+    'no_stage': 1.5,
+    'feeder': 1.5,
+    'bronze': 4.8,
+    'silver': 30,
+    'gold': 150,
+    'diamond': 750,
+    'infinity': 15000
+  };
+  
+  const bonusAmount = stageBonus[userStage] || 1.5;
   const filledSlotsCount = matrixData?.filter(m => m.filled && m.position < totalSlots).length || 0;
   
   const toggleNode = (id) => {
@@ -51,7 +62,7 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
             <p className="text-xs font-semibold text-gray-900 max-w-[80px] truncate">
               {member?.name || slot?.name || 'User'}
             </p>
-            <p className="text-xs text-green-600 font-bold">+${slot?.earning || '1.5'}</p>
+            <p className="text-xs text-green-600 font-bold">+${slot?.earning || bonusAmount}</p>
           </div>
         )}
         
@@ -66,7 +77,7 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
                   {child.full_name || child.email}
                 </p>
                 {child.has_deposited && (
-                  <p className="text-xs text-green-600 font-bold">+$1.5</p>
+                  <p className="text-xs text-green-600 font-bold">+${bonusAmount}</p>
                 )}
               </div>
             ))}
