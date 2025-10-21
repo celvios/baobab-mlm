@@ -281,12 +281,19 @@ class MLMService {
     );
 
     // Track member in matrix
-    // At no_stage/feeder: everyone counts
-    // At bronze+: only members who completed the PREVIOUS stage count
+    // At no_stage: everyone with paid deposit counts
+    // At feeder+: only members who completed the PREVIOUS stage count
     let isQualified = false;
     
-    if (userStage === 'no_stage' || userStage === 'feeder') {
+    if (userStage === 'no_stage') {
+      // At no_stage, any paid account counts
       isQualified = true;
+    } else if (userStage === 'feeder') {
+      // At feeder, only accounts that completed no_stage (have 6 paid accounts) count
+      const memberMatrixCheck = await client.query(`
+        SELECT is_complete FROM stage_matrix WHERE user_id = $1 AND stage = 'no_stage'
+      `, [newUserId]);
+      isQualified = memberMatrixCheck.rows.length > 0 && memberMatrixCheck.rows[0].is_complete === true;
     } else {
       // Get the required stage for this matrix
       const stageHierarchy = {
@@ -616,7 +623,7 @@ class MLMService {
       for (let i = 0; i < 2; i++) {
         const newUser = await client.query(`
           INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified)
-          VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true)
+          VALUES ($1, $2, $3, $4, $5, $6, 'no_stage', true, true)
           RETURNING id, full_name, email, referral_code
         `, [
           `Direct Referral ${i + 1}`,
@@ -642,7 +649,7 @@ class MLMService {
 
         await client.query(`
           INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-          VALUES ($1, 'feeder', 0, 6)
+          VALUES ($1, 'no_stage', 0, 6)
         `, [newUser.rows[0].id]);
       }
 
@@ -658,7 +665,7 @@ class MLMService {
         for (let j = 0; j < 2; j++) {
           const spilloverUser = await client.query(`
             INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified)
-            VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true)
+            VALUES ($1, $2, $3, $4, $5, $6, 'no_stage', true, true)
             RETURNING id, full_name, email, referral_code
           `, [
             `Spillover ${i + 1}-${j + 1}`,
@@ -683,7 +690,7 @@ class MLMService {
 
           await client.query(`
             INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-            VALUES ($1, 'feeder', 0, 6)
+            VALUES ($1, 'no_stage', 0, 6)
           `, [spilloverUser.rows[0].id]);
 
           // Process spillover through parent's referral

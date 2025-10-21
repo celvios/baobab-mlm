@@ -265,7 +265,7 @@ const generateReferrals = async (req, res) => {
       for (let i = 0; i < 2; i++) {
         const newUser = await client.query(`
           INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified, joining_fee_paid)
-          VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true, true)
+          VALUES ($1, $2, $3, $4, $5, $6, 'no_stage', true, true, true)
           RETURNING id, referral_code
         `, [
           `Direct Referral ${i + 1}`,
@@ -281,7 +281,7 @@ const generateReferrals = async (req, res) => {
 
         await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [userId, 'approved']);
         await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [userId]);
-        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [userId, 'feeder']);
+        await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [userId, 'no_stage']);
       }
 
       // Generate 4 spillover referrals (2 for each direct referral)
@@ -289,7 +289,7 @@ const generateReferrals = async (req, res) => {
         for (let j = 0; j < 2; j++) {
           const spillover = await client.query(`
             INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified, joining_fee_paid)
-            VALUES ($1, $2, $3, $4, $5, $6, 'feeder', true, true, true)
+            VALUES ($1, $2, $3, $4, $5, $6, 'no_stage', true, true, true)
             RETURNING id
           `, [
             `Spillover ${i + 1}-${j + 1}`,
@@ -303,7 +303,7 @@ const generateReferrals = async (req, res) => {
           const userId = spillover.rows[0].id;
           await client.query('INSERT INTO deposit_requests (user_id, amount, status) VALUES ($1, 18000, $2)', [userId, 'approved']);
           await client.query('INSERT INTO wallets (user_id, balance, total_earned) VALUES ($1, 0, 0)', [userId]);
-          await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [userId, 'feeder']);
+          await client.query('INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required) VALUES ($1, $2, 0, 6)', [userId, 'no_stage']);
         }
       }
 
