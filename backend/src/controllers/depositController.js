@@ -28,6 +28,16 @@ const submitDepositRequest = async (req, res) => {
       return res.status(400).json({ message: 'Payment proof image is required' });
     }
 
+    // Check if user already has a deposit request
+    const existingDeposit = await pool.query(
+      'SELECT * FROM deposit_requests WHERE user_id = $1',
+      [userId]
+    );
+    
+    if (existingDeposit.rows.length > 0) {
+      return res.status(400).json({ message: 'You have already submitted a deposit request. Please wait for admin approval.' });
+    }
+
     // Convert image to base64
     const proofBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     
@@ -94,12 +104,30 @@ const getDepositStatus = async (req, res) => {
     );
     
     const user = userResult.rows[0];
+    const deposit = depositResult.rows[0];
+    
+    // Check if user has approved deposit >= 18000
+    const hasValidDeposit = deposit && deposit.status === 'approved' && parseFloat(deposit.amount) >= 18000;
+    
+    // Map status to display text
+    let depositStatus = 'Not Submitted';
+    if (deposit) {
+      if (deposit.status === 'pending') {
+        depositStatus = 'Submitted';
+      } else if (deposit.status === 'approved') {
+        depositStatus = 'Approved';
+      } else if (deposit.status === 'rejected') {
+        depositStatus = 'Rejected';
+      }
+    }
     
     res.json({
-      deposit: depositResult.rows[0] || null,
-      dashboardUnlocked: user?.dashboard_unlocked ?? user?.joining_fee_paid ?? false,
-      depositConfirmed: user?.deposit_confirmed ?? user?.joining_fee_paid ?? false,
-      mlmLevel: user?.mlm_level || 'no_stage'
+      deposit: deposit || null,
+      depositStatus,
+      dashboardUnlocked: hasValidDeposit || (user?.dashboard_unlocked ?? false),
+      depositConfirmed: hasValidDeposit || (user?.deposit_confirmed ?? false),
+      mlmLevel: user?.mlm_level || 'no_stage',
+      hasDeposit: !!deposit
     });
   } catch (error) {
     console.error('Error getting deposit status:', error);

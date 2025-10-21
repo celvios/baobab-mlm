@@ -3,11 +3,16 @@ const pool = require('../config/database');
 const getPendingDeposits = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT dr.*, u.full_name, u.email 
+      SELECT dr.*, u.full_name as user_name, u.email as user_email
       FROM deposit_requests dr
       JOIN users u ON dr.user_id = u.id
-      WHERE dr.status = 'pending'
-      ORDER BY dr.created_at DESC
+      ORDER BY 
+        CASE dr.status 
+          WHEN 'pending' THEN 1 
+          WHEN 'approved' THEN 2 
+          WHEN 'rejected' THEN 3 
+        END,
+        dr.created_at DESC
     `);
     
     res.json({ deposits: result.rows });
@@ -37,7 +42,10 @@ const approveDeposit = async (req, res) => {
     }
     
     const userId = deposit.rows[0].user_id;
-    const amount = deposit.rows[0].amount;
+    const amount = parseFloat(deposit.rows[0].amount);
+    
+    // Only unlock dashboard if amount >= 18000
+    const shouldUnlock = amount >= 18000;
     
     await client.query(
       `UPDATE deposit_requests 
@@ -48,17 +56,33 @@ const approveDeposit = async (req, res) => {
     
     await client.query(
       `UPDATE users 
-       SET deposit_amount = deposit_amount + $1,
-           deposit_confirmed = TRUE,
+       SET deposit_amount = COALESCE(deposit_amount, 0) + $1,
+           deposit_confirmed = $2,
            deposit_confirmed_at = NOW(),
-           dashboard_unlocked = TRUE
-       WHERE id = $2`,
-      [amount, userId]
+           dashboard_unlocked = $2,
+           joining_fee_paid = $2,
+           mlm_level = CASE WHEN $2 THEN 'feeder' ELSE mlm_level END
+       WHERE id = $3`,
+      [amount, shouldUnlock, userId]
     );
+    
+    // If unlocking dashboard, process MLM referral
+    if (shouldUnlock) {
+      const mlmService = require('../services/mlmService');
+      
+      // Get referrer
+      const userResult = await client.query('SELECT referred_by FROM users WHERE id = $1', [userId]);
+      if (userResult.rows[0]?.referred_by) {
+        const referrerResult = await client.query('SELECT id FROM users WHERE referral_code = $1', [userResult.rows[0].referred_by]);
+        if (referrerResult.rows.length > 0) {
+          await mlmService.processReferral(referrerResult.rows[0].id, userId);
+        }
+      }
+    }
     
     await client.query('COMMIT');
     
-    res.json({ message: 'Deposit approved successfully' });
+    res.json({ message: shouldUnlock ? 'Deposit approved and dashboard unlocked' : 'Deposit approved but amount is below ₦18,000 minimum' });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error approving deposit:', error);

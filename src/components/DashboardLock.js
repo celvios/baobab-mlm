@@ -1,7 +1,14 @@
 import React from 'react';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 
-export default function DashboardLock({ onDepositClick }) {
+export default function DashboardLock({ onDepositClick, depositStatus = 'Not Submitted', hasDeposit = false }) {
+  const getStatusColor = () => {
+    if (depositStatus === 'Submitted') return 'bg-yellow-100 text-yellow-800';
+    if (depositStatus === 'Approved') return 'bg-green-100 text-green-800';
+    if (depositStatus === 'Rejected') return 'bg-red-100 text-red-800';
+    return 'text-gray-900';
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
@@ -30,19 +37,36 @@ export default function DashboardLock({ onDepositClick }) {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Deposit Status:</span>
-            <span className="text-sm font-medium text-gray-900">Not Submitted</span>
+            <span className={`text-sm font-medium ${depositStatus === 'Submitted' || depositStatus === 'Approved' || depositStatus === 'Rejected' ? `px-2 py-1 rounded-full text-xs ${getStatusColor()}` : 'text-gray-900'}`}>
+              {depositStatus}
+            </span>
           </div>
         </div>
         
-        <button
-          onClick={onDepositClick}
-          className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-        >
-          Make Deposit
-        </button>
+        {!hasDeposit ? (
+          <button
+            onClick={onDepositClick}
+            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+          >
+            Make Deposit
+          </button>
+        ) : depositStatus === 'Submitted' ? (
+          <div className="w-full bg-yellow-50 border border-yellow-200 text-yellow-800 py-3 px-6 rounded-lg font-medium">
+            Deposit Submitted - Awaiting Approval
+          </div>
+        ) : depositStatus === 'Rejected' ? (
+          <button
+            onClick={onDepositClick}
+            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+          >
+            Resubmit Deposit
+          </button>
+        ) : null}
         
         <p className="text-xs text-gray-500 mt-4">
-          After deposit approval, you'll gain access to all dashboard features
+          {depositStatus === 'Submitted' 
+            ? 'Your deposit is being reviewed by our admin team'
+            : 'After deposit approval, you\'ll gain access to all dashboard features'}
         </p>
       </div>
     </div>
