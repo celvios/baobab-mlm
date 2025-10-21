@@ -67,7 +67,8 @@ class MLMService {
     // Get current stage and check if matrix is complete
     const stageResult = await client.query(`
       SELECT u.mlm_level as current_stage, sm.slots_filled, sm.slots_required,
-             COALESCE(sm.qualified_slots_filled, sm.slots_filled) as qualified_slots_filled
+             COALESCE(sm.qualified_slots_filled, sm.slots_filled) as qualified_slots_filled,
+             COALESCE(sm.is_complete, false) as is_complete
       FROM users u
       LEFT JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = u.mlm_level
       WHERE u.id = $1
@@ -75,7 +76,10 @@ class MLMService {
     
     if (stageResult.rows.length === 0) return;
     
-    const { current_stage, qualified_slots_filled, slots_required } = stageResult.rows[0];
+    const { current_stage, qualified_slots_filled, slots_required, is_complete } = stageResult.rows[0];
+    
+    // Don't upgrade if already marked as complete (prevents double upgrades)
+    if (is_complete) return;
     
     // Only progress if qualified slots are filled
     const isComplete = qualified_slots_filled >= slots_required;
@@ -94,6 +98,11 @@ class MLMService {
     
     if (newStage) {
       const oldStage = current_stage;
+      
+      // Mark current stage as complete
+      await client.query(`
+        UPDATE stage_matrix SET is_complete = true WHERE user_id = $1 AND stage = $2
+      `, [userId, current_stage]);
       
       // Update user stage
       await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [newStage, userId]);
