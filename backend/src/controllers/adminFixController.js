@@ -4,7 +4,17 @@ const fixStuckStages = async (req, res) => {
   const client = await pool.connect();
   
   try {
-    // First, get diagnostic info
+    // First, create missing stage_matrix entries for all users at no_stage
+    await client.query(`
+      INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, qualified_slots_filled)
+      SELECT u.id, 'no_stage', 0, 6, 0
+      FROM users u
+      WHERE u.mlm_level = 'no_stage' 
+        AND NOT EXISTS (SELECT 1 FROM stage_matrix sm WHERE sm.user_id = u.id AND sm.stage = 'no_stage')
+        AND (u.role != 'admin' OR u.role IS NULL)
+    `);
+    
+    // Get diagnostic info
     const diagnostic = await client.query(`
       SELECT u.id, u.email, u.mlm_level, u.referral_code,
              sm.qualified_slots_filled, sm.slots_filled, sm.slots_required, sm.is_complete,
@@ -79,4 +89,51 @@ const manualUpgradeUser = async (req, res) => {
   }
 };
 
-module.exports = { fixStuckStages, manualUpgradeUser };
+const recalculateQualifiedSlots = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Get all users with stage_matrix at no_stage
+    const users = await client.query(`
+      SELECT u.id, u.referral_code, sm.id as matrix_id
+      FROM users u
+      JOIN stage_matrix sm ON u.id = sm.user_id AND sm.stage = 'no_stage'
+      WHERE u.role != 'admin' OR u.role IS NULL
+    `);
+    
+    const results = [];
+    
+    for (const user of users.rows) {
+      // Count approved referrals
+      const count = await client.query(`
+        SELECT COUNT(*) as count
+        FROM users u2
+        WHERE u2.referred_by = $1
+          AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u2.id AND status = 'approved')
+      `, [user.referral_code]);
+      
+      const approvedCount = parseInt(count.rows[0].count);
+      
+      // Update qualified_slots_filled
+      await client.query(`
+        UPDATE stage_matrix 
+        SET qualified_slots_filled = $1, slots_filled = $1
+        WHERE id = $2
+      `, [approvedCount, user.matrix_id]);
+      
+      results.push({ id: user.id, approvedReferrals: approvedCount });
+    }
+    
+    await client.query('COMMIT');
+    res.json({ message: 'Recalculated qualified slots', results });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+};
+
+module.exports = { fixStuckStages, manualUpgradeUser, recalculateQualifiedSlots };
