@@ -426,8 +426,8 @@ class MLMService {
   async getStageProgress(userId) {
     const result = await pool.query(`
       SELECT u.mlm_level as current_stage,
-             COALESCE(sm.slots_filled, 0) as slots_filled,
-             COALESCE(sm.qualified_slots_filled, sm.slots_filled) as qualified_slots_filled,
+             COALESCE(sm.qualified_slots_filled, 0) as slots_filled,
+             COALESCE(sm.qualified_slots_filled, 0) as qualified_slots_filled,
              COALESCE(sm.slots_required, 6) as slots_required,
              COALESCE(sm.qualified_slots_filled >= sm.slots_required, false) as is_complete
       FROM users u
