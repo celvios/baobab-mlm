@@ -625,6 +625,11 @@ class MLMService {
       );
       const referralCode = userResult.rows[0].referral_code;
 
+      // Determine what stage the generated accounts should be at
+      // no_stage: generate no_stage accounts (just paid)
+      // feeder: generate feeder accounts (completed no_stage)
+      // bronze+: generate accounts that completed previous stage
+      const generatedAccountStage = currentStage === 'no_stage' ? 'no_stage' : currentStage;
       const generatedUsers = [];
       const directReferrals = [];
 
@@ -632,7 +637,7 @@ class MLMService {
       for (let i = 0; i < 2; i++) {
         const newUser = await client.query(`
           INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified)
-          VALUES ($1, $2, $3, $4, $5, $6, 'no_stage', true, true)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, true, true)
           RETURNING id, full_name, email, referral_code
         `, [
           `Direct Referral ${i + 1}`,
@@ -640,7 +645,8 @@ class MLMService {
           '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
           `+234${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
           `DIR${Date.now()}${i}`,
-          referralCode
+          referralCode,
+          generatedAccountStage
         ]);
 
         directReferrals.push(newUser.rows[0]);
@@ -656,10 +662,22 @@ class MLMService {
           VALUES ($1, 0, 0)
         `, [newUser.rows[0].id]);
 
+        // Mark previous stage as complete if not no_stage
+        if (generatedAccountStage !== 'no_stage') {
+          const prevStageMap = { 'feeder': 'no_stage', 'bronze': 'feeder', 'silver': 'bronze', 'gold': 'silver', 'diamond': 'gold' };
+          const prevStage = prevStageMap[generatedAccountStage];
+          if (prevStage) {
+            await client.query(`
+              INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, qualified_slots_filled, is_complete)
+              VALUES ($1, $2, 6, 6, 6, true)
+            `, [newUser.rows[0].id, prevStage]);
+          }
+        }
+
         await client.query(`
           INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-          VALUES ($1, 'no_stage', 0, 6)
-        `, [newUser.rows[0].id]);
+          VALUES ($1, $2, 0, $3)
+        `, [newUser.rows[0].id, generatedAccountStage, (generatedAccountStage === 'no_stage' || generatedAccountStage === 'feeder') ? 6 : 14]);
       }
 
       // Process direct referrals first
@@ -674,7 +692,7 @@ class MLMService {
         for (let j = 0; j < 2; j++) {
           const spilloverUser = await client.query(`
             INSERT INTO users (full_name, email, password, phone, referral_code, referred_by, mlm_level, is_active, is_email_verified)
-            VALUES ($1, $2, $3, $4, $5, $6, 'no_stage', true, true)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, true, true)
             RETURNING id, full_name, email, referral_code
           `, [
             `Spillover ${i + 1}-${j + 1}`,
@@ -682,7 +700,8 @@ class MLMService {
             '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
             `+234${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
             `SPILL${Date.now()}${i}${j}`,
-            parentReferral.referral_code
+            parentReferral.referral_code,
+            generatedAccountStage
           ]);
 
           generatedUsers.push(spilloverUser.rows[0]);
@@ -697,10 +716,22 @@ class MLMService {
             VALUES ($1, 0, 0)
           `, [spilloverUser.rows[0].id]);
 
+          // Mark previous stage as complete if not no_stage
+          if (generatedAccountStage !== 'no_stage') {
+            const prevStageMap = { 'feeder': 'no_stage', 'bronze': 'feeder', 'silver': 'bronze', 'gold': 'silver', 'diamond': 'gold' };
+            const prevStage = prevStageMap[generatedAccountStage];
+            if (prevStage) {
+              await client.query(`
+                INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, qualified_slots_filled, is_complete)
+                VALUES ($1, $2, 6, 6, 6, true)
+              `, [spilloverUser.rows[0].id, prevStage]);
+            }
+          }
+
           await client.query(`
             INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
-            VALUES ($1, 'no_stage', 0, 6)
-          `, [spilloverUser.rows[0].id]);
+            VALUES ($1, $2, 0, $3)
+          `, [spilloverUser.rows[0].id, generatedAccountStage, (generatedAccountStage === 'no_stage' || generatedAccountStage === 'feeder') ? 6 : 14]);
 
           // Process spillover through parent's referral
           await this.processReferral(parentReferral.id, spilloverUser.rows[0].id);
