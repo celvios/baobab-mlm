@@ -32,7 +32,7 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
   
   const SlotNode = ({ index, member, level = 0 }) => {
     const slot = matrixData?.find(m => m.position === index);
-    const isFilled = slot?.filled || member?.has_deposited;
+    const isFilled = member ? true : (slot?.filled || false);
     const hasChildren = member?.children && member.children.length > 0;
     const isExpanded = expandedNodes.has(member?.id || index);
     
@@ -45,7 +45,7 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
             }`}
             style={{ animation: isFilled ? `popIn 0.4s ease-out ${level * 0.1}s both` : 'none' }}
           >
-            {isFilled ? (member?.full_name?.charAt(0) || member?.email?.charAt(0) || member?.name?.charAt(0) || slot?.name?.charAt(0) || 'U') : '?'}
+            {isFilled ? (member?.full_name?.charAt(0)?.toUpperCase() || member?.email?.charAt(0)?.toUpperCase() || member?.name?.charAt(0)?.toUpperCase() || slot?.name?.charAt(0)?.toUpperCase() || 'U') : '?'}
           </div>
           
           {isFilled && hasChildren && (
@@ -61,9 +61,14 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
         {isFilled && (
           <div className="mt-2 text-center">
             <p className="text-xs font-semibold text-gray-900 max-w-[80px] truncate">
-              {member?.full_name || member?.email || member?.name || slot?.name || 'User'}
+              {member?.full_name || member?.email?.split('@')[0] || member?.name || slot?.name || 'User'}
             </p>
-            <p className="text-xs text-green-600 font-bold">+${slot?.earning || bonusAmount}</p>
+            <p className="text-xs text-green-600 font-bold">+${member?.earning_from_user || slot?.earning || bonusAmount}</p>
+            {member?.mlm_level && (
+              <p className="text-xs text-blue-600 font-medium">
+                {member.mlm_level === 'no_stage' ? 'No Stage' : member.mlm_level.charAt(0).toUpperCase() + member.mlm_level.slice(1)}
+              </p>
+            )}
           </div>
         )}
         
