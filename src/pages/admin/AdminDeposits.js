@@ -65,6 +65,32 @@ const AdminDeposits = () => {
     }
   };
 
+  const handleApproveAll = async () => {
+    const pendingDeposits = deposits.filter(d => d.status === 'pending');
+    
+    if (pendingDeposits.length === 0) {
+      alert('No pending deposits to approve');
+      return;
+    }
+    
+    if (window.confirm(`Approve all ${pendingDeposits.length} pending deposit requests?`)) {
+      try {
+        setLoading(true);
+        for (const deposit of pendingDeposits) {
+          await apiService.approveDeposit(deposit.id, { amount: deposit.amount });
+        }
+        alert(`Successfully approved ${pendingDeposits.length} deposits!`);
+        fetchDeposits();
+      } catch (error) {
+        console.error('Error approving all deposits:', error);
+        alert('Failed to approve all deposits: ' + error.message);
+        fetchDeposits();
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -145,6 +171,17 @@ const AdminDeposits = () => {
             <h2 className="text-lg font-semibold text-gray-900">Deposit Requests</h2>
             
             <div className="flex flex-col sm:flex-row gap-3">
+              {/* Approve All Button */}
+              {deposits.filter(d => d.status === 'pending').length > 0 && (
+                <button
+                  onClick={handleApproveAll}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center font-medium"
+                >
+                  <FiCheck className="w-4 h-4 mr-2" />
+                  Approve All ({deposits.filter(d => d.status === 'pending').length})
+                </button>
+              )}
+              
               {/* Search */}
               <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
