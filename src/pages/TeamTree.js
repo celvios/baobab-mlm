@@ -194,7 +194,7 @@ export default function TeamTree() {
         <h2 className="text-xl font-bold text-gray-900 mb-6">Pyramid Matrix Structure</h2>
         <PyramidTree 
           userStage={userProfile?.mlmLevel}
-          teamMembers={matrixTree?.children || teamMembers}
+          teamMembers={teamMembers}
           matrixData={(() => {
             const currentStage = userProfile?.mlmLevel || 'no_stage';
             const maxSlots = (currentStage === 'no_stage' || currentStage === 'feeder') ? 6 : 14;
