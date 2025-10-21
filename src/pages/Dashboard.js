@@ -66,6 +66,11 @@ export default function Dashboard() {
   
   useEffect(() => {
     fetchDashboardData();
+    // Auto-refresh every 5 seconds to detect stage changes
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const refreshWalletData = async () => {

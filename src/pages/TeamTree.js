@@ -10,22 +10,49 @@ export default function TeamTree() {
   const [showToast, setShowToast] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [matrixTree, setMatrixTree] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [previousStage, setPreviousStage] = useState(null);
 
   useEffect(() => {
     fetchData();
+    // Auto-refresh every 5 seconds to detect stage changes
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
     try {
-      const [profile, teamData] = await Promise.all([
+      const [profile, teamData, treeData] = await Promise.all([
         apiService.getProfile(),
-        apiService.getTeam()
+        apiService.getTeam(),
+        apiService.getMatrixTree().catch(() => null)
       ]);
+      
+      // Update localStorage with latest profile
+      if (profile) {
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // Check if stage changed
+        if (previousStage && previousStage !== profile.mlmLevel) {
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 5000);
+        }
+        
+        localStorage.setItem('user', JSON.stringify({
+          ...storedUser,
+          mlmLevel: profile.mlmLevel
+        }));
+        
+        setPreviousStage(profile.mlmLevel);
+      }
       
       setUserProfile(profile);
       if (teamData && teamData.team) {
         setTeamMembers(teamData.team);
+      }
+      if (treeData && treeData.tree) {
+        setMatrixTree(treeData.tree);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -166,8 +193,8 @@ export default function TeamTree() {
       <div className="bg-white rounded-2xl shadow-card p-8">
         <h2 className="text-xl font-bold text-gray-900 mb-6">Pyramid Matrix Structure</h2>
         <PyramidTree 
-          userStage={userProfile?.mlmLevel === 'no_stage' ? 'feeder' : (userProfile?.mlmLevel || 'feeder')}
-          teamMembers={teamMembers}
+          userStage={userProfile?.mlmLevel || 'no_stage'}
+          teamMembers={matrixTree?.children || teamMembers}
           matrixData={(() => {
             const maxSlots = (userProfile?.mlmLevel === 'no_stage' || userProfile?.mlmLevel === 'feeder') ? 6 : 14;
             return teamMembers.slice(0, maxSlots).map((m, i) => ({
@@ -220,7 +247,9 @@ export default function TeamTree() {
 
       {showToast && (
         <Toast 
-          message="Referral link copied!"
+          message={previousStage && userProfile?.mlmLevel !== previousStage ? 
+            `🎉 Congratulations! You've been upgraded to ${userProfile?.mlmLevel?.toUpperCase()} stage!` : 
+            "Referral link copied!"}
           type="success"
           onClose={() => setShowToast(false)}
         />

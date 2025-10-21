@@ -12,6 +12,9 @@ export default function Team() {
 
   useEffect(() => {
     fetchData();
+    // Auto-refresh every 5 seconds to detect stage changes
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
