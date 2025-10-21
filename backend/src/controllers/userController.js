@@ -67,12 +67,12 @@ const getProfile = async (req, res) => {
       console.log('Error getting team size');
     }
     
-    // Get actual MLM earnings from referral_earnings table
+    // Get actual MLM earnings from referral_earnings table (both held and completed)
     let mlmEarnings = 0;
     try {
       const earningsResult = await pool.query(
-        'SELECT COALESCE(SUM(amount), 0) as total FROM referral_earnings WHERE user_id = $1 AND status = $2',
-        [userId, 'completed']
+        'SELECT COALESCE(SUM(amount), 0) as total FROM referral_earnings WHERE user_id = $1',
+        [userId]
       );
       mlmEarnings = parseFloat(earningsResult.rows[0]?.total || 0);
     } catch (e) {
