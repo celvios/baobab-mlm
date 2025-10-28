@@ -13,6 +13,7 @@ export default function TeamTree() {
   const [matrixTree, setMatrixTree] = useState(null);
   const [loading, setLoading] = useState(true);
   const [previousStage, setPreviousStage] = useState(null);
+  const [stageJustChanged, setStageJustChanged] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -36,7 +37,11 @@ export default function TeamTree() {
         // Check if stage changed
         if (previousStage && previousStage !== profile.mlmLevel) {
           setShowToast(true);
-          setTimeout(() => setShowToast(false), 5000);
+          setStageJustChanged(true);
+          setTimeout(() => {
+            setShowToast(false);
+            setStageJustChanged(false);
+          }, 5000);
         }
         
         localStorage.setItem('user', JSON.stringify({
@@ -191,8 +196,16 @@ export default function TeamTree() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-card p-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Pyramid Matrix Structure</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          Pyramid Matrix Structure
+          {stageJustChanged && (
+            <span className="ml-3 text-sm text-green-600 font-normal animate-pulse">
+              🎉 New {userProfile?.mlmLevel?.toUpperCase()} Matrix Started!
+            </span>
+          )}
+        </h2>
         <PyramidTree 
+          key={userProfile?.mlmLevel}
           userStage={userProfile?.mlmLevel}
           teamMembers={teamMembers}
           matrixData={(() => {
