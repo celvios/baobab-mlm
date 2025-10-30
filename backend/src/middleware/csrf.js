@@ -15,11 +15,13 @@ const csrfProtection = (req, res, next) => {
   const sessionId = req.headers['authorization'] || req.ip;
 
   if (!token) {
+    console.log('CSRF token missing for session:', sessionId);
     return res.status(403).json({ message: 'CSRF token missing' });
   }
 
   const storedToken = csrfTokens.get(sessionId);
   if (!storedToken || storedToken !== token) {
+    console.log('CSRF token mismatch:', { sessionId, provided: token, stored: storedToken, allTokens: Array.from(csrfTokens.keys()) });
     return res.status(403).json({ message: 'Invalid CSRF token' });
   }
 
@@ -30,6 +32,8 @@ const generateCsrfToken = (req, res, next) => {
   const sessionId = req.headers['authorization'] || req.ip;
   const token = generateToken();
   csrfTokens.set(sessionId, token);
+  
+  console.log('Generated CSRF token for session:', sessionId);
   
   setTimeout(() => csrfTokens.delete(sessionId), 3600000);
   

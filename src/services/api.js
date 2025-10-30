@@ -134,6 +134,8 @@ class ApiService {
   }
 
   async resendVerification(email) {
+    // Refresh CSRF token before resending
+    await this.fetchCsrfToken();
     return this.request('/auth/resend-verification', {
       method: 'POST',
       body: JSON.stringify({ email }),
@@ -141,6 +143,8 @@ class ApiService {
   }
 
   async verifyOTP(email, otp) {
+    // Refresh CSRF token before verification
+    await this.fetchCsrfToken();
     return this.request('/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify({ email, otp }),

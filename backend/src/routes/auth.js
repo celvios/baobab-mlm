@@ -19,14 +19,14 @@ router.post('/login', validateLogin, login);
 // Verify email
 router.get('/verify-email', verifyEmail);
 
-// Resend verification
-router.post('/resend-verification', csrfProtection, [
+// Resend verification (CSRF disabled - user not authenticated yet)
+router.post('/resend-verification', [
   body('email').isEmail().normalizeEmail(),
   handleValidationErrors
 ], resendVerification);
 
-// Verify OTP
-router.post('/verify-otp', csrfProtection, [
+// Verify OTP (CSRF disabled - user not authenticated yet)
+router.post('/verify-otp', [
   body('email').isEmail().normalizeEmail(),
   body('otp').isLength({ min: 6, max: 6 }),
   handleValidationErrors
