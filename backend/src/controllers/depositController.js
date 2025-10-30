@@ -28,14 +28,14 @@ const submitDepositRequest = async (req, res) => {
       return res.status(400).json({ message: 'Payment proof image is required' });
     }
 
-    // Check if user already has a deposit request
+    // Check if user already has a pending deposit request
     const existingDeposit = await pool.query(
-      'SELECT * FROM deposit_requests WHERE user_id = $1',
-      [userId]
+      'SELECT * FROM deposit_requests WHERE user_id = $1 AND status = $2',
+      [userId, 'pending']
     );
     
     if (existingDeposit.rows.length > 0) {
-      return res.status(400).json({ message: 'You have already submitted a deposit request. Please wait for admin approval.' });
+      return res.status(400).json({ message: 'You have a pending deposit request. Please wait for admin approval.' });
     }
 
     // Convert image to base64
