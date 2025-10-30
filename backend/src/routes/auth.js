@@ -11,10 +11,10 @@ router.get('/csrf-token', generateCsrfToken, (req, res) => {
 });
 
 // Register
-router.post('/register', csrfProtection, validateRegistration, register);
+router.post('/register', validateRegistration, register);
 
 // Login
-router.post('/login', csrfProtection, validateLogin, login);
+router.post('/login', validateLogin, login);
 
 // Verify email
 router.get('/verify-email', verifyEmail);
