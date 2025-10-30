@@ -80,9 +80,9 @@ export default function DepositModal({ isOpen, onClose, onSuccess }) {
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="font-semibold text-blue-900 mb-2">Bank Details</h3>
               <div className="text-sm text-blue-800 space-y-1">
-                <p><strong>Bank:</strong> First Bank</p>
-                <p><strong>Account Name:</strong> Baobab MLM Ltd</p>
-                <p><strong>Account Number:</strong> 1234567890</p>
+                <p><strong>Bank:</strong> Moniepoint</p>
+                <p><strong>Account Name:</strong> BAOBAB EXPORT SOLUTIONS LTD</p>
+                <p><strong>Account Number:</strong> 6244482485</p>
               </div>
             </div>
 

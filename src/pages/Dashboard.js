@@ -66,11 +66,6 @@ export default function Dashboard() {
   
   useEffect(() => {
     fetchDashboardData();
-    // Auto-refresh every 5 seconds to detect stage changes
-    const interval = setInterval(() => {
-      fetchDashboardData();
-    }, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   const refreshWalletData = async () => {
@@ -99,10 +94,7 @@ export default function Dashboard() {
   useEffect(() => {
     const convertBalances = async () => {
       if (userProfile?.wallet && !currencyLoading) {
-        // Balance is already in NGN, don't convert
-        // MLM earnings are in USD, convert to NGN
         const convertedEarnings = await convertPrice(userProfile.wallet.mlmEarnings || 0);
-        
         setConvertedBalances({
           balance: userProfile.wallet.balance || 0,
           mlmEarnings: convertedEarnings
@@ -110,7 +102,7 @@ export default function Dashboard() {
       }
     };
     convertBalances();
-  }, [userProfile, currencyLoading, convertPrice]);
+  }, [userProfile?.wallet?.balance, userProfile?.wallet?.mlmEarnings, currencyLoading]);
 
   useEffect(() => {
     const convertTeamEarnings = async () => {
@@ -125,7 +117,7 @@ export default function Dashboard() {
       }
     };
     convertTeamEarnings();
-  }, [teamMembers, currencyLoading, convertPrice]);
+  }, [teamMembers.length, currencyLoading]);
 
   const fetchDashboardData = async () => {
     try {
