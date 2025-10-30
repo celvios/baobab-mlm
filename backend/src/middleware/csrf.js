@@ -33,6 +33,12 @@ const generateCsrfToken = (req, res, next) => {
   
   setTimeout(() => csrfTokens.delete(sessionId), 3600000);
   
+  res.cookie('XSRF-TOKEN', token, { 
+    httpOnly: false, 
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none',
+    maxAge: 3600000 
+  });
   res.locals.csrfToken = token;
   next();
 };

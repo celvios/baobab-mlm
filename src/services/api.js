@@ -10,12 +10,25 @@ class ApiService {
 
   async fetchCsrfToken() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/csrf-token`);
+      const response = await fetch(`${API_BASE_URL}/api/auth/csrf-token`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       this.csrfToken = data.csrfToken;
+      // Also try to get from cookie
+      const cookieToken = this.getCookie('XSRF-TOKEN');
+      if (cookieToken) {
+        this.csrfToken = cookieToken;
+      }
     } catch (error) {
       console.error('Failed to fetch CSRF token:', error);
     }
+  }
+
+  getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
   }
 
   setToken(token) {
@@ -48,6 +61,7 @@ class ApiService {
     const url = `${API_BASE_URL}/api${endpoint}`;
     const config = {
       headers: this.getHeaders(),
+      credentials: 'include',
       ...options,
     };
 
