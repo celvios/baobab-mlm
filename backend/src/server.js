@@ -31,7 +31,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     const allowedOrigins = process.env.NODE_ENV === 'production' 
-      ? [/\.vercel\.app$/, 'https://baobab-frontend.vercel.app', 'https://baobab-mlm.vercel.app']
+      ? [/\.vercel\.app$/, 'https://baobabworldwide.com', 'https://www.baobabworldwide.com', 'https://baobab-mlm.vercel.app']
       : ['http://localhost:3000', 'http://localhost:3002', 'http://192.168.1.84:3002'];
     
     const isAllowed = allowedOrigins.some(allowedOrigin => {
