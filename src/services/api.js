@@ -3,7 +3,19 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://baobab-mlm.onrend
 class ApiService {
   constructor() {
     this.token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+    this.csrfToken = null;
     console.log('API Base URL:', API_BASE_URL);
+    this.fetchCsrfToken();
+  }
+
+  async fetchCsrfToken() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/csrf-token`);
+      const data = await response.json();
+      this.csrfToken = data.csrfToken;
+    } catch (error) {
+      console.error('Failed to fetch CSRF token:', error);
+    }
   }
 
   setToken(token) {
@@ -23,6 +35,10 @@ class ApiService {
     const token = this.token || localStorage.getItem('token') || localStorage.getItem('adminToken');
     if (token) {
       headers.Authorization = `Bearer ${token}`;
+    }
+    
+    if (this.csrfToken) {
+      headers['X-CSRF-Token'] = this.csrfToken;
     }
     
     return headers;
@@ -67,6 +83,9 @@ class ApiService {
 
   // Auth methods
   async register(userData) {
+    if (!this.csrfToken) {
+      await this.fetchCsrfToken();
+    }
     return this.request('/auth/register', {
       method: 'POST',
       body: JSON.stringify({
@@ -81,6 +100,9 @@ class ApiService {
   }
 
   async login(email, password) {
+    if (!this.csrfToken) {
+      await this.fetchCsrfToken();
+    }
     const response = await this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),

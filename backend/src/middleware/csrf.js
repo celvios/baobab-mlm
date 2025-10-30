@@ -12,9 +12,9 @@ const csrfProtection = (req, res, next) => {
   }
 
   const token = req.headers['x-csrf-token'] || req.body._csrf;
-  const sessionId = req.headers['authorization'];
+  const sessionId = req.headers['authorization'] || req.ip;
 
-  if (!token || !sessionId) {
+  if (!token) {
     return res.status(403).json({ message: 'CSRF token missing' });
   }
 
