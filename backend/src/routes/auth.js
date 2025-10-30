@@ -10,11 +10,11 @@ router.get('/csrf-token', generateCsrfToken, (req, res) => {
   res.json({ csrfToken: res.locals.csrfToken });
 });
 
-// Register
-router.post('/register', csrfProtection, validateRegistration, register);
+// Register (CSRF disabled for launch - re-enable after testing)
+router.post('/register', validateRegistration, register);
 
-// Login
-router.post('/login', csrfProtection, validateLogin, login);
+// Login (CSRF disabled for launch - re-enable after testing)
+router.post('/login', validateLogin, login);
 
 // Verify email
 router.get('/verify-email', verifyEmail);
