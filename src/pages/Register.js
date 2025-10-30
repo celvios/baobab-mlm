@@ -8,6 +8,12 @@ import apiService from '../services/api';
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    hasMinLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false
+  });
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -53,13 +59,22 @@ export default function Register() {
   const { addNotification } = useNotification();
   const navigate = useNavigate();
 
+  const checkPasswordStrength = (password) => {
+    setPasswordStrength({
+      hasMinLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password)
+    });
+  };
+
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
       addNotification('Passwords do not match', 'error');
       return false;
     }
-    if (formData.password.length < 6) {
-      addNotification('Password must be at least 6 characters', 'error');
+    if (!passwordStrength.hasMinLength || !passwordStrength.hasUpperCase || !passwordStrength.hasLowerCase || !passwordStrength.hasNumber) {
+      addNotification('Password does not meet all requirements', 'error');
       return false;
     }
     if (!formData.agreeToTerms) {
@@ -294,7 +309,10 @@ export default function Register() {
                   required
                   className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  onChange={(e) => {
+                    setFormData({...formData, password: e.target.value});
+                    checkPasswordStrength(e.target.value);
+                  }}
                 />
                 <button
                   type="button"
@@ -303,6 +321,24 @@ export default function Register() {
                 >
                   {showPassword ? <EyeSlashIcon className="h-5 w-5 text-gray-400" /> : <EyeIcon className="h-5 w-5 text-gray-400" />}
                 </button>
+              </div>
+              <div className="mt-2 space-y-1 text-xs">
+                <div className={`flex items-center ${passwordStrength.hasMinLength ? 'text-green-600' : 'text-gray-500'}`}>
+                  <span className="mr-2">{passwordStrength.hasMinLength ? '✓' : '○'}</span>
+                  At least 8 characters
+                </div>
+                <div className={`flex items-center ${passwordStrength.hasUpperCase ? 'text-green-600' : 'text-gray-500'}`}>
+                  <span className="mr-2">{passwordStrength.hasUpperCase ? '✓' : '○'}</span>
+                  One uppercase letter
+                </div>
+                <div className={`flex items-center ${passwordStrength.hasLowerCase ? 'text-green-600' : 'text-gray-500'}`}>
+                  <span className="mr-2">{passwordStrength.hasLowerCase ? '✓' : '○'}</span>
+                  One lowercase letter
+                </div>
+                <div className={`flex items-center ${passwordStrength.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
+                  <span className="mr-2">{passwordStrength.hasNumber ? '✓' : '○'}</span>
+                  One number
+                </div>
               </div>
             </div>
 
