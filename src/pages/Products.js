@@ -264,7 +264,7 @@ export default function Products() {
           </div>
 
           {/* Related Products Sidebar */}
-          <div className="w-full lg:w-80">
+          <div className="hidden lg:block lg:w-80">
             <div className="bg-white rounded-2xl p-6">
               <h3 className="text-xl font-bold mb-6">Related Products</h3>
               <div className="space-y-4">
@@ -349,7 +349,7 @@ export default function Products() {
         </div>
 
         {/* Related Products Sidebar */}
-        <div className="w-full lg:w-80">
+        <div className="hidden lg:block lg:w-80">
           <h3 className="text-xl font-bold mb-6">Related Products</h3>
           
           <div className="space-y-4">
