@@ -66,7 +66,7 @@ export default function TeamTree() {
     }
   };
 
-  const referralLink = userProfile?.referralCode ? `${process.env.REACT_APP_FRONTEND_URL || window.location.origin}/register?ref=${userProfile.referralCode}` : 'Loading...';
+  const referralLink = userProfile?.referralCode ? `${process.env.REACT_APP_FRONTEND_URL || window.location.origin}/register?ref=${userProfile.referralCode}` : (loading ? 'Loading...' : 'No referral code available');
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -240,24 +240,26 @@ export default function TeamTree() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-card p-6">
-        <div className="flex items-center mb-4">
-          <LinkIcon className="h-5 w-5 text-gray-600 mr-2" />
-          <h3 className="text-lg font-semibold text-gray-900">Grow Your Team</h3>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <code className="text-sm text-gray-700 flex-1 mr-4 break-all">{referralLink}</code>
-            <button
-              onClick={copyReferralLink}
-              className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center"
-            >
-              <ClipboardDocumentIcon className="h-4 w-4 mr-2" />
-              Copy
-            </button>
+      {userProfile?.referralCode && (
+        <div className="bg-white rounded-xl shadow-card p-6">
+          <div className="flex items-center mb-4">
+            <LinkIcon className="h-5 w-5 text-gray-600 mr-2" />
+            <h3 className="text-lg font-semibold text-gray-900">Grow Your Team</h3>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <code className="text-sm text-gray-700 flex-1 mr-4 break-all">{referralLink}</code>
+              <button
+                onClick={copyReferralLink}
+                className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center"
+              >
+                <ClipboardDocumentIcon className="h-4 w-4 mr-2" />
+                Copy
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {showToast && (
         <Toast 
