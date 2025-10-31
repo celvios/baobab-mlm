@@ -8,9 +8,25 @@
       "config": {
         "distDir": "build"
       }
+    },
+    {
+      "src": "home/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "^/$",
+      "dest": "/home/index.php"
+    },
+    {
+      "src": "^/(aboutus|contact|product|details)$",
+      "dest": "/home/$1.php"
+    },
+    {
+      "src": "^/home/(.*)",
+      "dest": "/home/$1"
+    },
     {
       "src": "/static/(.*)",
       "headers": {
