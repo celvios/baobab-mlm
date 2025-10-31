@@ -13,7 +13,7 @@
   "routes": [
     {
       "src": "^/$",
-      "dest": "/home/index.php"
+      "dest": "/home.html"
     },
     {
       "src": "^/home/(.*)",
