@@ -51,7 +51,13 @@ const CartDropdown = ({ isOpen, onClose, userProfile }) => {
 
   return (
     <>
-      <div className="fixed sm:absolute right-0 sm:right-0 top-0 sm:top-12 w-full sm:w-96 h-full sm:h-auto bg-white sm:rounded-lg shadow-xl border z-50">
+      {/* Mobile backdrop */}
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+        onClick={onClose}
+      />
+      
+      <div className="fixed sm:absolute right-0 sm:right-0 top-0 sm:top-12 w-full sm:w-96 h-full sm:h-auto bg-white sm:rounded-lg shadow-xl border z-50 flex flex-col">
       <div className="p-4 border-b flex items-center justify-between">
         <h3 className="text-lg font-semibold">Shopping Cart</h3>
         <button onClick={onClose} className="sm:hidden p-2 hover:bg-gray-100 rounded-lg">
@@ -61,7 +67,7 @@ const CartDropdown = ({ isOpen, onClose, userProfile }) => {
         </button>
       </div>
       
-      <div className="max-h-96 sm:max-h-96 overflow-y-auto flex-1">
+      <div className="overflow-y-auto flex-1">
         {cartItems.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             Your cart is empty
