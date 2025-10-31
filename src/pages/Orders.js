@@ -164,7 +164,7 @@ export default function Orders() {
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
       </div>
 
       <MarketUpdates />
@@ -249,18 +249,18 @@ export default function Orders() {
       <div className="bg-white rounded-2xl shadow-card overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">History</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">History</h2>
             <div className="flex space-x-3">
               <button 
                 onClick={() => setShowDeleteAllModal(true)}
-                className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium"
+                className="bg-black text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium"
               >
                 Delete All
               </button>
               <div className="relative">
                 <button 
                   onClick={() => setShowSortDropdown(!showSortDropdown)}
-                  className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center"
+                  className="border border-gray-300 text-gray-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center"
                 >
                   Sort By: {sortBy === 'date' ? 'Date' : sortBy === 'amount' ? 'Amount' : sortBy === 'product' ? 'Product' : 'Status'}
                   <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
