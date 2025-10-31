@@ -1,0 +1,22 @@
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Serve home folder for root and marketing pages
+RewriteCond %{REQUEST_URI} ^/$
+RewriteRule ^(.*)$ /home/index.php [L]
+
+RewriteCond %{REQUEST_URI} ^/(aboutus|contact|product|details)
+RewriteRule ^(.*)$ /home/$1.php [L]
+
+# Serve static assets from home folder
+RewriteCond %{REQUEST_URI} ^/(css|js|img|lib|productimage|scss)/
+RewriteRule ^(.*)$ /home/$1 [L]
+
+# All other routes go to React app (index.html)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/home/
+RewriteRule ^(.*)$ /index.html [L]
