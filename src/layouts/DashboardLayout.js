@@ -201,7 +201,7 @@ export default function DashboardLayout() {
           </button>
           
           <div className="flex flex-1 justify-end items-center px-4 lg:px-6 space-x-2 lg:space-x-3">
-            <div className="relative hidden sm:block">
+            <div className="relative">
               <button 
                 onClick={() => setCartOpen(!cartOpen)}
                 className="cart-button p-2 lg:p-3 text-gray-500 hover:text-primary-600 transition-all duration-200 rounded-lg lg:rounded-xl hover:bg-primary-50 relative"
