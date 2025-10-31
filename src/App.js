@@ -95,13 +95,6 @@ const PublicRoute = ({ children }) => {
 };
 
 function AppContent() {
-  // Redirect root to static homepage
-  React.useEffect(() => {
-    if (window.location.pathname === '/') {
-      window.location.replace('/home.html');
-    }
-  }, []);
-
   return (
     <Router>
       <div className="App">
