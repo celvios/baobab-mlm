@@ -843,14 +843,33 @@ router.put('/withdrawals/:id', adminAuth, async (req, res) => {
 router.get('/test-withdrawals', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT wr.*, u.full_name, u.email 
+      SELECT wr.*, u.full_name, u.email, up.bank_name, up.account_number, up.account_name
       FROM withdrawal_requests wr
       LEFT JOIN users u ON wr.user_id = u.id
+      LEFT JOIN user_profiles up ON u.id = up.user_id
       ORDER BY wr.created_at DESC
     `);
+    
+    const formattedRequests = result.rows.map(row => ({
+      id: row.id,
+      amount: parseFloat(row.amount),
+      status: row.status,
+      source: 'wallet',
+      createdAt: row.created_at,
+      user: {
+        fullName: row.full_name,
+        email: row.email
+      },
+      bankDetails: {
+        bankName: row.bank_name,
+        accountNumber: row.account_number,
+        accountName: row.account_name
+      }
+    }));
+    
     res.json({ 
       total: result.rows.length,
-      withdrawals: result.rows 
+      requests: formattedRequests
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
