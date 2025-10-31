@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="User Dashboard" />
-    <title>User Dashboard</title>
-  </head>
-  <body>
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Baobab Worldwide</title>
+    <link href="/home/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/home/css/style.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-  </body>
+    <script>
+        // Check if we're on root path
+        if (window.location.pathname === '/') {
+            // Load the PHP homepage content
+            window.location.href = '/home/';
+        }
+    </script>
+</body>
 </html>

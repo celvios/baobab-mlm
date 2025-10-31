@@ -19,13 +19,13 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "CI=false react-scripts build",
+    "build": "CI=false react-scripts build && cp -r home build/",
     "serve": "node server.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "node deploy.js",
     "test-build": "node test-build.js",
-    "vercel-build": "CI=false react-scripts build"
+    "vercel-build": "CI=false react-scripts build && cp -r home build/"
   },
   "eslintConfig": {
     "extends": [

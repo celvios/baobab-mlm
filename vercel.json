@@ -8,10 +8,6 @@
       "config": {
         "distDir": "build"
       }
-    },
-    {
-      "src": "home/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -20,31 +16,20 @@
       "dest": "/home/index.php"
     },
     {
-      "src": "^/(aboutus|contact|product|details)$",
-      "dest": "/home/$1.php"
-    },
-    {
       "src": "^/home/(.*)",
       "dest": "/home/$1"
     },
     {
       "src": "/static/(.*)",
-      "headers": {
-        "cache-control": "s-maxage=31536000,immutable"
-      }
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg))",
-      "headers": {
-        "cache-control": "s-maxage=31536000,immutable"
-      }
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
