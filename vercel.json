@@ -16,6 +16,18 @@
       "dest": "/home.html"
     },
     {
+      "src": "^/aboutus$",
+      "dest": "/aboutus.html"
+    },
+    {
+      "src": "^/product$",
+      "dest": "/product.html"
+    },
+    {
+      "src": "^/contact$",
+      "dest": "/contact.html"
+    },
+    {
       "src": "^/home/(.*)",
       "dest": "/home/$1"
     },
