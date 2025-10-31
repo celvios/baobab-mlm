@@ -51,12 +51,17 @@ const CartDropdown = ({ isOpen, onClose, userProfile }) => {
 
   return (
     <>
-      <div className="absolute right-0 top-12 w-96 bg-white rounded-lg shadow-xl border z-50">
-      <div className="p-4 border-b">
+      <div className="fixed sm:absolute right-0 sm:right-0 top-0 sm:top-12 w-full sm:w-96 h-full sm:h-auto bg-white sm:rounded-lg shadow-xl border z-50">
+      <div className="p-4 border-b flex items-center justify-between">
         <h3 className="text-lg font-semibold">Shopping Cart</h3>
+        <button onClick={onClose} className="sm:hidden p-2 hover:bg-gray-100 rounded-lg">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
       
-      <div className="max-h-96 overflow-y-auto">
+      <div className="max-h-96 sm:max-h-96 overflow-y-auto flex-1">
         {cartItems.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             Your cart is empty
