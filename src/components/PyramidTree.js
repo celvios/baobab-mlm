@@ -4,7 +4,7 @@ import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 export default function PyramidTree({ userStage, matrixData, teamMembers = [] }) {
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   
-  const isFeeder = userStage === 'feeder' || userStage === 'no_stage';
+  const isFeeder = !userStage || userStage === 'feeder' || userStage === 'no_stage' || userStage === 'NaN';
   const totalSlots = isFeeder ? 6 : 14;
   
   const stageBonus = {
@@ -109,7 +109,9 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
         `}</style>
         
         <div className="text-center mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Matrix Structure (2x2)</h3>
+          <h3 className="text-lg font-bold text-gray-900">
+            {!userStage || userStage === 'NaN' || userStage === 'no_stage' ? 'No Stage' : 'Feeder'} Matrix (2x2)
+          </h3>
           <p className="text-sm text-gray-600">{filledSlotsCount}/6 slots filled</p>
         </div>
         
