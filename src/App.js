@@ -99,7 +99,6 @@ function AppContent() {
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/" element={<Homepage />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/security-verification" element={<PublicRoute><SecurityVerification /></PublicRoute>} />
