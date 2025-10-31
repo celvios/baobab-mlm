@@ -125,14 +125,14 @@ export default function SecurityVerification() {
             <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
               Enter verification code
             </label>
-            <div className="flex justify-center space-x-3">
+            <div className="flex justify-center space-x-2 sm:space-x-3">
               {otp.map((digit, index) => (
                 <input
                   key={index}
                   id={`otp-${index}`}
                   type="text"
                   maxLength="1"
-                  className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-10 h-10 sm:w-12 sm:h-12 text-center text-lg sm:text-xl font-bold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
