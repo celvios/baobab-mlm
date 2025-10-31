@@ -155,7 +155,7 @@ export default function Products() {
         <MarketUpdates />
 
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Main Content */>
+          {/* Main Content */}
           <div className="flex-1">
             {/* Breadcrumb */}
             <div className="flex items-center mb-6">
@@ -263,7 +263,7 @@ export default function Products() {
             </div>
           </div>
 
-          {/* Related Products Sidebar */>
+          {/* Related Products Sidebar */}
           <div className="w-full lg:w-80">
             <div className="bg-white rounded-2xl p-6">
               <h3 className="text-xl font-bold mb-6">Related Products</h3>
@@ -307,7 +307,7 @@ export default function Products() {
       <MarketUpdates />
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        {/* Main Products Grid */>
+        {/* Main Products Grid */}
         <div className="flex-1">
           <h2 className="text-2xl font-bold mb-6">All Products</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -348,7 +348,7 @@ export default function Products() {
           </div>
         </div>
 
-        {/* Related Products Sidebar */>
+        {/* Related Products Sidebar */}
         <div className="w-full lg:w-80">
           <h3 className="text-xl font-bold mb-6">Related Products</h3>
           
