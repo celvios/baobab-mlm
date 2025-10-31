@@ -53,11 +53,12 @@ const CartDropdown = ({ isOpen, onClose, userProfile }) => {
     <>
       {/* Mobile backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+        className="fixed inset-0 bg-black bg-opacity-50 sm:hidden"
+        style={{ zIndex: 9998 }}
         onClick={onClose}
       />
       
-      <div className="fixed sm:absolute right-0 sm:right-0 top-0 sm:top-12 w-full sm:w-96 h-full sm:h-auto bg-white sm:rounded-lg shadow-xl border z-50 flex flex-col">
+      <div className="fixed sm:absolute left-0 sm:left-auto right-0 top-0 sm:top-12 w-full sm:w-96 h-screen sm:h-auto bg-white sm:rounded-lg shadow-xl border flex flex-col" style={{ zIndex: 9999 }}>
       <div className="p-4 border-b flex items-center justify-between">
         <h3 className="text-lg font-semibold">Shopping Cart</h3>
         <button onClick={onClose} className="sm:hidden p-2 hover:bg-gray-100 rounded-lg">
