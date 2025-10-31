@@ -95,7 +95,7 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
   
   if (isFeeder) {
     return (
-      <div className="flex flex-col items-center space-y-8 py-8">
+      <div className="flex flex-col items-center space-y-4 sm:space-y-8 py-4 sm:py-8 overflow-x-auto w-full">
         <style>{`
           @keyframes popIn {
             0% { transform: scale(0); opacity: 0; }
@@ -119,12 +119,12 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
           YOU
         </div>
         
-        <div className="flex space-x-32">
+        <div className="flex space-x-8 sm:space-x-16 md:space-x-32">
           <SlotNode index={0} member={teamMembers[0]} level={1} />
           <SlotNode index={1} member={teamMembers[1]} level={1} />
         </div>
         
-        <div className="flex space-x-16">
+        <div className="flex space-x-4 sm:space-x-8 md:space-x-16">
           <SlotNode index={2} member={teamMembers[2]} level={2} />
           <SlotNode index={3} member={teamMembers[3]} level={2} />
           <SlotNode index={4} member={teamMembers[4]} level={2} />
@@ -135,7 +135,7 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
   }
   
   return (
-    <div className="flex flex-col items-center space-y-6 py-8">
+    <div className="flex flex-col items-center space-y-4 sm:space-y-6 py-4 sm:py-8 overflow-x-auto w-full">
       <style>{`
         @keyframes popIn {
           0% { transform: scale(0); opacity: 0; }
@@ -157,19 +157,19 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
         YOU
       </div>
       
-      <div className="flex space-x-32">
+      <div className="flex space-x-8 sm:space-x-16 md:space-x-32">
         <SlotNode index={0} member={teamMembers[0]} level={1} />
         <SlotNode index={1} member={teamMembers[1]} level={1} />
       </div>
       
-      <div className="flex space-x-16">
+      <div className="flex space-x-4 sm:space-x-8 md:space-x-16">
         <SlotNode index={2} member={teamMembers[2]} level={2} />
         <SlotNode index={3} member={teamMembers[3]} level={2} />
         <SlotNode index={4} member={teamMembers[4]} level={2} />
         <SlotNode index={5} member={teamMembers[5]} level={2} />
       </div>
       
-      <div className="flex space-x-8">
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-4 md:gap-8">
         <SlotNode index={6} member={teamMembers[6]} level={3} />
         <SlotNode index={7} member={teamMembers[7]} level={3} />
         <SlotNode index={8} member={teamMembers[8]} level={3} />
