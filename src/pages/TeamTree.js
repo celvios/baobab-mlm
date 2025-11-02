@@ -22,6 +22,20 @@ export default function TeamTree() {
     return () => clearInterval(interval);
   }, []);
 
+  const flattenTeam = (members) => {
+    const flattened = [];
+    const flatten = (nodes) => {
+      nodes.forEach(node => {
+        flattened.push(node);
+        if (node.children && node.children.length > 0) {
+          flatten(node.children);
+        }
+      });
+    };
+    flatten(members);
+    return flattened;
+  };
+
   const fetchData = async () => {
     try {
       const [profile, teamData, treeData] = await Promise.all([
@@ -54,7 +68,7 @@ export default function TeamTree() {
       
       setUserProfile(profile);
       if (teamData && teamData.team) {
-        setTeamMembers(teamData.team);
+        setTeamMembers(flattenTeam(teamData.team));
       }
       if (treeData && treeData.tree) {
         setMatrixTree(treeData.tree);
@@ -85,33 +99,9 @@ export default function TeamTree() {
     return levelColors[level] || 'bg-red-500';
   };
 
-  const countAllMembers = (members) => {
-    let count = 0;
-    const countRecursive = (nodes) => {
-      nodes.forEach(node => {
-        count++;
-        if (node.children && node.children.length > 0) {
-          countRecursive(node.children);
-        }
-      });
-    };
-    countRecursive(members);
-    return count;
-  };
+  const countAllMembers = (members) => members.length;
 
-  const countActiveMembers = (members) => {
-    let count = 0;
-    const countRecursive = (nodes) => {
-      nodes.forEach(node => {
-        if (node.has_deposited) count++;
-        if (node.children && node.children.length > 0) {
-          countRecursive(node.children);
-        }
-      });
-    };
-    countRecursive(members);
-    return count;
-  };
+  const countActiveMembers = (members) => members.filter(m => m.has_deposited).length;
 
   if (loading) {
     return (
