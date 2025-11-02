@@ -73,20 +73,88 @@ export default function PyramidTree({ userStage, matrixData, teamMembers = [] })
         )}
         
         {hasChildren && isExpanded && (
-          <div className="mt-4 flex flex-wrap justify-center gap-3 max-w-[200px]" style={{ animation: 'fadeIn 0.3s ease-out' }}>
-            {member.children.map((child, idx) => (
-              <div key={child.id || idx} className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shadow">
-                  {child.full_name?.charAt(0) || child.email?.charAt(0).toUpperCase()}
+          <div className="mt-4 flex flex-wrap justify-center gap-3" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+            {member.children.map((child, idx) => {
+              const childHasChildren = child.children && child.children.length > 0;
+              const isChildExpanded = expandedNodes.has(child.id);
+              
+              return (
+                <div key={child.id || idx} className="flex flex-col items-center">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow">
+                      {child.full_name?.charAt(0) || child.email?.charAt(0).toUpperCase()}
+                    </div>
+                    {childHasChildren && (
+                      <button
+                        onClick={() => toggleNode(child.id)}
+                        className="absolute -bottom-1 -right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-md hover:bg-purple-600 transition-all hover:scale-110"
+                      >
+                        {isChildExpanded ? '−' : '+'}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs mt-1 text-gray-700 max-w-[70px] truncate">
+                    {child.full_name || child.email?.split('@')[0]}
+                  </p>
+                  {child.has_deposited && (
+                    <p className="text-xs text-green-600 font-bold">+${bonusAmount}</p>
+                  )}
+                  {child.mlm_level && (
+                    <p className="text-xs text-purple-600 font-medium">
+                      {child.mlm_level === 'no_stage' ? 'No Stage' : child.mlm_level.charAt(0).toUpperCase() + child.mlm_level.slice(1)}
+                    </p>
+                  )}
+                  
+                  {childHasChildren && isChildExpanded && (
+                    <div className="mt-2 flex flex-wrap justify-center gap-2" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                      {child.children.map((grandchild, gidx) => {
+                        const gcHasChildren = grandchild.children && grandchild.children.length > 0;
+                        const isGcExpanded = expandedNodes.has(grandchild.id);
+                        
+                        return (
+                          <div key={grandchild.id || gidx} className="flex flex-col items-center">
+                            <div className="relative">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow">
+                                {grandchild.full_name?.charAt(0) || grandchild.email?.charAt(0).toUpperCase()}
+                              </div>
+                              {gcHasChildren && (
+                                <button
+                                  onClick={() => toggleNode(grandchild.id)}
+                                  className="absolute -bottom-1 -right-1 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-md hover:bg-pink-600 transition-all"
+                                >
+                                  {isGcExpanded ? '−' : '+'}
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-xs mt-1 text-gray-600 max-w-[60px] truncate">
+                              {grandchild.full_name || grandchild.email?.split('@')[0]}
+                            </p>
+                            {grandchild.has_deposited && (
+                              <p className="text-xs text-green-600 font-bold">+${bonusAmount}</p>
+                            )}
+                            
+                            {gcHasChildren && isGcExpanded && grandchild.children && (
+                              <div className="mt-2 flex flex-wrap justify-center gap-1 max-w-[120px]" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                                {grandchild.children.map((ggc, ggidx) => (
+                                  <div key={ggc.id || ggidx} className="flex flex-col items-center">
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center text-white text-xs font-bold shadow">
+                                      {ggc.full_name?.charAt(0) || ggc.email?.charAt(0).toUpperCase()}
+                                    </div>
+                                    <p className="text-xs mt-1 text-gray-500 max-w-[50px] truncate">
+                                      {ggc.full_name || ggc.email?.split('@')[0]}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                <p className="text-xs mt-1 text-gray-700 max-w-[60px] truncate">
-                  {child.full_name || child.email}
-                </p>
-                {child.has_deposited && (
-                  <p className="text-xs text-green-600 font-bold">+${bonusAmount}</p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

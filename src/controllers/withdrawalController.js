@@ -3,21 +3,28 @@ const pool = require('../config/database');
 const requestWithdrawal = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { amount } = req.body;
+    const { amount, source = 'balance' } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid withdrawal amount' });
     }
 
-    // Check wallet balance
-    const walletResult = await pool.query('SELECT balance FROM wallets WHERE user_id = $1', [userId]);
+    if (!['balance', 'earnings'].includes(source)) {
+      return res.status(400).json({ message: 'Invalid withdrawal source' });
+    }
+
+    // Check wallet
+    const walletResult = await pool.query('SELECT balance, total_earned FROM wallets WHERE user_id = $1', [userId]);
     if (walletResult.rows.length === 0) {
       return res.status(404).json({ message: 'Wallet not found' });
     }
 
-    const currentBalance = parseFloat(walletResult.rows[0].balance);
-    if (amount > currentBalance) {
-      return res.status(400).json({ message: 'Insufficient balance' });
+    const availableAmount = source === 'earnings' 
+      ? parseFloat(walletResult.rows[0].total_earned)
+      : parseFloat(walletResult.rows[0].balance);
+
+    if (amount > availableAmount) {
+      return res.status(400).json({ message: `Insufficient ${source === 'earnings' ? 'MLM earnings' : 'balance'}` });
     }
 
     // Check if user has complete bank details
@@ -32,8 +39,8 @@ const requestWithdrawal = async (req, res) => {
 
     // Create withdrawal request
     const result = await pool.query(
-      'INSERT INTO withdrawal_requests (user_id, amount) VALUES ($1, $2) RETURNING id, created_at',
-      [userId, amount]
+      'INSERT INTO withdrawal_requests (user_id, amount, source) VALUES ($1, $2, $3) RETURNING id, created_at',
+      [userId, amount, source]
     );
 
     // Create transaction record

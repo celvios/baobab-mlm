@@ -14,7 +14,9 @@ const getDashboardStats = async (req, res) => {
       withdrawalRequestsResult,
       pendingPaymentsResult,
       totalWalletBalanceResult,
-      mlmEarningsResult
+      mlmEarningsResult,
+      totalWithdrawalsResult,
+      mlmWithdrawalsResult
     ] = await Promise.all([
       pool.query('SELECT COUNT(*) as total_users FROM users'),
       pool.query('SELECT COUNT(*) as onboarded_users FROM users WHERE status = \'active\' AND current_stage != \'feeder\''),
@@ -22,8 +24,10 @@ const getDashboardStats = async (req, res) => {
       pool.query('SELECT COUNT(*) as total_orders, COALESCE(SUM(total_amount), 0) as total_sales FROM orders'),
       pool.query('SELECT COUNT(*) as total_products FROM products'),
       pool.query('SELECT COALESCE(SUM(amount), 0) as today_earnings FROM transactions WHERE DATE(created_at) = CURRENT_DATE AND type = \'commission\''),
-      pool.query('SELECT COALESCE(SUM(amount), 0) as total_revenue FROM deposit_requests WHERE status = \'approved\''),
+      pool.query('SELECT COALESCE(SUM(amount), 0) - COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE status = \'approved\' AND source = \'balance\'), 0) as total_revenue FROM deposit_requests WHERE status = \'approved\''),
       pool.query('SELECT COUNT(*) as pending_withdrawals, COALESCE(SUM(amount), 0) as total_withdrawal_amount FROM withdrawal_requests WHERE status = \'pending\''),
+      pool.query('SELECT COALESCE(SUM(amount), 0) as total_withdrawals FROM withdrawal_requests WHERE status = \'approved\' AND source = \'balance\''),
+      pool.query('SELECT COALESCE(SUM(amount), 0) as mlm_withdrawals FROM withdrawal_requests WHERE status = \'approved\' AND source = \'earnings\'')
       pool.query('SELECT COUNT(*) as pending_payments FROM payment_confirmations WHERE status = \'pending\''),
       pool.query('SELECT COALESCE(SUM(balance), 0) as total_wallet_balance FROM wallets'),
       pool.query('SELECT COALESCE(SUM(total_earned), 0) as total_mlm_earnings FROM wallets')
@@ -108,7 +112,10 @@ const getDashboardStats = async (req, res) => {
         totalWithdrawalAmount: parseFloat(withdrawalRequestsResult.rows[0].total_withdrawal_amount),
         pendingPayments: parseInt(pendingPaymentsResult.rows[0].pending_payments),
         totalWalletBalance: parseFloat(totalWalletBalanceResult.rows[0].total_wallet_balance),
-        totalMlmEarnings: parseFloat(mlmEarningsResult.rows[0].total_mlm_earnings)
+        totalMlmEarnings: parseFloat(mlmEarningsResult.rows[0].total_mlm_earnings),
+        totalWithdrawals: parseFloat(totalWithdrawalsResult.rows[0].total_withdrawals),
+        mlmWithdrawals: parseFloat(mlmWithdrawalsResult.rows[0].mlm_withdrawals),
+        netMlmEarnings: parseFloat(mlmEarningsResult.rows[0].total_mlm_earnings) - parseFloat(mlmWithdrawalsResult.rows[0].mlm_withdrawals)
       },
       recentOrders: recentOrders.rows,
       recentWithdrawals: recentWithdrawals.rows.map(w => ({
