@@ -116,6 +116,36 @@ router.get('/check-referrals/:email', async (req, res) => {
   }
 });
 
+// Manually process referral earnings
+router.get('/process-referral/:referralEmail', async (req, res) => {
+  try {
+    const { referralEmail } = req.params;
+    
+    const referralResult = await pool.query('SELECT id, referred_by FROM users WHERE email = $1', [referralEmail]);
+    if (referralResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Referral user not found' });
+    }
+    
+    const referral = referralResult.rows[0];
+    
+    if (!referral.referred_by) {
+      return res.status(400).json({ message: 'User was not referred by anyone' });
+    }
+    
+    const referrerResult = await pool.query('SELECT id FROM users WHERE referral_code = $1', [referral.referred_by]);
+    if (referrerResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Referrer not found' });
+    }
+    
+    const mlmService = require('../services/mlmService');
+    const result = await mlmService.processReferral(referrerResult.rows[0].id, referral.id);
+    
+    res.json({ message: 'Referral processed', result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Check earnings for a user by email
 router.get('/check-earnings/:email', async (req, res) => {
   try {
