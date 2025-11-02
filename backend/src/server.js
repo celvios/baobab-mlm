@@ -2153,6 +2153,63 @@ app.get('/api/reset-to-feeder/:email', async (req, res) => {
   }
 });
 
+// Debug user earnings
+app.get('/api/debug-earnings/:email', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { email } = req.params;
+    const client = await pool.connect();
+    
+    const user = await client.query('SELECT id, referral_code, mlm_level FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const userId = user.rows[0].id;
+    
+    const referrals = await client.query(`
+      SELECT u.id, u.email, u.mlm_level,
+             (SELECT status FROM deposit_requests WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as deposit_status
+      FROM users u
+      WHERE u.referred_by = $1
+    `, [user.rows[0].referral_code]);
+    
+    const earnings = await client.query(
+      'SELECT * FROM referral_earnings WHERE user_id = $1',
+      [userId]
+    );
+    
+    const stageMatrix = await client.query(
+      'SELECT * FROM stage_matrix WHERE user_id = $1',
+      [userId]
+    );
+    
+    client.release();
+    
+    res.json({
+      user: user.rows[0],
+      referrals: referrals.rows,
+      earnings: earnings.rows,
+      stageMatrix: stageMatrix.rows,
+      summary: {
+        totalReferrals: referrals.rows.length,
+        approvedDeposits: referrals.rows.filter(r => r.deposit_status === 'approved').length,
+        totalEarnings: earnings.rows.length,
+        completedEarnings: earnings.rows.filter(e => e.status === 'completed').length,
+        heldEarnings: earnings.rows.filter(e => e.status === 'held').length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Fix all referral earnings system-wide
 app.get('/api/fix-all-referral-earnings', async (req, res) => {
   const { Pool } = require('pg');
