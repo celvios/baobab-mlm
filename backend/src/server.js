@@ -2153,6 +2153,64 @@ app.get('/api/reset-to-feeder/:email', async (req, res) => {
   }
 });
 
+// Force process missing referrals
+app.get('/api/force-process-referrals/:email', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const { email } = req.params;
+    const client = await pool.connect();
+    const mlmService = require('./services/mlmService');
+    
+    const user = await client.query('SELECT id, referral_code FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const userId = user.rows[0].id;
+    
+    const referrals = await client.query(`
+      SELECT u.id, u.email
+      FROM users u
+      WHERE u.referred_by = $1
+      AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved')
+    `, [user.rows[0].referral_code]);
+    
+    let processed = 0;
+    const results = [];
+    
+    for (const ref of referrals.rows) {
+      const existing = await client.query(
+        'SELECT id FROM referral_earnings WHERE user_id = $1 AND referred_user_id = $2',
+        [userId, ref.id]
+      );
+      
+      if (existing.rows.length === 0) {
+        await mlmService.processReferral(userId, ref.id);
+        processed++;
+        results.push(ref.email);
+      }
+    }
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: `Processed ${processed} missing referrals`,
+      totalReferrals: referrals.rows.length,
+      processed: processed,
+      processedEmails: results
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Debug user earnings
 app.get('/api/debug-earnings/:email', async (req, res) => {
   const { Pool } = require('pg');
