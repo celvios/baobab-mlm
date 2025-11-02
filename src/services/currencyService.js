@@ -85,19 +85,20 @@ class CurrencyService {
 
   async getExchangeRates() {
     try {
-      const response = await fetch(`${BASE_URL}/${API_KEY}/latest/USD`);
+      // Fetch admin-set exchange rate from backend
+      const response = await fetch('/api/exchange-rate');
       const data = await response.json();
       
-      if (data.result === 'success') {
-        this.rates = data.conversion_rates;
+      if (data.rate) {
+        this.rates = { NGN: data.rate, USD: 1 };
         this.lastUpdate = new Date();
         return this.rates;
       }
       throw new Error('Failed to fetch exchange rates');
     } catch (error) {
       console.error('Exchange rate fetch error:', error);
-      // Fallback to 1500 NGN per USD if API fails
-      this.rates = { NGN: 1500, USD: 1, ...this.rates };
+      // Fallback to 1500 NGN per USD if fetch fails
+      this.rates = { NGN: 1500, USD: 1 };
       return this.rates;
     }
   }

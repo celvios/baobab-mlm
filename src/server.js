@@ -12,6 +12,7 @@ const mlmRoutes = require('./routes/mlm');
 const ordersRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
 const productsRoutes = require('./routes/products');
+const exchangeRateRoutes = require('./routes/exchangeRate');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/bank', require('./routes/bank'));
 app.use('/api/payment', require('./routes/payment'));
 app.use('/api/wallet', require('./routes/wallet'));
 app.use('/api/admin', adminRoutes);
+app.use('/api/exchange-rate', exchangeRateRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

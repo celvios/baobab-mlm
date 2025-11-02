@@ -20,6 +20,7 @@ const { getSalesReport, getUserAnalytics, getCommissionReport, exportData } = re
 const { getNotifications, markAsRead, markAllAsRead, deleteNotification, getNotificationSettings, updateNotificationSettings } = require('../controllers/adminNotificationController');
 const { getActivityLogs, getSystemLogs, getSecurityEvents, getAuditStats } = require('../controllers/adminAuditController');
 const { getPaymentGateways, updatePaymentGateway, getEmailServices, updateEmailService, testEmailService, getSystemHealth, optimizeDatabase } = require('../controllers/adminIntegrationController');
+const { getExchangeRate, updateExchangeRate } = require('../controllers/exchangeRateController');
 const adminAuth = require('../middleware/adminAuth');
 const { apiLimiter, authLimiter, uploadLimiter } = require('../middleware/rateLimiter');
 const { cacheMiddleware } = require('../middleware/cache');
@@ -215,5 +216,11 @@ router.put('/integrations/email-services/:id', adminAuth, updateEmailService);
 router.post('/integrations/test-email', adminAuth, testEmailService);
 router.get('/system/health', adminAuth, getSystemHealth);
 router.post('/system/optimize', adminAuth, optimizeDatabase);
+
+// Exchange Rate Management (protected)
+router.get('/exchange-rate', adminAuth, getExchangeRate);
+router.put('/exchange-rate', adminAuth, [
+  body('rate').isFloat({ min: 0.01 })
+], updateExchangeRate);
 
 module.exports = router;
