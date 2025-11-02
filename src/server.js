@@ -221,6 +221,64 @@ app.get('/api/create-user-records', async (req, res) => {
   }
 });
 
+// Fix referral earnings endpoint
+app.get('/api/fix-referral-earnings/:email', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const { email } = req.params;
+    const client = await pool.connect();
+    
+    // Get user
+    const userResult = await client.query('SELECT id, referral_code, mlm_level FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Get all referrals with approved deposits
+    const referralsResult = await client.query(`
+      SELECT u.id, u.full_name, u.email
+      FROM users u
+      WHERE u.referred_by = $1
+      AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved')
+    `, [user.referral_code]);
+    
+    let processed = 0;
+    const mlmService = require('./services/mlmService');
+    
+    for (const referral of referralsResult.rows) {
+      // Check if earning already exists
+      const existingEarning = await client.query(
+        'SELECT id FROM referral_earnings WHERE user_id = $1 AND referred_user_id = $2',
+        [user.id, referral.id]
+      );
+      
+      if (existingEarning.rows.length === 0) {
+        await mlmService.processReferral(user.id, referral.id);
+        processed++;
+      }
+    }
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: `Processed ${processed} missing referral earnings`,
+      totalReferrals: referralsResult.rows.length,
+      processed: processed
+    });
+  } catch (error) {
+    console.error('Fix referral earnings error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Exchange rate migration endpoint
 app.get('/api/run-exchange-rate-migration', async (req, res) => {
   const { Pool } = require('pg');
