@@ -149,7 +149,7 @@ class MLMService {
   async placeInMatrixWithSpillover(client, userId, referrerId, initialStage) {
     // Get referrer info
     const referrerResult = await client.query(
-      'SELECT id, mlm_level, referral_code FROM users WHERE id = $1',
+      'SELECT id, mlm_level, referral_code, full_name, email FROM users WHERE id = $1',
       [referrerId]
     );
     
@@ -191,8 +191,10 @@ class MLMService {
     // Find available slot in the matrix tree (breadth-first search)
     const availableSlot = await this.findAvailableMatrixSlot(client, referrerId, stage);
     
+    let isSpillover = false;
     if (availableSlot) {
       placementParentId = availableSlot.user_id;
+      isSpillover = (placementParentId !== referrerId);
       
       // Update parent's matrix with new child
       if (!availableSlot.left_child_id) {
@@ -215,13 +217,55 @@ class MLMService {
     );
 
     // Get new user's current stage
-    const newUserResult = await client.query('SELECT mlm_level FROM users WHERE id = $1', [userId]);
+    const newUserResult = await client.query('SELECT mlm_level, full_name FROM users WHERE id = $1', [userId]);
     const newUserStage = newUserResult.rows[0]?.mlm_level || 'no_stage';
+    const newUserName = newUserResult.rows[0]?.full_name || 'New Member';
+
+    // If spillover, notify the placement parent and record it
+    if (isSpillover && placementParentId !== referrerId) {
+      // Record spillover in database
+      await client.query(`
+        INSERT INTO spillover_referrals (original_referrer_id, placement_parent_id, referred_user_id, stage)
+        VALUES ($1, $2, $3, $4)
+      `, [referrerId, placementParentId, userId, stage]);
+      
+      const placementParentResult = await client.query(
+        'SELECT full_name, email FROM users WHERE id = $1',
+        [placementParentId]
+      );
+      
+      if (placementParentResult.rows.length > 0) {
+        const placementParent = placementParentResult.rows[0];
+        
+        // Send in-app notification
+        await client.query(`
+          INSERT INTO market_updates (user_id, title, message, type)
+          VALUES ($1, $2, $3, 'info')
+        `, [
+          placementParentId,
+          'New Spillover Member!',
+          `${newUserName} has been placed in your downline through spillover from ${referrer.full_name}. Note: The referral bonus goes to ${referrer.full_name}.`
+        ]);
+        
+        // Send email notification
+        try {
+          const { sendSpilloverNotificationEmail } = require('../utils/emailService');
+          await sendSpilloverNotificationEmail(
+            placementParent.email,
+            placementParent.full_name,
+            newUserName,
+            referrer.full_name
+          );
+        } catch (emailError) {
+          console.error('Failed to send spillover email:', emailError);
+        }
+      }
+    }
 
     // Credit only the direct matrix owner (no upline chain)
     await this.creditDirectMatrixOwner(client, placementParentId, userId, stage, newUserStage);
 
-    return { placementParentId, stage };
+    return { placementParentId, stage, isSpillover };
   }
 
   async findAvailableMatrixSlot(client, rootUserId, stage) {
@@ -412,6 +456,8 @@ class MLMService {
     const result = await pool.query(`
       SELECT u.id, u.full_name, u.email, u.mlm_level, u.is_active, u.created_at, u.referral_code,
              COALESCE(re.amount, 0) as earning_from_user,
+             false as is_spillover,
+             NULL as original_referrer_name,
              CASE 
                WHEN EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved') 
                THEN true 
@@ -423,9 +469,30 @@ class MLMService {
       ORDER BY u.created_at DESC
     `, [userId, referralCode]);
 
+    // Get spillover referrals (users placed in this user's downline)
+    const spilloverResult = await pool.query(`
+      SELECT u.id, u.full_name, u.email, u.mlm_level, u.is_active, sr.created_at, u.referral_code,
+             0 as earning_from_user,
+             true as is_spillover,
+             ref.full_name as original_referrer_name,
+             CASE 
+               WHEN EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved') 
+               THEN true 
+               ELSE false 
+             END as has_deposited
+      FROM spillover_referrals sr
+      JOIN users u ON sr.referred_user_id = u.id
+      JOIN users ref ON sr.original_referrer_id = ref.id
+      WHERE sr.placement_parent_id = $1
+      ORDER BY sr.created_at DESC
+    `, [userId]);
+
+    // Combine direct and spillover referrals
+    const allMembers = [...result.rows, ...spilloverResult.rows];
+
     // Recursively fetch children for each team member
     const membersWithChildren = await Promise.all(
-      result.rows.map(async (member) => {
+      allMembers.map(async (member) => {
         const children = await this.getTeamMembersRecursive(member.id);
         return { ...member, children };
       })

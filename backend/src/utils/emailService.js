@@ -192,6 +192,25 @@ const sendWithdrawalRejectedEmail = async (email, fullName, amount) => {
   await sendEmail(email, 'Withdrawal Request Rejected', html);
 };
 
+const sendSpilloverNotificationEmail = async (email, fullName, spilloverMemberName, referrerName) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #4a5d23;">New Spillover Member, ${fullName}!</h2>
+      <p><strong>${spilloverMemberName}</strong> has been placed in your downline through spillover from <strong>${referrerName}</strong>.</p>
+      <div style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
+        <p style="margin: 0;"><strong>Note:</strong> This is a spillover referral. While ${spilloverMemberName} appears in your team, the referral bonus goes to ${referrerName} who originally referred them.</p>
+      </div>
+      <p>Spillover members help fill your matrix and contribute to your team growth!</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${process.env.FRONTEND_URL}/user/team" style="background-color: #4a5d23; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">View Your Team</a>
+      </div>
+      <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+      <p style="color: #999; font-size: 10px; font-style: italic;">You are receiving this email because a spillover member was placed in your downline. If you have any questions, contact us at <a href="mailto:info@baobaworldwide.com">info@baobaworldwide.com</a></p>
+    </div>
+  `;
+  await sendEmail(email, 'New Spillover Member in Your Team!', html);
+};
+
 module.exports = {
   generateVerificationToken,
   sendOTPEmail,
@@ -204,5 +223,6 @@ module.exports = {
   sendDepositRejectedEmail,
   sendWithdrawalPendingEmail,
   sendWithdrawalApprovedEmail,
-  sendWithdrawalRejectedEmail
+  sendWithdrawalRejectedEmail,
+  sendSpilloverNotificationEmail
 };
