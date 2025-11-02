@@ -221,8 +221,8 @@ app.get('/api/create-user-records', async (req, res) => {
   }
 });
 
-// Fix referral earnings endpoint
-app.get('/api/fix-referral-earnings/:email', async (req, res) => {
+// Fix all referral earnings system-wide
+app.get('/api/fix-all-referral-earnings', async (req, res) => {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -230,38 +230,49 @@ app.get('/api/fix-referral-earnings/:email', async (req, res) => {
   });
   
   try {
-    const { email } = req.params;
     const client = await pool.connect();
-    
-    // Get user
-    const userResult = await client.query('SELECT id, referral_code, mlm_level FROM users WHERE email = $1', [email]);
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const user = userResult.rows[0];
-    
-    // Get all referrals with approved deposits
-    const referralsResult = await client.query(`
-      SELECT u.id, u.full_name, u.email
-      FROM users u
-      WHERE u.referred_by = $1
-      AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved')
-    `, [user.referral_code]);
-    
-    let processed = 0;
     const mlmService = require('./services/mlmService');
     
-    for (const referral of referralsResult.rows) {
-      // Check if earning already exists
-      const existingEarning = await client.query(
-        'SELECT id FROM referral_earnings WHERE user_id = $1 AND referred_user_id = $2',
-        [user.id, referral.id]
-      );
+    // Get all users with referrals that have approved deposits
+    const usersResult = await client.query(`
+      SELECT DISTINCT u.id, u.email, u.referral_code
+      FROM users u
+      WHERE EXISTS (
+        SELECT 1 FROM users ref
+        WHERE ref.referred_by = u.referral_code
+        AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = ref.id AND status = 'approved')
+      )
+    `);
+    
+    let totalProcessed = 0;
+    const results = [];
+    
+    for (const user of usersResult.rows) {
+      // Get referrals with approved deposits
+      const referralsResult = await client.query(`
+        SELECT u.id, u.full_name, u.email
+        FROM users u
+        WHERE u.referred_by = $1
+        AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved')
+      `, [user.referral_code]);
       
-      if (existingEarning.rows.length === 0) {
-        await mlmService.processReferral(user.id, referral.id);
-        processed++;
+      let userProcessed = 0;
+      
+      for (const referral of referralsResult.rows) {
+        const existingEarning = await client.query(
+          'SELECT id FROM referral_earnings WHERE user_id = $1 AND referred_user_id = $2',
+          [user.id, referral.id]
+        );
+        
+        if (existingEarning.rows.length === 0) {
+          await mlmService.processReferral(user.id, referral.id);
+          userProcessed++;
+          totalProcessed++;
+        }
+      }
+      
+      if (userProcessed > 0) {
+        results.push({ email: user.email, processed: userProcessed, totalReferrals: referralsResult.rows.length });
       }
     }
     
@@ -269,12 +280,13 @@ app.get('/api/fix-referral-earnings/:email', async (req, res) => {
     
     res.json({
       success: true,
-      message: `Processed ${processed} missing referral earnings`,
-      totalReferrals: referralsResult.rows.length,
-      processed: processed
+      message: `Fixed referral earnings for ${results.length} users`,
+      totalProcessed: totalProcessed,
+      usersFixed: results.length,
+      details: results
     });
   } catch (error) {
-    console.error('Fix referral earnings error:', error);
+    console.error('Fix all referral earnings error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
