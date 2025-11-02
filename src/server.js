@@ -221,6 +221,51 @@ app.get('/api/create-user-records', async (req, res) => {
   }
 });
 
+// Exchange rate migration endpoint
+app.get('/api/run-exchange-rate-migration', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS exchange_rates (
+        id SERIAL PRIMARY KEY,
+        currency_code VARCHAR(3) NOT NULL UNIQUE,
+        rate DECIMAL(10, 4) NOT NULL,
+        updated_by INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await client.query(`
+      INSERT INTO exchange_rates (currency_code, rate) 
+      VALUES ('NGN', 1500.00)
+      ON CONFLICT (currency_code) DO NOTHING
+    `);
+    
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_exchange_rates_currency 
+      ON exchange_rates(currency_code)
+    `);
+    
+    client.release();
+    res.json({ 
+      success: true,
+      message: 'Exchange rate migration completed successfully!',
+      defaultRate: 1500
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Test email endpoint with your actual email
 app.get('/api/test-email/:email', async (req, res) => {
   try {
