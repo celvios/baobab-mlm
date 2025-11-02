@@ -12,7 +12,6 @@ router.get('/stats', adminAuth, async (req, res) => {
       pool.query('SELECT COUNT(*) as count FROM orders'),
       pool.query(`
         SELECT 
-          COALESCE(SUM(COALESCE(balance, 0)), 0) + 
           COALESCE(SUM(COALESCE(total_earned, 0)), 0) as total
         FROM wallets
       `),
