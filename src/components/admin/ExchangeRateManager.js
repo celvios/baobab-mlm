@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 
 const ExchangeRateManager = () => {
   const [currentRate, setCurrentRate] = useState(null);
@@ -15,12 +14,13 @@ const ExchangeRateManager = () => {
   const fetchCurrentRate = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get('/api/admin/exchange-rate', {
+      const response = await fetch('/api/admin/exchange-rate', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCurrentRate(response.data.rate);
-      setLastUpdated(response.data.updated_at);
-      setNewRate(response.data.rate);
+      const data = await response.json();
+      setCurrentRate(data.rate);
+      setLastUpdated(data.updated_at);
+      setNewRate(data.rate);
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
     }
@@ -39,18 +39,27 @@ const ExchangeRateManager = () => {
 
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.put('/api/admin/exchange-rate', 
-        { rate: parseFloat(newRate) },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await fetch('/api/admin/exchange-rate', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ rate: parseFloat(newRate) })
+      });
       
-      setMessage('Exchange rate updated successfully!');
-      setCurrentRate(parseFloat(newRate));
-      setLastUpdated(new Date().toISOString());
+      const data = await response.json();
       
-      setTimeout(() => setMessage(''), 3000);
+      if (response.ok) {
+        setMessage('Exchange rate updated successfully!');
+        setCurrentRate(parseFloat(newRate));
+        setLastUpdated(new Date().toISOString());
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(data.message || 'Failed to update exchange rate');
+      }
     } catch (error) {
-      setMessage(error.response?.data?.message || 'Failed to update exchange rate');
+      setMessage('Failed to update exchange rate');
     } finally {
       setLoading(false);
     }
