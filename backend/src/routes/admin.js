@@ -73,6 +73,49 @@ router.get('/test-stats', async (req, res) => {
   }
 });
 
+// Check referrals for a user by email
+router.get('/check-referrals/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    // Get user's referral code
+    const userResult = await pool.query('SELECT id, referral_code, full_name FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Get all referrals
+    const referralsResult = await pool.query(
+      `SELECT id, full_name, email, is_email_verified, created_at, 
+              (SELECT COUNT(*) FROM deposit_requests WHERE user_id = users.id AND status = 'approved') as deposits
+       FROM users 
+       WHERE referred_by = $1 
+       ORDER BY created_at DESC`,
+      [user.referral_code]
+    );
+    
+    res.json({
+      user: {
+        name: user.full_name,
+        email: email,
+        referralCode: user.referral_code
+      },
+      totalReferrals: referralsResult.rows.length,
+      referrals: referralsResult.rows.map(r => ({
+        name: r.full_name,
+        email: r.email,
+        emailVerified: r.is_email_verified,
+        hasDeposit: parseInt(r.deposits) > 0,
+        joinedAt: r.created_at
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test users endpoint with hardcoded data
 router.get('/users-test', async (req, res) => {
   try {
