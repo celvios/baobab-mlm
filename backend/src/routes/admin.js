@@ -116,31 +116,56 @@ router.get('/check-referrals/:email', async (req, res) => {
   }
 });
 
-// Manually process referral earnings
-router.get('/process-referral/:referralEmail', async (req, res) => {
+// Fix all missing referral earnings
+router.get('/fix-all-referrals', async (req, res) => {
   try {
-    const { referralEmail } = req.params;
-    
-    const referralResult = await pool.query('SELECT id, referred_by FROM users WHERE email = $1', [referralEmail]);
-    if (referralResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Referral user not found' });
-    }
-    
-    const referral = referralResult.rows[0];
-    
-    if (!referral.referred_by) {
-      return res.status(400).json({ message: 'User was not referred by anyone' });
-    }
-    
-    const referrerResult = await pool.query('SELECT id FROM users WHERE referral_code = $1', [referral.referred_by]);
-    if (referrerResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Referrer not found' });
-    }
+    const usersWithDeposits = await pool.query(`
+      SELECT DISTINCT u.id, u.email, u.referred_by
+      FROM users u
+      WHERE u.referred_by IS NOT NULL
+      AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved')
+    `);
     
     const mlmService = require('../services/mlmService');
-    const result = await mlmService.processReferral(referrerResult.rows[0].id, referral.id);
+    let processed = 0;
+    let skipped = 0;
+    const results = [];
     
-    res.json({ message: 'Referral processed', result });
+    for (const user of usersWithDeposits.rows) {
+      const referrerResult = await pool.query('SELECT id FROM users WHERE referral_code = $1', [user.referred_by]);
+      
+      if (referrerResult.rows.length === 0) {
+        skipped++;
+        continue;
+      }
+      
+      const referrerId = referrerResult.rows[0].id;
+      
+      const earningsCheck = await pool.query(
+        'SELECT id FROM referral_earnings WHERE user_id = $1 AND referred_user_id = $2',
+        [referrerId, user.id]
+      );
+      
+      if (earningsCheck.rows.length === 0) {
+        try {
+          await mlmService.processReferral(referrerId, user.id);
+          processed++;
+          results.push({ email: user.email, status: 'processed' });
+        } catch (error) {
+          results.push({ email: user.email, status: 'error', error: error.message });
+        }
+      } else {
+        skipped++;
+      }
+    }
+    
+    res.json({ 
+      message: 'Referral fix completed',
+      totalUsers: usersWithDeposits.rows.length,
+      processed,
+      skipped,
+      results
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
