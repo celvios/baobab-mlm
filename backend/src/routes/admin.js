@@ -715,12 +715,8 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
     );
     console.log('Dashboard unlocked for user:', unlockResult.rows[0]);
     
-    // Check if deposit meets minimum threshold (USD equivalent) and user was referred
-    const { meetsMinimumDeposit } = require('../utils/currencyUtils');
-    const meetsThreshold = await meetsMinimumDeposit(amount);
-    
-    if (meetsThreshold && deposit.referred_by) {
-      // Get referrer ID
+    // Process referral if user was referred
+    if (deposit.referred_by) {
       const referrerResult = await client.query('SELECT id FROM users WHERE referral_code = $1', [deposit.referred_by]);
       
       if (referrerResult.rows.length > 0) {
@@ -733,14 +729,12 @@ router.post('/approve-deposit', adminAuth, async (req, res) => {
         );
         
         if (bonusCheck.rows.length === 0) {
-          // Process referral bonus
           const mlmService = require('../services/mlmService');
           try {
             await mlmService.processReferral(referrerId, deposit.user_id);
-            console.log(`Referral bonus activated for user ${deposit.user_id} (deposited ₦${amount})`);
+            console.log(`Referral processed for user ${deposit.user_id}`);
           } catch (mlmError) {
             console.error('Error processing referral:', mlmError);
-            // Continue even if MLM processing fails
           }
         }
       }

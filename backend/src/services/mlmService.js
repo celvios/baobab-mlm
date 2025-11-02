@@ -16,28 +16,6 @@ class MLMService {
     try {
       await client.query('BEGIN');
 
-      // Check if new user has paid
-      const newUserResult = await client.query(
-        'SELECT joining_fee_paid FROM users WHERE id = $1',
-        [newUserId]
-      );
-      
-      const hasPaid = newUserResult.rows[0]?.joining_fee_paid || false;
-      
-      // Check if user has approved deposit
-      const depositCheck = await client.query(
-        'SELECT id FROM deposit_requests WHERE user_id = $1 AND status = $2',
-        [newUserId, 'approved']
-      );
-      
-      const hasApprovedDeposit = depositCheck.rows.length > 0;
-
-      // Only process if user has paid
-      if (!hasPaid && !hasApprovedDeposit) {
-        await client.query('COMMIT');
-        return { success: false, message: 'User must pay joining fee first' };
-      }
-
       // Get referrer's current level
       const referrerResult = await client.query(
         'SELECT mlm_level FROM users WHERE id = $1',
