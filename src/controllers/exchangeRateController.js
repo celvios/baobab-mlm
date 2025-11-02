@@ -46,10 +46,14 @@ const updateExchangeRate = async (req, res) => {
       [rate, req.admin?.id]
     );
 
-    await pool.query(
-      'INSERT INTO admin_activity_logs (admin_id, action, details) VALUES ($1, $2, $3)',
-      [req.admin?.id, 'update_exchange_rate', `Updated NGN exchange rate to ${rate}`]
-    );
+    try {
+      await pool.query(
+        'INSERT INTO admin_activity_logs (admin_id, action, details) VALUES ($1, $2, $3)',
+        [req.admin?.id, 'update_exchange_rate', `Updated NGN exchange rate to ${rate}`]
+      );
+    } catch (logError) {
+      console.log('Activity log failed (non-critical):', logError.message);
+    }
 
     res.json({ 
       message: 'Exchange rate updated successfully',

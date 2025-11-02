@@ -7,7 +7,8 @@ const AdminDashboard = () => {
     totalUsers: 0,
     totalOrders: 0,
     totalRevenue: 0,
-    pendingWithdrawals: 0
+    pendingWithdrawals: 0,
+    totalMLMEarnings: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,8 @@ const AdminDashboard = () => {
         totalUsers: 0,
         totalOrders: 0,
         totalRevenue: 0,
-        pendingWithdrawals: 0
+        pendingWithdrawals: 0,
+        totalMLMEarnings: 0
       });
       setRecentActivity([]);
     } finally {
@@ -70,7 +72,7 @@ const AdminDashboard = () => {
         <p className="text-gray-600">Overview of your MLM system</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <StatCard
           icon={FiUsers}
           title="Total Users"
@@ -88,6 +90,12 @@ const AdminDashboard = () => {
           title="Total Revenue"
           value={`₦${stats.totalRevenue.toLocaleString()}`}
           color="bg-purple-500"
+        />
+        <StatCard
+          icon={FiDollarSign}
+          title="MLM Earnings"
+          value={`$${stats.totalMLMEarnings.toLocaleString()}`}
+          color="bg-emerald-500"
         />
         <StatCard
           icon={FiTrendingUp}

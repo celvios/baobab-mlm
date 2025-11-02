@@ -7,7 +7,7 @@ const { getBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost, publishBlo
 // Admin dashboard stats
 router.get('/stats', adminAuth, async (req, res) => {
   try {
-    const [usersResult, ordersResult, revenueResult, withdrawalsResult] = await Promise.all([
+    const [usersResult, ordersResult, revenueResult, withdrawalsResult, mlmEarningsResult] = await Promise.all([
       pool.query('SELECT COUNT(*) as count FROM users WHERE role != $1', ['admin']),
       pool.query('SELECT COUNT(*) as count FROM orders'),
       pool.query(`
@@ -15,14 +15,16 @@ router.get('/stats', adminAuth, async (req, res) => {
           COALESCE(SUM(COALESCE(total_earned, 0)), 0) as total
         FROM wallets
       `),
-      pool.query('SELECT COUNT(*) as count FROM withdrawal_requests WHERE status = $1', ['pending'])
+      pool.query('SELECT COUNT(*) as count FROM withdrawal_requests WHERE status = $1', ['pending']),
+      pool.query('SELECT COALESCE(SUM(amount), 0) as total FROM referral_earnings WHERE status = $1', ['completed'])
     ]);
 
     res.json({
       totalUsers: parseInt(usersResult.rows[0].count),
       totalOrders: parseInt(ordersResult.rows[0].count),
       totalRevenue: parseFloat(revenueResult.rows[0].total),
-      pendingWithdrawals: parseInt(withdrawalsResult.rows[0].count)
+      pendingWithdrawals: parseInt(withdrawalsResult.rows[0].count),
+      totalMLMEarnings: parseFloat(mlmEarningsResult.rows[0].total)
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);
