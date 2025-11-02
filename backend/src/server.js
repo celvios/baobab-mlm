@@ -2153,6 +2153,57 @@ app.get('/api/reset-to-feeder/:email', async (req, res) => {
   }
 });
 
+// Release all held earnings system-wide
+app.get('/api/release-all-held-earnings', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    
+    const heldEarnings = await client.query(
+      "SELECT * FROM referral_earnings WHERE status = 'held'"
+    );
+    
+    let totalReleased = 0;
+    const users = new Set();
+    
+    for (const earning of heldEarnings.rows) {
+      await client.query(
+        "UPDATE referral_earnings SET status = 'completed' WHERE id = $1",
+        [earning.id]
+      );
+      
+      await client.query(
+        'UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2',
+        [earning.amount, earning.user_id]
+      );
+      
+      await client.query(
+        'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+        [earning.user_id, 'matrix_bonus', earning.amount, 'Released held earnings', 'completed']
+      );
+      
+      totalReleased += parseFloat(earning.amount);
+      users.add(earning.user_id);
+    }
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: `Released ${heldEarnings.rows.length} held earnings for ${users.size} users`,
+      totalAmount: totalReleased,
+      affectedUsers: users.size
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Force process missing referrals
 app.get('/api/force-process-referrals/:email', async (req, res) => {
   const { Pool } = require('pg');

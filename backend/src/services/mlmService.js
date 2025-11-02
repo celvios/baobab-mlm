@@ -271,8 +271,8 @@ class MLMService {
     const stageConfig = MLM_LEVELS[userStage] || MLM_LEVELS['no_stage'];
     const bonusAmount = stageConfig.bonusUSD;
 
-    // Determine earning status based on user stage
-    const earningStatus = (userStage === 'no_stage') ? 'held' : 'completed';
+    // Always pay earnings immediately (no holding)
+    const earningStatus = 'completed';
     
     // Add referral earning with correct bonus amount for current stage
     await client.query(
@@ -280,18 +280,16 @@ class MLMService {
       [matrixOwnerId, newUserId, userStage, bonusAmount, earningStatus]
     );
 
-    // Only update wallet and add transaction if user is Feeder or higher
-    if (userStage !== 'no_stage') {
-      await client.query(
-        'UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2',
-        [bonusAmount, matrixOwnerId]
-      );
+    // Always update wallet and add transaction immediately
+    await client.query(
+      'UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2',
+      [bonusAmount, matrixOwnerId]
+    );
 
-      await client.query(
-        'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
-        [matrixOwnerId, 'matrix_bonus', bonusAmount, `Matrix bonus at ${userStage} stage`, 'completed']
-      );
-    }
+    await client.query(
+      'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
+      [matrixOwnerId, 'matrix_bonus', bonusAmount, `Matrix bonus at ${userStage} stage`, 'completed']
+    );
 
     // Update stage matrix slots
     await client.query(
