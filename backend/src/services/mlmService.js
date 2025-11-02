@@ -422,30 +422,30 @@ class MLMService {
   }
 
   async getTeamMembers(userId) {
-    // Get user's current stage
-    const userStageResult = await pool.query(
-      'SELECT mlm_level FROM users WHERE id = $1',
+    // Get user's referral code
+    const userResult = await pool.query(
+      'SELECT referral_code FROM users WHERE id = $1',
       [userId]
     );
     
-    const currentStage = userStageResult.rows[0]?.mlm_level || 'no_stage';
+    if (userResult.rows.length === 0) return [];
     
-    // Get members that are part of the CURRENT stage matrix
+    const referralCode = userResult.rows[0].referral_code;
+    
+    // Get all direct referrals (users who used this user's referral code)
     const result = await pool.query(`
-      SELECT DISTINCT u.id, u.full_name, u.email, u.mlm_level, u.is_active, u.created_at, u.referral_code,
+      SELECT u.id, u.full_name, u.email, u.mlm_level, u.is_active, u.created_at, u.referral_code,
              COALESCE(re.amount, 0) as earning_from_user,
              CASE 
                WHEN EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved') 
                THEN true 
                ELSE false 
-             END as has_deposited,
-             smm.is_qualified
-      FROM stage_matrix_members smm
-      JOIN users u ON smm.member_id = u.id
-      LEFT JOIN referral_earnings re ON u.id = re.referred_user_id AND re.user_id = $1 AND re.stage = $2
-      WHERE smm.matrix_owner_id = $1 AND smm.matrix_stage = $2
-      ORDER BY smm.created_at ASC
-    `, [userId, currentStage]);
+             END as has_deposited
+      FROM users u
+      LEFT JOIN referral_earnings re ON u.id = re.referred_user_id AND re.user_id = $1
+      WHERE u.referred_by = $2
+      ORDER BY u.created_at DESC
+    `, [userId, referralCode]);
 
     // Recursively fetch children for each team member
     const membersWithChildren = await Promise.all(
