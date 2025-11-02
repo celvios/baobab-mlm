@@ -2153,6 +2153,74 @@ app.get('/api/reset-to-feeder/:email', async (req, res) => {
   }
 });
 
+// Fix all referral earnings system-wide
+app.get('/api/fix-all-referral-earnings', async (req, res) => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: true } : false
+  });
+  
+  try {
+    const client = await pool.connect();
+    const mlmService = require('./services/mlmService');
+    
+    const usersResult = await client.query(`
+      SELECT DISTINCT u.id, u.email, u.referral_code
+      FROM users u
+      WHERE EXISTS (
+        SELECT 1 FROM users ref
+        WHERE ref.referred_by = u.referral_code
+        AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = ref.id AND status = 'approved')
+      )
+    `);
+    
+    let totalProcessed = 0;
+    const results = [];
+    
+    for (const user of usersResult.rows) {
+      const referralsResult = await client.query(`
+        SELECT u.id, u.full_name, u.email
+        FROM users u
+        WHERE u.referred_by = $1
+        AND EXISTS (SELECT 1 FROM deposit_requests WHERE user_id = u.id AND status = 'approved')
+      `, [user.referral_code]);
+      
+      let userProcessed = 0;
+      
+      for (const referral of referralsResult.rows) {
+        const existingEarning = await client.query(
+          'SELECT id FROM referral_earnings WHERE user_id = $1 AND referred_user_id = $2',
+          [user.id, referral.id]
+        );
+        
+        if (existingEarning.rows.length === 0) {
+          await mlmService.processReferral(user.id, referral.id);
+          userProcessed++;
+          totalProcessed++;
+        }
+      }
+      
+      if (userProcessed > 0) {
+        results.push({ email: user.email, processed: userProcessed, totalReferrals: referralsResult.rows.length });
+      }
+    }
+    
+    client.release();
+    
+    res.json({
+      success: true,
+      message: `Fixed referral earnings for ${results.length} users`,
+      totalProcessed: totalProcessed,
+      usersFixed: results.length,
+      details: results
+    });
+  } catch (error) {
+    console.error('Fix all referral earnings error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
