@@ -27,7 +27,7 @@ const getDashboardStats = async (req, res) => {
       pool.query('SELECT COALESCE(SUM(amount), 0) - COALESCE((SELECT SUM(amount) FROM withdrawal_requests WHERE status = \'approved\' AND source = \'balance\'), 0) as total_revenue FROM deposit_requests WHERE status = \'approved\''),
       pool.query('SELECT COUNT(*) as pending_withdrawals, COALESCE(SUM(amount), 0) as total_withdrawal_amount FROM withdrawal_requests WHERE status = \'pending\''),
       pool.query('SELECT COALESCE(SUM(amount), 0) as total_withdrawals FROM withdrawal_requests WHERE status = \'approved\' AND source = \'balance\''),
-      pool.query('SELECT COALESCE(SUM(amount), 0) as mlm_withdrawals FROM withdrawal_requests WHERE status = \'approved\' AND source = \'earnings\'')
+      pool.query('SELECT COALESCE(SUM(amount), 0) as mlm_withdrawals FROM withdrawal_requests WHERE status = \'approved\' AND source = \'earnings\''),
       pool.query('SELECT COUNT(*) as pending_payments FROM payment_confirmations WHERE status = \'pending\''),
       pool.query('SELECT COALESCE(SUM(balance), 0) as total_wallet_balance FROM wallets'),
       pool.query('SELECT COALESCE(SUM(total_earned), 0) as total_mlm_earnings FROM wallets')
