@@ -116,6 +116,57 @@ router.get('/check-referrals/:email', async (req, res) => {
   }
 });
 
+// Check earnings for a user by email
+router.get('/check-earnings/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    const userResult = await pool.query('SELECT id, full_name, referral_code, mlm_level FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Get wallet info
+    const walletResult = await pool.query('SELECT balance, total_earned FROM wallets WHERE user_id = $1', [user.id]);
+    
+    // Get referral earnings
+    const earningsResult = await pool.query(
+      `SELECT re.*, u.full_name as referred_user_name, u.email as referred_user_email
+       FROM referral_earnings re
+       JOIN users u ON re.referred_user_id = u.id
+       WHERE re.user_id = $1
+       ORDER BY re.created_at DESC`,
+      [user.id]
+    );
+    
+    // Get all referrals
+    const referralsResult = await pool.query(
+      `SELECT id, full_name, email,
+              (SELECT COUNT(*) FROM deposit_requests WHERE user_id = users.id AND status = 'approved') as deposits
+       FROM users 
+       WHERE referred_by = $1`,
+      [user.referral_code]
+    );
+    
+    res.json({
+      user: {
+        name: user.full_name,
+        email: email,
+        level: user.mlm_level
+      },
+      wallet: walletResult.rows[0] || { balance: 0, total_earned: 0 },
+      totalReferrals: referralsResult.rows.length,
+      referralsWithDeposit: referralsResult.rows.filter(r => parseInt(r.deposits) > 0).length,
+      earnings: earningsResult.rows,
+      totalEarnings: earningsResult.rows.reduce((sum, e) => sum + parseFloat(e.amount), 0)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Test users endpoint with hardcoded data
 router.get('/users-test', async (req, res) => {
   try {
