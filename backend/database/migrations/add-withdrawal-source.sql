@@ -1,6 +1,5 @@
--- Add source column to track withdrawal type
-ALTER TABLE withdrawal_requests 
-ADD COLUMN IF NOT EXISTS source VARCHAR(20) DEFAULT 'balance';
+-- Add source column to withdrawal_requests table
+ALTER TABLE withdrawal_requests ADD COLUMN IF NOT EXISTS source VARCHAR(20) DEFAULT 'wallet';
 
--- source can be: 'balance' (wallet overview) or 'earnings' (MLM earnings)
-COMMENT ON COLUMN withdrawal_requests.source IS 'Source of withdrawal: balance or earnings';
+-- Update existing records to have 'wallet' as source
+UPDATE withdrawal_requests SET source = 'wallet' WHERE source IS NULL;

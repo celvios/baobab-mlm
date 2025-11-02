@@ -16,7 +16,7 @@ router.get('/stats', adminAuth, async (req, res) => {
         FROM wallets
       `),
       pool.query('SELECT COUNT(*) as count FROM withdrawal_requests WHERE status = $1', ['pending']),
-      pool.query('SELECT COALESCE(SUM(amount), 0) as total FROM referral_earnings WHERE status = $1', ['completed'])
+      pool.query('SELECT COALESCE(SUM(total_earned), 0) as total FROM wallets')
     ]);
 
     res.json({
@@ -945,17 +945,26 @@ router.put('/withdrawals/:id', async (req, res) => {
       [status, status === 'approved' ? 'Withdrawal approved' : 'Withdrawal rejected', withdrawal.user_id, -withdrawal.amount]
     );
     
-    // If rejected, return money to wallet
+    // If rejected, return money to appropriate source
     if (status === 'rejected') {
-      await client.query(
-        'UPDATE wallets SET balance = balance + $1 WHERE user_id = $2',
-        [withdrawal.amount, withdrawal.user_id]
-      );
+      const source = withdrawal.source || 'wallet';
+      
+      if (source === 'mlm_earnings') {
+        await client.query(
+          'UPDATE wallets SET total_earned = total_earned + $1 WHERE user_id = $2',
+          [withdrawal.amount, withdrawal.user_id]
+        );
+      } else {
+        await client.query(
+          'UPDATE wallets SET balance = balance + $1 WHERE user_id = $2',
+          [withdrawal.amount, withdrawal.user_id]
+        );
+      }
       
       // Create refund transaction
       await client.query(
         'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
-        [withdrawal.user_id, 'refund', withdrawal.amount, 'Withdrawal rejected - refund', 'completed']
+        [withdrawal.user_id, 'refund', withdrawal.amount, `Withdrawal rejected - refund to ${source === 'mlm_earnings' ? 'MLM earnings' : 'wallet'}`, 'completed']
       );
     }
     

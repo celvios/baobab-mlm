@@ -7,30 +7,44 @@ const requestWithdrawal = async (req, res) => {
     await client.query('BEGIN');
     
     const userId = req.user.id;
-    const { amount, bank, accountNumber, accountName } = req.body;
+    const { amount, bank, accountNumber, accountName, source = 'wallet' } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ message: 'Invalid withdrawal amount' });
     }
 
-    // Check wallet balance
-    const walletResult = await client.query('SELECT balance FROM wallets WHERE user_id = $1', [userId]);
+    if (!['wallet', 'mlm_earnings'].includes(source)) {
+      return res.status(400).json({ message: 'Invalid withdrawal source' });
+    }
+
+    // Check balance based on source
+    const walletResult = await client.query('SELECT balance, total_earned FROM wallets WHERE user_id = $1', [userId]);
     if (walletResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Wallet not found' });
     }
 
-    const currentBalance = parseFloat(walletResult.rows[0].balance);
+    const currentBalance = source === 'mlm_earnings' 
+      ? parseFloat(walletResult.rows[0].total_earned)
+      : parseFloat(walletResult.rows[0].balance);
+
     if (amount > currentBalance) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ message: 'Insufficient balance' });
+      return res.status(400).json({ message: `Insufficient ${source === 'mlm_earnings' ? 'MLM earnings' : 'wallet balance'}` });
     }
 
-    // Deduct from wallet balance
-    await client.query(
-      'UPDATE wallets SET balance = balance - $1 WHERE user_id = $2',
-      [amount, userId]
-    );
+    // Deduct from appropriate balance
+    if (source === 'mlm_earnings') {
+      await client.query(
+        'UPDATE wallets SET total_earned = total_earned - $1 WHERE user_id = $2',
+        [amount, userId]
+      );
+    } else {
+      await client.query(
+        'UPDATE wallets SET balance = balance - $1 WHERE user_id = $2',
+        [amount, userId]
+      );
+    }
 
     // Update user bank details if provided
     if (bank && accountNumber && accountName) {
@@ -43,16 +57,16 @@ const requestWithdrawal = async (req, res) => {
       );
     }
 
-    // Create withdrawal request
+    // Create withdrawal request with source
     const result = await client.query(
-      'INSERT INTO withdrawal_requests (user_id, amount) VALUES ($1, $2) RETURNING id, created_at',
-      [userId, amount]
+      'INSERT INTO withdrawal_requests (user_id, amount, source) VALUES ($1, $2, $3) RETURNING id, created_at',
+      [userId, amount, source]
     );
 
     // Create transaction record
     await client.query(
       'INSERT INTO transactions (user_id, type, amount, description, status) VALUES ($1, $2, $3, $4, $5)',
-      [userId, 'withdrawal', -amount, 'Withdrawal request submitted', 'pending']
+      [userId, 'withdrawal', -amount, `Withdrawal from ${source === 'mlm_earnings' ? 'MLM earnings' : 'wallet'}`, 'pending']
     );
 
     await client.query('COMMIT');
