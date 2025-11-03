@@ -82,14 +82,17 @@ export default function History() {
           // Convert USD to Naira for matrix bonus (1 USD = 1500 Naira)
           const amountInNaira = tx.type === 'matrix_bonus' ? tx.amount * 1500 : tx.amount;
           
+          // Determine if incoming or outgoing
+          const isIncoming = tx.amount > 0 || ['credit', 'deposit_approved', 'commission', 'referral_bonus', 'matrix_bonus', 'deposit', 'refund'].includes(tx.type);
+          
           return {
             id: userOrders.length + withdrawals.length + index + 1,
             account: profile?.email || 'user@example.com',
             stage: profile?.mlmLevel === 'feeder' ? 'Feeder' : profile?.mlmLevel?.charAt(0).toUpperCase() + profile?.mlmLevel?.slice(1) || 'No Level',
             transaction: transactionName,
-            type: tx.isCredit ? 'Incoming' : 'Outgoing',
-            amount: `₦${amountInNaira.toLocaleString()}`,
-            amountValue: amountInNaira,
+            type: isIncoming ? 'Incoming' : 'Outgoing',
+            amount: `₦${Math.abs(amountInNaira).toLocaleString()}`,
+            amountValue: Math.abs(amountInNaira),
             status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending',
             originalId: tx.id,
             adminName: tx.adminName
@@ -136,7 +139,7 @@ export default function History() {
   };
 
   const getSortedHistoryData = () => {
-    return [...historyData].sort((a, b) => {
+    const sorted = [...historyData].sort((a, b) => {
       let aValue, bValue;
       
       switch (sortBy) {
@@ -167,6 +170,9 @@ export default function History() {
         return aValue < bValue ? 1 : -1;
       }
     });
+    
+    // Re-number from 1
+    return sorted.map((item, index) => ({ ...item, displayId: index + 1 }));
   };
 
   if (loading) {
@@ -273,7 +279,7 @@ export default function History() {
             <tbody>
               {getSortedHistoryData().length > 0 ? getSortedHistoryData().map((item) => (
                 <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 lg:py-4 px-2 lg:px-4 text-xs lg:text-sm">{item.id}</td>
+                  <td className="py-3 lg:py-4 px-2 lg:px-4 text-xs lg:text-sm">{item.displayId || item.id}</td>
                   <td className="py-3 lg:py-4 px-2 lg:px-4">
                     <div className="flex items-center">
                       <div className="w-5 h-5 lg:w-6 lg:h-6 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-xs mr-1 lg:mr-2">
@@ -295,7 +301,7 @@ export default function History() {
                   <td className="py-3 lg:py-4 px-2 lg:px-4 text-xs lg:text-sm font-semibold">{item.amount}</td>
                   <td className="py-3 lg:py-4 px-2 lg:px-4">
                     <span className={`px-1.5 lg:px-2 py-0.5 lg:py-1 rounded-full text-xs font-semibold ${
-                      item.status === 'Approved' || item.status === 'Successful'
+                      item.status === 'Completed' || item.status === 'Approved' || item.status === 'Successful'
                         ? 'bg-green-100 text-green-800' 
                         : item.status === 'Pending'
                         ? 'bg-yellow-100 text-yellow-800'
