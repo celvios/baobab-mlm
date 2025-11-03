@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiService from '../../services/api';
 
 const ExchangeRateManager = () => {
   const [currentRate, setCurrentRate] = useState(null);
@@ -13,11 +14,7 @@ const ExchangeRateManager = () => {
 
   const fetchCurrentRate = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/exchange-rate', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
+      const data = await apiService.request('/admin/exchange-rate');
       setCurrentRate(data.rate);
       setLastUpdated(data.updated_at);
       setNewRate(data.rate);
@@ -38,28 +35,17 @@ const ExchangeRateManager = () => {
     setMessage('');
 
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/exchange-rate', {
+      const data = await apiService.request('/admin/exchange-rate', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
         body: JSON.stringify({ rate: parseFloat(newRate) })
       });
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        setMessage('Exchange rate updated successfully!');
-        setCurrentRate(parseFloat(newRate));
-        setLastUpdated(new Date().toISOString());
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage(data.message || 'Failed to update exchange rate');
-      }
+      setMessage('Exchange rate updated successfully!');
+      setCurrentRate(parseFloat(newRate));
+      setLastUpdated(new Date().toISOString());
+      setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage('Failed to update exchange rate');
+      setMessage(error.message || 'Failed to update exchange rate');
     } finally {
       setLoading(false);
     }
