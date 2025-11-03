@@ -218,7 +218,8 @@ router.get('/system/health', adminAuth, getSystemHealth);
 router.post('/system/optimize', adminAuth, optimizeDatabase);
 
 // Exchange Rate Management (protected)
-router.get('/exchange-rate', adminAuth, getExchangeRate);
+const { getExchangeRate, updateExchangeRate } = require('../controllers/exchangeRateController');
+router.get('/exchange-rate', getExchangeRate);
 router.put('/exchange-rate', adminAuth, [
   body('rate').isFloat({ min: 0.01 })
 ], updateExchangeRate);
