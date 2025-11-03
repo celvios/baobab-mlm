@@ -14,6 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
     const validateAuth = async () => {
@@ -35,10 +36,27 @@ export const AuthProvider = ({ children }) => {
       }
       
       setLoading(false);
+      setInitialLoad(false);
     };
     
     validateAuth();
   }, []);
+
+  if (initialLoad) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl space-y-4">
+          <div className="h-8 bg-gray-200 rounded animate-pulse w-48"></div>
+          <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const login = async (email, password) => {
     try {
