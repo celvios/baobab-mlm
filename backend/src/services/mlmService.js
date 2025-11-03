@@ -824,6 +824,9 @@ class MLMService {
         }
       }
 
+      // Final check for level progression after all placements
+      await this.checkLevelProgression(client, userId);
+
       await client.query('COMMIT');
 
       return {
