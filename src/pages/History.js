@@ -76,7 +76,11 @@ export default function History() {
                                  tx.type === 'deposit_approved' ? 'Deposit Approved' :
                                  tx.type === 'commission' ? 'Commission' :
                                  tx.type === 'referral_bonus' ? 'Referral Bonus' :
+                                 tx.type === 'matrix_bonus' ? 'Matrix_bonus' :
                                  tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction';
+          
+          // Convert USD to Naira for matrix bonus (1 USD = 1500 Naira)
+          const amountInNaira = tx.type === 'matrix_bonus' ? tx.amount * 1500 : tx.amount;
           
           return {
             id: userOrders.length + withdrawals.length + index + 1,
@@ -84,8 +88,8 @@ export default function History() {
             stage: profile?.mlmLevel === 'feeder' ? 'Feeder' : profile?.mlmLevel?.charAt(0).toUpperCase() + profile?.mlmLevel?.slice(1) || 'No Level',
             transaction: transactionName,
             type: tx.isCredit ? 'Incoming' : 'Outgoing',
-            amount: `₦${tx.amount.toLocaleString()}`,
-            amountValue: tx.amount,
+            amount: `₦${amountInNaira.toLocaleString()}`,
+            amountValue: amountInNaira,
             status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending',
             originalId: tx.id,
             adminName: tx.adminName
@@ -363,12 +367,14 @@ export default function History() {
         }}
       />
 
-      <Toast 
-        message={toastMessage}
-        type="success"
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
+      {showToast && toastMessage && (
+        <Toast 
+          message={toastMessage}
+          type="success"
+          isVisible={showToast}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 }

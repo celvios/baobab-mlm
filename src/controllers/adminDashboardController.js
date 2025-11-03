@@ -12,11 +12,11 @@ const getDashboardStats = async (req, res) => {
       earningsResult, 
       revenueResult,
       withdrawalRequestsResult,
+      totalWithdrawalsResult,
+      mlmWithdrawalsResult,
       pendingPaymentsResult,
       totalWalletBalanceResult,
-      mlmEarningsResult,
-      totalWithdrawalsResult,
-      mlmWithdrawalsResult
+      mlmEarningsResult
     ] = await Promise.all([
       pool.query('SELECT COUNT(*) as total_users FROM users'),
       pool.query('SELECT COUNT(*) as onboarded_users FROM users WHERE status = \'active\' AND current_stage != \'feeder\''),
