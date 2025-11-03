@@ -65,7 +65,16 @@ const AdminDashboard = () => {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+          <div className="space-y-4 w-full">
+            <div className="h-6 bg-gray-200 rounded animate-pulse w-32"></div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+          </div>
         </div>
       </div>
     );

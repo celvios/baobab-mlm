@@ -29,7 +29,14 @@ export default function DashboardWrapper({ children }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="space-y-4 w-full max-w-4xl">
+          <div className="h-6 bg-gray-200 rounded animate-pulse w-48"></div>
+          <div className="h-48 bg-gray-200 rounded animate-pulse"></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-32 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
       </div>
     );
   }
