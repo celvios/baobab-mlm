@@ -24,7 +24,13 @@ const AdminDashboard = () => {
         apiService.getAdminStats(),
         apiService.getRecentActivity()
       ]);
-      setStats(statsData);
+      setStats({
+        totalUsers: statsData.totalUsers || 0,
+        totalOrders: statsData.totalOrders || 0,
+        totalRevenue: statsData.totalRevenue || 0,
+        pendingWithdrawals: statsData.pendingWithdrawals || 0,
+        totalMLMEarnings: statsData.totalMlmEarnings || 0
+      });
       setRecentActivity(activityData.activities || []);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
@@ -76,31 +82,31 @@ const AdminDashboard = () => {
         <StatCard
           icon={FiUsers}
           title="Total Users"
-          value={stats.totalUsers.toLocaleString()}
+          value={(stats.totalUsers || 0).toLocaleString()}
           color="bg-blue-500"
         />
         <StatCard
           icon={FiShoppingBag}
           title="Total Orders"
-          value={stats.totalOrders.toLocaleString()}
+          value={(stats.totalOrders || 0).toLocaleString()}
           color="bg-green-500"
         />
         <StatCard
           icon={FiDollarSign}
           title="Total Revenue"
-          value={`₦${stats.totalRevenue.toLocaleString()}`}
+          value={`₦${(stats.totalRevenue || 0).toLocaleString()}`}
           color="bg-purple-500"
         />
         <StatCard
           icon={FiDollarSign}
           title="MLM Earnings"
-          value={`$${stats.totalMLMEarnings.toLocaleString()}`}
+          value={`$${(stats.totalMLMEarnings || 0).toLocaleString()}`}
           color="bg-emerald-500"
         />
         <StatCard
           icon={FiTrendingUp}
           title="Pending Withdrawals"
-          value={stats.pendingWithdrawals.toLocaleString()}
+          value={(stats.pendingWithdrawals || 0).toLocaleString()}
           color="bg-orange-500"
         />
       </div>

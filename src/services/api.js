@@ -360,7 +360,8 @@ class ApiService {
   }
 
   async getAdminStats() {
-    return this.request('/admin-stats');
+    const response = await this.request('/admin/dashboard/stats');
+    return response.stats || {};
   }
 
   async getRecentActivity() {

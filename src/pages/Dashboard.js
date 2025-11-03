@@ -323,16 +323,21 @@ export default function Dashboard() {
       amount: formatPrice(withdrawal.amount),
       status: withdrawal.status?.charAt(0).toUpperCase() + withdrawal.status?.slice(1) || 'Pending'
     })),
-    ...transactions.map((tx, index) => ({
-      id: userOrders.length + withdrawals.length + index + 1,
-      account: userProfile?.email || 'user@example.com',
-      stage: formatLevel(userProfile?.mlmLevel),
-      transaction: tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction',
-      type: tx.amount > 0 ? 'Incoming' : 'Outgoing',
-      amount: formatPrice(Math.abs(tx.amount)),
-      status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending'
-    }))
-  ].slice(0, 5); // Show only latest 5 entries
+    ...transactions.map((tx, index) => {
+      const isIncoming = tx.amount > 0 || ['credit', 'deposit_approved', 'commission', 'referral_bonus', 'matrix_bonus', 'deposit', 'refund'].includes(tx.type);
+      const amountInNaira = tx.type === 'matrix_bonus' ? tx.amount * 1500 : tx.amount;
+      
+      return {
+        id: userOrders.length + withdrawals.length + index + 1,
+        account: userProfile?.email || 'user@example.com',
+        stage: formatLevel(userProfile?.mlmLevel),
+        transaction: tx.type === 'matrix_bonus' ? 'Matrix_bonus' : (tx.type?.charAt(0).toUpperCase() + tx.type?.slice(1) || 'Transaction'),
+        type: isIncoming ? 'Incoming' : 'Outgoing',
+        amount: formatPrice(Math.abs(amountInNaira)),
+        status: tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1) || 'Pending'
+      };
+    })
+  ].slice(0, 5).map((item, index) => ({ ...item, displayId: index + 1 })); // Re-number from 1
 
   return (
     <div className="space-y-6">
@@ -508,7 +513,7 @@ export default function Dashboard() {
             <tbody>
               {historyData.length > 0 ? historyData.map((item) => (
                 <tr key={item.id} className="border-b border-gray-100">
-                  <td className="py-4 px-4 text-sm">{item.id}</td>
+                  <td className="py-4 px-4 text-sm">{item.displayId || item.id}</td>
                   <td className="py-4 px-4">
                     <div className="flex items-center">
                       <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-xs mr-2">
@@ -530,7 +535,7 @@ export default function Dashboard() {
                   <td className="py-4 px-4 text-sm font-semibold">{item.amount}</td>
                   <td className="py-4 px-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      item.status === 'Successful' ? 'bg-green-100 text-green-800' :
+                      item.status === 'Completed' || item.status === 'Successful' || item.status === 'Approved' ? 'bg-green-100 text-green-800' :
                       item.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}>
