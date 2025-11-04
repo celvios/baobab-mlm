@@ -2,7 +2,7 @@ const pool = require('../config/database');
 
 const MLM_LEVELS = {
   no_stage: { bonusUSD: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
-  feeder: { bonusUSD: 1.5, requiredReferrals: 6, matrixSize: '2x2' },
+  feeder: { bonusUSD: 1.5, requiredReferrals: 14, matrixSize: '2x3' },
   bronze: { bonusUSD: 4.8, requiredReferrals: 14, matrixSize: '2x3' },
   silver: { bonusUSD: 30, requiredReferrals: 14, matrixSize: '2x3' },
   gold: { bonusUSD: 150, requiredReferrals: 14, matrixSize: '2x3' },
@@ -86,7 +86,7 @@ class MLMService {
       await client.query('UPDATE users SET mlm_level = $1 WHERE id = $2', [newStage, userId]);
 
       // Create new stage_matrix entry for next stage
-      const nextStageSlots = newStage === 'infinity' ? 0 : ((newStage === 'no_stage' || newStage === 'feeder') ? 6 : 14);
+      const nextStageSlots = newStage === 'infinity' ? 0 : (newStage === 'no_stage' ? 6 : 14);
       await client.query(`
         INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, qualified_slots_filled)
         VALUES ($1, $2, 0, $3, 0)
@@ -161,7 +161,7 @@ class MLMService {
     const stage = referrer.mlm_level || 'no_stage';
     
     // Ensure referrer has stage_matrix entry
-    const stageSlots = (stage === 'no_stage' || stage === 'feeder') ? 6 : 14;
+    const stageSlots = stage === 'no_stage' ? 6 : 14;
     await client.query(`
       INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required, qualified_slots_filled)
       VALUES ($1, $2, 0, $3, 0)
@@ -760,7 +760,7 @@ class MLMService {
         await client.query(`
           INSERT INTO stage_matrix (user_id, stage, slots_filled, slots_required)
           VALUES ($1, $2, 0, $3)
-        `, [newUser.rows[0].id, generatedAccountStage, (generatedAccountStage === 'no_stage' || generatedAccountStage === 'feeder') ? 6 : 14]);
+        `, [newUser.rows[0].id, generatedAccountStage, generatedAccountStage === 'no_stage' ? 6 : 14]);
       }
 
       // Process direct referrals first
