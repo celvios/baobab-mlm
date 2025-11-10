@@ -302,6 +302,24 @@ router.get('/users', adminAuth, async (req, res) => {
   }
 });
 
+// Deactivate user
+router.put('/users/:userId/deactivate', adminAuth, async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const result = await pool.query(
+      'UPDATE users SET is_active = false WHERE id = $1 RETURNING email',
+      [userId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User deactivated successfully' });
+  } catch (error) {
+    console.error('Error deactivating user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Create new user
 router.post('/users', adminAuth, async (req, res) => {
   const { fullName, email, phone, password, creditAmount } = req.body;

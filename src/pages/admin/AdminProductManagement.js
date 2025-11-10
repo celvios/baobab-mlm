@@ -133,7 +133,7 @@ const AdminProductManagement = () => {
             />
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
-                $
+                ₦
               </span>
               <input
                 type="number"
@@ -285,7 +285,7 @@ const AdminProductManagement = () => {
                     {product.category}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${product.price.toLocaleString()}
+                    ₦{product.price.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {product.stock_quantity}

@@ -138,7 +138,7 @@ const AdminOrdersManagement = () => {
                     {order.product_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${(order.total_amount || 0).toLocaleString()}
+                    ₦{(order.total_amount || 0).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.order_status || 'pending')}`}>

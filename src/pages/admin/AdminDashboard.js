@@ -109,7 +109,7 @@ const AdminDashboard = () => {
         <StatCard
           icon={FiDollarSign}
           title="MLM Earnings"
-          value={`$${(stats.totalMLMEarnings || 0).toLocaleString()}`}
+          value={`₦${(stats.totalMLMEarnings || 0).toLocaleString()}`}
           color="bg-emerald-500"
         />
         <StatCard

@@ -97,13 +97,14 @@ const AdminUsersManagement = () => {
   const handleDeactivateUser = async (userId) => {
     if (window.confirm('Are you sure you want to deactivate this user?')) {
       try {
-        await fetch(`/api/admin/users/${userId}/deactivate`, {
-          method: 'PUT',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+        await apiService.request(`/admin/users/${userId}/deactivate`, {
+          method: 'PUT'
         });
+        setToast({ message: 'User deactivated successfully', type: 'success' });
         fetchUsers();
       } catch (error) {
         console.error('Error deactivating user:', error);
+        setToast({ message: 'Failed to deactivate user', type: 'error' });
       }
     }
   };

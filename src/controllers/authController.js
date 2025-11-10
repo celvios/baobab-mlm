@@ -77,24 +77,28 @@ const register = async (req, res) => {
 
     // Process referral if referred by someone
     if (referredBy) {
-      const referrerResult = await pool.query('SELECT id, full_name FROM users WHERE referral_code = $1', [referredBy]);
-      if (referrerResult.rows.length > 0) {
-        await mlmService.processReferral(referrerResult.rows[0].id, user.id);
+      try {
+        const referralResult = await mlmService.processReferralEarning(user.id, 18000);
         
-        // Create referral notification
-        try {
-          await pool.query(
-            'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-            [
-              referrerResult.rows[0].id,
-              'New Team Member!',
-              `${fullName} joined your team using your referral code`,
-              'success'
-            ]
-          );
-        } catch (notificationError) {
-          console.log('Failed to create referral notification:', notificationError.message);
+        if (referralResult.success && referralResult.earnings.length > 0) {
+          // Create notifications for all earners
+          for (const earning of referralResult.earnings) {
+            const earnerResult = await pool.query('SELECT full_name FROM users WHERE id = $1', [earning.userId]);
+            if (earnerResult.rows.length > 0) {
+              await pool.query(
+                'INSERT INTO market_updates (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+                [
+                  earning.userId,
+                  `Level ${earning.level} Referral Bonus!`,
+                  `You earned ₦${earning.amount.toLocaleString()} from ${fullName} joining your ${earning.level === 1 ? 'direct' : 'indirect'} team`,
+                  'success'
+                ]
+              );
+            }
+          }
         }
+      } catch (referralError) {
+        console.log('Failed to process referral earnings:', referralError.message);
       }
     }
 

@@ -63,6 +63,7 @@ const AdminWithdrawals = () => {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'approved': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
+      case 'cancelled': return 'bg-orange-100 text-orange-800';
       case 'processing': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -99,6 +100,7 @@ const AdminWithdrawals = () => {
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
+                <option value="cancelled">Cancelled</option>
                 <option value="processing">Processing</option>
               </select>
             </div>
@@ -183,6 +185,13 @@ const AdminWithdrawals = () => {
                             title="Reject"
                           >
                             <FiX className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => updateWithdrawalStatus(withdrawal.id, 'cancelled')}
+                            className="text-orange-600 hover:text-orange-900"
+                            title="Cancel"
+                          >
+                            <span className="text-xs">Cancel</span>
                           </button>
                         </>
                       )}

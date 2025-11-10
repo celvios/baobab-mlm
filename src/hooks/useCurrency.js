@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import currencyService from '../services/currencyService';
 
 export const useCurrency = () => {
-  const [currency, setCurrency] = useState('USD');
-  const [country, setCountry] = useState('US');
+  const [currency, setCurrency] = useState('NGN');
+  const [country, setCountry] = useState('NG');
   const [loading, setLoading] = useState(true);
   const [rates, setRates] = useState({});
 

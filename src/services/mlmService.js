@@ -1,15 +1,129 @@
 const pool = require('../config/database');
 
 const STAGES = {
-  feeder: { bonus: 1.5, slots: 6, levels: 2, next: 'bronze' },
-  bronze: { bonus: 4.8, slots: 14, levels: 3, next: 'silver' },
-  silver: { bonus: 30, slots: 14, levels: 3, next: 'gold' },
-  gold: { bonus: 150, slots: 14, levels: 3, next: 'diamond' },
-  diamond: { bonus: 750, slots: 14, levels: 3, next: 'infinity' },
-  infinity: { bonus: 15000, slots: 0, levels: 0, next: null }
+  feeder: { bonus: 2250, slots: 6, levels: 2, next: 'bronze' },
+  bronze: { bonus: 7200, slots: 14, levels: 3, next: 'silver' },
+  silver: { bonus: 45000, slots: 14, levels: 3, next: 'gold' },
+  gold: { bonus: 225000, slots: 14, levels: 3, next: 'diamond' },
+  diamond: { bonus: 1125000, slots: 14, levels: 3, next: 'infinity' },
+  infinity: { bonus: 22500000, slots: 0, levels: 0, next: null }
 };
 
 class MLMService {
+  async processReferralEarning(referredUserId, joiningFeeAmount) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Get referred user's referrer chain (up to 2 levels)
+      const referredUserResult = await client.query(
+        'SELECT referred_by FROM users WHERE id = $1',
+        [referredUserId]
+      );
+      
+      if (referredUserResult.rows.length === 0 || !referredUserResult.rows[0].referred_by) {
+        await client.query('COMMIT');
+        return { success: true, message: 'No referrer found' };
+      }
+      
+      const directReferralCode = referredUserResult.rows[0].referred_by;
+      
+      // Get direct referrer (Level 1)
+      const directReferrerResult = await client.query(
+        'SELECT id, mlm_level, referred_by FROM users WHERE referral_code = $1',
+        [directReferralCode]
+      );
+      
+      if (directReferrerResult.rows.length === 0) {
+        await client.query('COMMIT');
+        return { success: true, message: 'Direct referrer not found' };
+      }
+      
+      const directReferrer = directReferrerResult.rows[0];
+      const earnings = [];
+      
+      // Process Level 1 (Direct Referrer) Earning
+      const level1Stage = directReferrer.mlm_level || 'feeder';
+      const level1Config = STAGES[level1Stage];
+      
+      if (level1Config) {
+        const bonusAmount = level1Config.bonus;
+        
+        // Create referral earning record for Level 1
+        await client.query(`
+          INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status, referral_level)
+          VALUES ($1, $2, $3, $4, 'completed', 1)
+        `, [directReferrer.id, referredUserId, level1Stage, bonusAmount]);
+        
+        // Update Level 1 referrer's wallet
+        await client.query(`
+          UPDATE wallets SET balance = balance + $1, total_earned = total_earned + $1
+          WHERE user_id = $2
+        `, [bonusAmount, directReferrer.id]);
+        
+        // Create transaction record for Level 1
+        await client.query(`
+          INSERT INTO transactions (user_id, type, amount, description, status)
+          VALUES ($1, 'referral_bonus', $2, $3, 'completed')
+        `, [directReferrer.id, bonusAmount, `Level 1 referral bonus from new member`]);
+        
+        earnings.push({ level: 1, userId: directReferrer.id, amount: bonusAmount, stage: level1Stage });
+      }
+      
+      // Process Level 2 (Indirect Referrer) Earning if exists
+      if (directReferrer.referred_by) {
+        const indirectReferrerResult = await client.query(
+          'SELECT id, mlm_level FROM users WHERE referral_code = $1',
+          [directReferrer.referred_by]
+        );
+        
+        if (indirectReferrerResult.rows.length > 0) {
+          const indirectReferrer = indirectReferrerResult.rows[0];
+          const level2Stage = indirectReferrer.mlm_level || 'feeder';
+          const level2Config = STAGES[level2Stage];
+          
+          if (level2Config) {
+            const bonusAmount = level2Config.bonus;
+            
+            // Create referral earning record for Level 2
+            await client.query(`
+              INSERT INTO referral_earnings (user_id, referred_user_id, stage, amount, status, referral_level)
+              VALUES ($1, $2, $3, $4, 'completed', 2)
+            `, [indirectReferrer.id, referredUserId, level2Stage, bonusAmount]);
+            
+            // Update Level 2 referrer's wallet
+            await client.query(`
+              UPDATE wallets SET balance = balance + $1, total_earned = total_earned + $1
+              WHERE user_id = $2
+            `, [bonusAmount, indirectReferrer.id]);
+            
+            // Create transaction record for Level 2
+            await client.query(`
+              INSERT INTO transactions (user_id, type, amount, description, status)
+              VALUES ($1, 'referral_bonus', $2, $3, 'completed')
+            `, [indirectReferrer.id, bonusAmount, `Level 2 referral bonus from new member`]);
+            
+            earnings.push({ level: 2, userId: indirectReferrer.id, amount: bonusAmount, stage: level2Stage });
+          }
+        }
+      }
+      
+      await client.query('COMMIT');
+      
+      return {
+        success: true,
+        earnings,
+        totalEarnings: earnings.reduce((sum, e) => sum + e.amount, 0)
+      };
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async initializeUser(userId) {
     const client = await pool.connect();
     try {
@@ -62,16 +176,38 @@ class MLMService {
   }
 
   async getTeamMembers(userId) {
-    const result = await pool.query(`
+    // Get direct referrals (Level 1)
+    const directResult = await pool.query(`
       SELECT u.id, u.full_name, u.email, u.mlm_level, u.created_at,
-             re.amount as earning_from_user
+             re.amount as earning_from_user, 1 as referral_level,
+             u.referral_code, true as has_deposited
       FROM users u
-      LEFT JOIN referral_earnings re ON u.id = re.referred_user_id AND re.user_id = $1
+      LEFT JOIN referral_earnings re ON u.id = re.referred_user_id AND re.user_id = $1 AND re.referral_level = 1
       WHERE u.referred_by = (SELECT referral_code FROM users WHERE id = $1)
       ORDER BY u.created_at DESC
     `, [userId]);
 
-    return result.rows;
+    // Get indirect referrals (Level 2) - people referred by direct referrals
+    const indirectResult = await pool.query(`
+      SELECT u.id, u.full_name, u.email, u.mlm_level, u.created_at,
+             re.amount as earning_from_user, 2 as referral_level,
+             u.referral_code, true as has_deposited
+      FROM users u
+      LEFT JOIN referral_earnings re ON u.id = re.referred_user_id AND re.user_id = $1 AND re.referral_level = 2
+      WHERE u.referred_by IN (
+        SELECT referral_code FROM users 
+        WHERE referred_by = (SELECT referral_code FROM users WHERE id = $1)
+      )
+      ORDER BY u.created_at DESC
+    `, [userId]);
+
+    // Combine and sort: direct first, then indirect
+    const allMembers = [
+      ...directResult.rows.map(member => ({ ...member, level_type: 'Direct' })),
+      ...indirectResult.rows.map(member => ({ ...member, level_type: 'Indirect' }))
+    ];
+
+    return allMembers;
   }
 
   async completeUserMatrix(userId, currentStage) {

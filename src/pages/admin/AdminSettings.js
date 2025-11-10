@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiUser, FiHome, FiLock, FiMapPin, FiSave, FiDollarSign } from 'react-icons/fi';
-import ExchangeRateManager from '../../components/admin/ExchangeRateManager';
+import { FiUser, FiHome, FiLock, FiMapPin, FiSave } from 'react-icons/fi';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -393,17 +392,7 @@ const AdminSettings = () => {
             <FiMapPin className="inline w-4 h-4 mr-2" />
             Pick-Up Stations
           </button>
-          <button
-            onClick={() => setActiveTab('exchange')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'exchange'
-                ? 'border-green-500 text-green-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <FiDollarSign className="inline w-4 h-4 mr-2" />
-            Exchange Rate
-          </button>
+
 
         </nav>
       </div>
@@ -412,7 +401,6 @@ const AdminSettings = () => {
       {activeTab === 'business' && <BusinessDetails />}
       {activeTab === 'security' && <SecuritySettings />}
       {activeTab === 'pickup' && <PickupStations />}
-      {activeTab === 'exchange' && <ExchangeRateManager />}
     </div>
   );
 };

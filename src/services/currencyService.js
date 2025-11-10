@@ -69,13 +69,9 @@ class CurrencyService {
 
   async getUserLocation() {
     try {
-      // Get country from user profile in localStorage
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const country = user.country || 'NG';
-      console.log('Currency Service - User country:', country);
-      this.userLocation = country;
-      this.userCurrency = AFRICAN_CURRENCIES[country] || 'NGN';
-      console.log('Currency Service - Selected currency:', this.userCurrency);
+      // Default to Nigeria for Baobab MLM system
+      this.userLocation = 'NG';
+      this.userCurrency = 'NGN';
       return { country: this.userLocation, currency: this.userCurrency };
     } catch (error) {
       console.error('Failed to get user location:', error);
@@ -85,37 +81,20 @@ class CurrencyService {
 
   async getExchangeRates() {
     try {
-      // Fetch admin-set exchange rate from backend
-      const response = await fetch('/api/exchange-rate');
-      const data = await response.json();
-      
-      if (data.rate) {
-        this.rates = { NGN: data.rate, USD: 1 };
-        this.lastUpdate = new Date();
-        return this.rates;
-      }
-      throw new Error('Failed to fetch exchange rates');
+      // Use direct NGN rates - no conversion needed
+      this.rates = { NGN: 1, USD: 1 };
+      this.lastUpdate = new Date();
+      return this.rates;
     } catch (error) {
       console.error('Exchange rate fetch error:', error);
-      // Fallback to 1500 NGN per USD if fetch fails
-      this.rates = { NGN: 1500, USD: 1 };
+      this.rates = { NGN: 1, USD: 1 };
       return this.rates;
     }
   }
 
-  async convertPrice(usdPrice, targetCurrency = null) {
-    const currency = targetCurrency || this.userCurrency;
-    
-    // Check if rates need updating (update every 10 minutes)
-    const needsUpdate = !this.lastUpdate || 
-      (new Date() - this.lastUpdate) > 10 * 60 * 1000;
-    
-    if (needsUpdate) {
-      await this.getExchangeRates();
-    }
-
-    const rate = this.rates[currency] || (currency === 'NGN' ? 1500 : 1);
-    return usdPrice * rate;
+  async convertPrice(ngnPrice, targetCurrency = null) {
+    // All prices are in NGN, no conversion needed
+    return ngnPrice;
   }
 
   formatPrice(price, currency = null) {

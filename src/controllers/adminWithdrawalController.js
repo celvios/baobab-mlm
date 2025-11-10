@@ -74,8 +74,8 @@ const processWithdrawal = async (req, res) => {
     const { status, adminNotes = '' } = req.body;
     const adminId = req.admin.id;
 
-    if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status. Must be approved or rejected' });
+    if (!['approved', 'rejected', 'cancelled'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status. Must be approved, rejected, or cancelled' });
     }
 
     // Get withdrawal request details
@@ -95,6 +95,11 @@ const processWithdrawal = async (req, res) => {
     const userId = withdrawal.user_id;
     const amount = parseFloat(withdrawal.amount);
 
+    // Check if withdrawal is already processed
+    if (withdrawal.status !== 'pending') {
+      return res.status(400).json({ message: 'Withdrawal request has already been processed' });
+    }
+
     if (status === 'approved') {
       // Check if user has sufficient balance
       const currentBalance = parseFloat(withdrawal.balance || 0);
@@ -110,6 +115,12 @@ const processWithdrawal = async (req, res) => {
         INSERT INTO transactions (user_id, type, amount, description, status, admin_id, reference)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
       `, [userId, 'debit', amount, `Withdrawal approved: ${adminNotes}`, 'completed', adminId, `WD${id}`]);
+    } else if (status === 'cancelled') {
+      // For cancelled withdrawals, no balance changes needed as money was never deducted
+      await pool.query(`
+        INSERT INTO transactions (user_id, type, amount, description, status, admin_id, reference)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [userId, 'withdrawal_cancelled', amount, `Withdrawal cancelled: ${adminNotes}`, 'cancelled', adminId, `WC${id}`]);
     }
 
     // Update withdrawal request
